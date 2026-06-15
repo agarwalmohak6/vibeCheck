@@ -111,6 +111,8 @@ export const TEMPLATE_TYPES: {
   hasRunaway: boolean;
   defaultCoverImage: string;
   recommendedTheme: ThemeId;
+  defaultYesText: string;
+  defaultNoText: string;
   messagePresets: MessagePreset[];
 }[] = [
   {
@@ -120,6 +122,8 @@ export const TEMPLATE_TYPES: {
     hasRunaway: true,
     defaultCoverImage: '/themes/midnight_romance.png',
     recommendedTheme: 'midnight_romance',
+    defaultYesText: 'YES 💖',
+    defaultNoText: 'No 💔',
     messagePresets: [
       {
         style: '🎬 Filmy',
@@ -145,6 +149,8 @@ export const TEMPLATE_TYPES: {
     hasRunaway: true,
     defaultCoverImage: '/themes/maan_jao_cover.png',
     recommendedTheme: 'soft_coquette',
+    defaultYesText: 'Forgiven! 🥺❤️',
+    defaultNoText: 'No way 😒',
     messagePresets: [
       {
         style: '😭 Dramatic',
@@ -170,6 +176,8 @@ export const TEMPLATE_TYPES: {
     hasRunaway: true,
     defaultCoverImage: '/themes/birthday_roast_cover.png',
     recommendedTheme: 'friends_sitcom',
+    defaultYesText: 'Aww, thanks! 🎂',
+    defaultNoText: 'Still an idiot 🙄',
     messagePresets: [
       {
         style: '🔥 Pure Roast',
@@ -195,6 +203,8 @@ export const TEMPLATE_TYPES: {
     hasRunaway: true,
     defaultCoverImage: '/themes/bestie_cover.png',
     recommendedTheme: 'friends_sitcom',
+    defaultYesText: 'Love you bestie! 👯‍♀️',
+    defaultNoText: 'Eww, cringe 💀',
     messagePresets: [
       {
         style: '🥺 Senti Mode',
@@ -220,6 +230,8 @@ export const TEMPLATE_TYPES: {
     hasRunaway: true,
     defaultCoverImage: '/themes/netflix_chill_cover.png',
     recommendedTheme: 'midnight_romance',
+    defaultYesText: "I'll bring snacks! 🍿",
+    defaultNoText: "I'm busy sleeping 😴",
     messagePresets: [
       {
         style: '😏 Lowkey Flirty',

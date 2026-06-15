@@ -20,6 +20,9 @@ export interface CardData {
   unlock_code?: string;
   unlock_question?: string;
   cover_image_url?: string;
+  yes_btn_text?: string;
+  no_btn_text?: string;
+  has_secret_code?: boolean;
 }
 
 export interface Card {

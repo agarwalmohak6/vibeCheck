@@ -4,26 +4,36 @@ import { useState, useRef } from 'react';
 import confetti from 'canvas-confetti';
 
 interface SecretCodeGateProps {
-  unlockCode?: string;
+  cardId: string;
   unlockQuestion?: string;
   onUnlock: () => void;
 }
 
-export default function SecretCodeGate({ unlockCode, unlockQuestion, onUnlock }: SecretCodeGateProps) {
+export default function SecretCodeGate({ cardId, unlockQuestion, onUnlock }: SecretCodeGateProps) {
   const [input, setInput] = useState('');
   const [shake, setShake] = useState(false);
   const [, setAttempts] = useState(0);
   const [hint, setHint] = useState('');
+  const [checking, setChecking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isNumeric = !unlockQuestion;
 
-  const handleSubmit = () => {
-    const normalizedInput = input.trim().toLowerCase();
-    const normalizedCode = (unlockCode || '').trim().toLowerCase();
+  const handleSubmit = async () => {
+    if (!input.trim() || checking) return;
+    setChecking(true);
 
-    if (normalizedInput === normalizedCode) {
-      // Unlock!
+    const res = await fetch(`/api/cards/${cardId}/unlock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: input }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.unlock_token) {
+        localStorage.setItem(`unlock_token_${cardId}`, data.unlock_token);
+      }
       confetti({ particleCount: 80, spread: 80, origin: { y: 0.6 } });
       onUnlock();
     } else {
@@ -37,6 +47,7 @@ export default function SecretCodeGate({ unlockCode, unlockQuestion, onUnlock }:
       setTimeout(() => setShake(false), 600);
       inputRef.current?.focus();
     }
+    setChecking(false);
   };
 
   return (
@@ -104,7 +115,7 @@ export default function SecretCodeGate({ unlockCode, unlockQuestion, onUnlock }:
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+              onKeyDown={(e) => e.key === 'Enter' && void handleSubmit()}
               placeholder="Type your answer..."
               className="w-full px-4 py-3 rounded-xl text-center text-base outline-none mb-4"
               style={{
@@ -166,18 +177,18 @@ export default function SecretCodeGate({ unlockCode, unlockQuestion, onUnlock }:
         )}
 
         <motion.button
-          onClick={handleSubmit}
+          onClick={() => void handleSubmit()}
           whileTap={{ scale: 0.95 }}
           whileHover={{ scale: 1.03 }}
-          disabled={!input}
+          disabled={!input || checking}
           className="w-full py-3 rounded-xl font-bold text-white"
           style={{
-            background: input ? 'linear-gradient(135deg, var(--accent), var(--accent2))' : 'var(--surface2)',
+            background: input && !checking ? 'linear-gradient(135deg, var(--accent), var(--accent2))' : 'var(--surface2)',
             boxShadow: input ? '0 8px 30px var(--glow)' : 'none',
             transition: 'all 0.2s ease',
           }}
         >
-          Unlock 🗝️
+          {checking ? 'Checking...' : 'Unlock 🗝️'}
         </motion.button>
       </motion.div>
     </motion.div>

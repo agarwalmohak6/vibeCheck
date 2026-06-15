@@ -6,16 +6,95 @@ import AmbientBackground from '@/components/AmbientBackground';
 import { TIERS } from '@/lib/themes';
 import { LANDING_STRINGS } from '@/lib/strings';
 
+const EXPERIENCE_STACK = [
+  { label: 'Envelope reveal', value: 'Cinematic open' },
+  { label: 'Secret gate', value: 'Private passcode' },
+  { label: 'Music cue', value: 'Tap-to-play safe' },
+  { label: 'Live tracker', value: 'Creator activity feed' },
+];
 
+const MARKET_EDGES = [
+  {
+    title: 'More premium than a template',
+    body: 'Every card feels like a designed reveal, not a static greeting image with text pasted on top.',
+  },
+  {
+    title: 'More personal than a video sticker',
+    body: 'Names, themes, passcodes, music, photos, and buttons make each link feel built for one person.',
+  },
+  {
+    title: 'More useful after sending',
+    body: 'Creators get opens, passcode unlocks, dodge attempts, acceptance moments, and follow-up replies.',
+  },
+  {
+    title: 'Made for mobile sharing',
+    body: 'The flow is optimized for WhatsApp, DMs, UPI checkout, and one-thumb recipient interactions.',
+  },
+];
+
+const LAUNCH_STATS = [
+  { value: '<3 min', label: 'to build a card' },
+  { value: '5', label: 'emotional templates' },
+  { value: '₹29', label: 'starting price' },
+  { value: '0 apps', label: 'needed to open' },
+];
+
+const SIGNATURE_THEMES = [
+  {
+    name: 'Midnight Romance',
+    image: '/themes/midnight_romance.png',
+    mood: 'Neon confession energy',
+    colors: ['#FF2E93', '#a855f7', '#06b6d4'],
+  },
+  {
+    name: 'Soft Coquette',
+    image: '/themes/soft_coquette.png',
+    mood: 'Pastel, delicate, dreamy',
+    colors: ['#e91e8c', '#d4a017', '#fff0f5'],
+  },
+  {
+    name: 'Desi Festive',
+    image: '/themes/desi_festive.png',
+    mood: 'Royal wax-seal drama',
+    colors: ['#FACC15', '#D97706', '#4C0519'],
+  },
+  {
+    name: 'Friends Sitcom',
+    image: '/themes/friends_sitcom.png',
+    mood: 'Warm, funny, familiar',
+    colors: ['#5F4B8B', '#FFB81C', '#F4F1EA'],
+  },
+];
+
+const FLOW_ACTS = [
+  {
+    act: 'Act I',
+    title: 'The creator feels in control',
+    body: 'Pick a template, write the message, add a photo, choose the music, and decide whether the card needs a secret gate.',
+  },
+  {
+    act: 'Act II',
+    title: 'The recipient feels chosen',
+    body: 'They open a cinematic envelope, unlock the moment, hear the cue, and interact with buttons that feel alive.',
+  },
+  {
+    act: 'Act III',
+    title: 'The story keeps going',
+    body: 'You see opens, unlocks, dodges, accepts, and replies in a success hub built for the post-send dopamine.',
+  },
+];
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
+    <main className="min-h-screen vc-market" style={{ background: 'var(--bg)' }}>
       <AmbientBackground />
+      <div className="vc-conversion-dock" aria-label="Quick start">
+        <span>Launch-ready emotional cards</span>
+        <Link href="/customize">Create one now</Link>
+      </div>
 
       {/* Nav */}
-      <nav className="sticky top-0 z-40 px-6 py-4 flex items-center justify-between"
-        style={{ background: 'rgba(11,15,25,0.8)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--border)' }}>
+      <nav className="vc-nav sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -42,11 +121,14 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="relative px-6 pt-16 pb-8 text-center max-w-4xl mx-auto">
+      <section className="vc-hero relative px-6 pt-16 pb-8 text-center overflow-hidden">
+        <div className="vc-hero__image" aria-hidden />
+        <div className="vc-hero__veil" aria-hidden />
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
+          className="vc-hero__content relative z-10 max-w-4xl mx-auto"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-6"
             style={{ background: 'rgba(255,46,147,0.15)', border: '1px solid rgba(255,46,147,0.3)', color: 'var(--accent)' }}>
@@ -54,28 +136,28 @@ export default function LandingPage() {
           </div>
 
           <h1
-            className="text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight capitalize tracking-tighter drop-shadow-2xl"
+            className="text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight capitalize drop-shadow-2xl"
             style={{
               fontFamily: 'var(--font-display)',
               filter: 'drop-shadow(0px 10px 20px rgba(0,0,0,0.5))'
             }}
           >
-            <span className="gradient-text">Send Vibes,</span><br /><span className="gradient-text">Not Texts</span> 💌
+            <span className="gradient-text">VibeCheck</span>
           </h1>
+
+          <p className="vc-hero-kicker mx-auto mb-5">
+            Premium emotional cards for proposals, apologies, birthdays, best friends, and anniversaries.
+          </p>
 
           <p className="text-base md:text-xl mb-8 max-w-2xl mx-auto leading-relaxed" style={{ color: 'var(--text3)' }}>
             {LANDING_STRINGS.HERO_SUBTITLE}
           </p>
 
-          <div className="relative mx-auto mb-10 max-w-lg hidden md:block">
-            <motion.div 
-              animate={{ y: [0, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
-              className="rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_var(--glow)] border border-white/10"
-            >
-               {/* eslint-disable-next-line @next/next/no-img-element */}
-               <img src="/images/hero_image.png" alt="Hero" className="w-full object-cover" />
-            </motion.div>
+          <div className="vc-proof-strip mx-auto mb-8">
+            <span>Passcode gates</span>
+            <span>Live tracker</span>
+            <span>Music reveal</span>
+            <span>Follow-up chat</span>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -91,6 +173,140 @@ export default function LandingPage() {
             <p className="text-sm" style={{ color: 'var(--text3)' }}>{LANDING_STRINGS.HERO_PRICE_NOTE}</p>
           </div>
         </motion.div>
+      </section>
+
+      {/* Launch credibility */}
+      <section className="vc-band px-6 py-10">
+        <div className="vc-container">
+          <div className="vc-stat-grid">
+            {LAUNCH_STATS.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.08 }}
+                className="vc-stat"
+              >
+                <strong>{stat.value}</strong>
+                <span>{stat.label}</span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Theme runway */}
+      <section className="px-6 py-16">
+        <div className="vc-container">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="vc-section-copy vc-section-copy--center"
+          >
+            <span className="vc-eyebrow">Mood before message</span>
+            <h2>Themes that feel like scenes, not skins.</h2>
+            <p>
+              Every visual direction changes the envelope, surface, glow, typography, and emotional tone.
+              The card starts feeling personal before the first sentence is read.
+            </p>
+          </motion.div>
+
+          <div className="vc-theme-runway">
+            {SIGNATURE_THEMES.map((theme, index) => (
+              <motion.article
+                key={theme.name}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.08 }}
+                className="vc-theme-card"
+              >
+                <div className="vc-theme-card__image" style={{ backgroundImage: `url(${theme.image})` }} />
+                <div className="vc-theme-card__body">
+                  <h3>{theme.name}</h3>
+                  <p>{theme.mood}</p>
+                  <div className="vc-swatch-row" aria-hidden>
+                    {theme.colors.map((color) => (
+                      <span key={color} style={{ background: color }} />
+                    ))}
+                  </div>
+                </div>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Experience stack */}
+      <section className="px-6 py-14">
+        <div className="vc-container vc-experience-grid">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="vc-section-copy"
+          >
+            <span className="vc-eyebrow">Built to feel expensive</span>
+            <h2>Not another e-card. A tiny emotional product.</h2>
+            <p>
+              Competitors stop at templates, videos, or RSVPs. VibeCheck combines the thrill of opening,
+              the privacy of a secret gate, and the feedback loop creators actually care about.
+            </p>
+          </motion.div>
+
+          <div className="vc-stack-panel" aria-label="VibeCheck experience stack">
+            {EXPERIENCE_STACK.map((item, index) => (
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, x: 18 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="vc-stack-row"
+              >
+                <span>0{index + 1}</span>
+                <div>
+                  <strong>{item.label}</strong>
+                  <p>{item.value}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Emotional flow */}
+      <section className="px-6 py-16">
+        <div className="vc-container vc-flow-stage">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="vc-section-copy"
+          >
+            <span className="vc-eyebrow">The product loop</span>
+            <h2>A card that behaves like a story.</h2>
+          </motion.div>
+
+          <div className="vc-flow-grid">
+            {FLOW_ACTS.map((item, index) => (
+              <motion.article
+                key={item.title}
+                initial={{ opacity: 0, y: 22 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="vc-flow-card"
+              >
+                <span>{item.act}</span>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+              </motion.article>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Live Simulator */}
@@ -109,6 +325,41 @@ export default function LandingPage() {
           </div>
           <LiveSimulator />
         </motion.div>
+      </section>
+
+      {/* Competitive edge */}
+      <section className="vc-band px-6 py-16">
+        <div className="vc-container">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="vc-section-copy vc-section-copy--center"
+          >
+            <span className="vc-eyebrow">Why people share it</span>
+            <h2>Designed for the moment after they open it.</h2>
+            <p>
+              The product is not just card creation. It is anticipation, reveal, reaction, and the follow-up.
+            </p>
+          </motion.div>
+
+          <div className="vc-edge-grid">
+            {MARKET_EDGES.map((edge, index) => (
+              <motion.article
+                key={edge.title}
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.08 }}
+                className="vc-edge-card"
+              >
+                <span>{String(index + 1).padStart(2, '0')}</span>
+                <h3>{edge.title}</h3>
+                <p>{edge.body}</p>
+              </motion.article>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* How it works */}
@@ -187,6 +438,11 @@ export default function LandingPage() {
                 <div className="text-3xl font-black mb-1" style={{ color: 'var(--text)' }}>₹{tier.price}</div>
                 <div className="text-sm font-semibold mb-1" style={{ color: 'var(--accent)' }}>{tier.duration}</div>
                 <div className="text-sm mb-4" style={{ color: 'var(--text3)' }}>{tier.description}</div>
+                <ul className="vc-tier-list">
+                  <li>Interactive reveal</li>
+                  <li>Tracker + replies</li>
+                  <li>Mobile share link</li>
+                </ul>
                 <Link href={`/customize?tier=${tier.id}`}>
                   <motion.button
                     whileTap={{ scale: 0.96 }}

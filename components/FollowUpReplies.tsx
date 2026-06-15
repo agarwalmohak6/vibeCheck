@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, ChatMessage } from '@/lib/supabase';
+import type { PublicCard, ChatMessageDTO } from '@/types/vibecheck';
 
 // Map of template_type to preset follow-up replies
 const PRESET_REPLIES: Record<string, string[]> = {
@@ -47,12 +47,12 @@ const DEFAULT_PRESETS = [
 ];
 
 interface FollowUpRepliesProps {
-  card: Card;
+  card: PublicCard;
   isCreator: boolean;
 }
 
 export default function FollowUpReplies({ card, isCreator }: FollowUpRepliesProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessageDTO[]>([]);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [sentSuccess, setSentSuccess] = useState(false);
@@ -87,7 +87,12 @@ export default function FollowUpReplies({ card, isCreator }: FollowUpRepliesProp
     try {
       const res = await fetch('/api/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(isCreator && typeof window !== 'undefined'
+            ? { 'x-vibecheck-creator-token': localStorage.getItem(`creator_token_${card.id}`) || '' }
+            : {}),
+        },
         body: JSON.stringify({
           card_id: card.id,
           sender: senderType,

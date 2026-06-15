@@ -16,6 +16,7 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa = 'vibecheck@up
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
   const [isVerifying, setIsVerifying] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const allowMockPayments = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS !== 'false';
 
   // 1. Build the UPI Intent URL
   const payeeName = "VibeCheck";
@@ -67,7 +68,7 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa = 'vibecheck@up
 
     const checkPaymentStatus = async () => {
       try {
-        const res = await fetch(`/api/cards?id=${cardId}`);
+        const res = await fetch(`/api/cards?id=${cardId}&status=payment`);
         if (res.ok) {
           const card = await res.json();
           if (card.is_paid) {
@@ -95,7 +96,7 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa = 'vibecheck@up
     try {
       const res = await fetch('/api/payment/webhook', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-vibecheck-mock-payment': 'true' },
         body: JSON.stringify({
           card_id: cardId,
           payment_id: `mock_txn_${Date.now()}`,
@@ -179,6 +180,7 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa = 'vibecheck@up
       </div>
 
       {/* Dev Mock Sandbox Shortcut */}
+      {allowMockPayments && (
       <div className="w-full pt-2 border-t border-white/5">
         <button
           onClick={handleMockPayment}
@@ -198,6 +200,7 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa = 'vibecheck@up
           <p className="text-[10px] text-red-400 mt-1.5 font-medium">{errorMsg}</p>
         )}
       </div>
+      )}
     </div>
   );
 }

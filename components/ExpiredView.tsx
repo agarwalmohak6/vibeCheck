@@ -1,9 +1,9 @@
 'use client';
 import { motion } from 'framer-motion';
-import { Card } from '@/lib/supabase';
+import type { PublicCard } from '@/types/vibecheck';
 import { useState } from 'react';
 
-export default function ExpiredView({ card }: { card: Card }) {
+export default function ExpiredView({ card }: { card: PublicCard }) {
   const [paying, setPaying] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -14,7 +14,7 @@ export default function ExpiredView({ card }: { card: Card }) {
     newExpiry.setHours(newExpiry.getHours() + 72);
     await fetch('/api/payment/webhook', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-vibecheck-mock-payment': 'true' },
       body: JSON.stringify({ card_id: card.id, payment_id: `extend_${Date.now()}`, extends_at: newExpiry.toISOString() }),
     });
     setPaying(false);

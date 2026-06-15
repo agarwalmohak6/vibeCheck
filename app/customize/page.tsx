@@ -29,7 +29,15 @@ interface FormData {
   unlockQuestion: string;
   useCustomQuestion: boolean;
   tierId: string;
+  yesBtnText: string;
+  noBtnText: string;
+  customMusicUrl: string;
 }
+
+type Notice = {
+  tone: 'error' | 'success' | 'info';
+  message: string;
+};
 
 const STEPS = ['basics', 'theme', 'content', 'lock', 'payment'];
 const STEP_LABELS = ['Basics', 'Theme', 'Content', 'Lock', 'Payment'];
@@ -40,10 +48,12 @@ function CustomizePageContent() {
   const { setTheme } = useTheme();
 
   const [step, setStep] = useState(0);
+  const initialTemplate = params.get('type') || 'shoot_shot';
+  const initialTmplMeta = TEMPLATE_TYPES.find(t => t.id === initialTemplate);
   const [form, setForm] = useState<FormData>({
     recipientName: '',
     creatorName: '',
-    templateType: params.get('type') || 'shoot_shot',
+    templateType: initialTemplate,
     theme: 'midnight_romance',
     messageTitle: '',
     mainBody: '',
@@ -55,15 +65,21 @@ function CustomizePageContent() {
     unlockQuestion: '',
     useCustomQuestion: false,
     tierId: params.get('tier') || '3_day',
+    yesBtnText: initialTmplMeta?.defaultYesText || 'YES 💖',
+    noBtnText: initialTmplMeta?.defaultNoText || 'No 💔',
+    customMusicUrl: '',
   });
 
   const [showGiphy, setShowGiphy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [createdCardId, setCreatedCardId] = useState<string | null>(null);
+  const [creatorToken, setCreatorToken] = useState<string | null>(null);
   const [paymentStep, setPaymentStep] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const allowMockPayments = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS !== 'false';
 
   // Check device type on mount
   useEffect(() => {
@@ -86,6 +102,9 @@ function CustomizePageContent() {
       set('coverImageUrl', tmpl.defaultCoverImage);
       // Auto-apply the recommended theme
       handleThemeChange(tmpl.recommendedTheme, THEMES.find(t => t.id === tmpl.recommendedTheme)?.coverImage || '');
+      // Auto-apply default button texts
+      set('yesBtnText', tmpl.defaultYesText);
+      set('noBtnText', tmpl.defaultNoText);
     }
   };
 
@@ -102,12 +121,16 @@ function CustomizePageContent() {
     if (!file) return;
 
     setIsCompressing(true);
+    setNotice(null);
     try {
       const result = await compressImage(file);
       set('coverImageUrl', result.dataUrl); // store base64 in coverImageUrl
     } catch (err) {
       console.error(err);
-      alert('Failed to compress image. Please select a smaller photo.');
+      setNotice({
+        tone: 'error',
+        message: 'That photo is too heavy for a smooth card. Try a smaller image or screenshot.',
+      });
     } finally {
       setIsCompressing(false);
     }
@@ -116,6 +139,7 @@ function CustomizePageContent() {
   const handleSubmit = async () => {
     if (!form.recipientName || !form.creatorName) return;
     setLoading(true);
+    setNotice(null);
     try {
       const res = await fetch('/api/cards', {
         method: 'POST',
@@ -134,20 +158,33 @@ function CustomizePageContent() {
             cover_image_url: form.coverImageUrl,
             unlock_code: form.hasSecretCode ? form.unlockCode : '',
             unlock_question: form.hasSecretCode && form.useCustomQuestion ? form.unlockQuestion : '',
+            yes_btn_text: form.yesBtnText,
+            no_btn_text: form.noBtnText,
+            music_url: form.customMusicUrl || undefined,
           },
         }),
       });
       const data = await res.json();
       if (res.ok && data.id) {
         setCreatedCardId(data.id);
+        if (data.creator_token) {
+          setCreatorToken(data.creator_token);
+          localStorage.setItem(`creator_token_${data.id}`, data.creator_token);
+        }
         // Identify this browser as the creator of the card
         localStorage.setItem(`creator_of_${data.id}`, 'true');
         setPaymentStep(true);
       } else {
-        alert(data.error || 'Failed to create card. Please check your fields.');
+        setNotice({
+          tone: 'error',
+          message: data.error || 'We could not create the card yet. Check the required fields and try again.',
+        });
       }
     } catch {
-      alert('Something went wrong. Please try again.');
+      setNotice({
+        tone: 'error',
+        message: 'Network hiccup. Your design is still here, so try again in a moment.',
+      });
     } finally {
       setLoading(false);
     }
@@ -175,7 +212,7 @@ function CustomizePageContent() {
     if (loading && createdCardId && isMobile) {
       interval = setInterval(async () => {
         try {
-          const res = await fetch(`/api/cards?id=${createdCardId}`);
+          const res = await fetch(`/api/cards?id=${createdCardId}&status=payment`);
           if (res.ok) {
             const card = await res.json();
             if (card.is_paid) {
@@ -198,7 +235,7 @@ function CustomizePageContent() {
     try {
       await fetch('/api/payment/webhook', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-vibecheck-mock-payment': 'true' },
         body: JSON.stringify({
           card_id: createdCardId,
           payment_id: `mock_mobile_${Date.now()}`,
@@ -215,7 +252,12 @@ function CustomizePageContent() {
     return (
       <main className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg)' }}>
         <AmbientBackground />
-        <SuccessHub cardId={createdCardId} recipientName={form.recipientName} creatorName={form.creatorName} />
+        <SuccessHub
+          cardId={createdCardId}
+          recipientName={form.recipientName}
+          creatorName={form.creatorName}
+          creatorToken={creatorToken || localStorage.getItem(`creator_token_${createdCardId}`) || undefined}
+        />
       </main>
     );
   }
@@ -242,12 +284,14 @@ function CustomizePageContent() {
             <span>{loading ? 'Waiting for App...' : 'Pay via UPI App'}</span>
           </button>
 
-          <button
-            onClick={handleMobileMockSuccess}
-            className="w-full bg-white/5 border border-white/10 hover:bg-white/10 text-neutral-300 font-bold py-3 px-6 rounded-2xl text-xs transition-colors cursor-pointer"
-          >
-            Simulate Mock Success Payment 🛠️
-          </button>
+          {allowMockPayments && (
+            <button
+              onClick={handleMobileMockSuccess}
+              className="w-full bg-white/5 border border-white/10 hover:bg-white/10 text-neutral-300 font-bold py-3 px-6 rounded-2xl text-xs transition-colors cursor-pointer"
+            >
+              Simulate Mock Success Payment 🛠️
+            </button>
+          )}
         </div>
 
         {loading && (
@@ -398,13 +442,47 @@ function CustomizePageContent() {
 
 
 
+          {/* Custom Action Buttons */}
+          <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-neutral-900/30 border border-white/5">
+            <div>
+              <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text3)' }}>💚 Positive Response Button</label>
+              <input
+                value={form.yesBtnText}
+                onChange={e => set('yesBtnText', e.target.value)}
+                placeholder="e.g. YES 💖"
+                className="w-full px-3 py-2 rounded-lg outline-none text-xs"
+                style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text3)' }}>💔 Negative Response Button</label>
+              <input
+                value={form.noBtnText}
+                onChange={e => set('noBtnText', e.target.value)}
+                placeholder="e.g. No 💔"
+                className="w-full px-3 py-2 rounded-lg outline-none text-xs"
+                style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              />
+            </div>
+          </div>
+
           {/* Music Selector component instead of raw link */}
-          <div>
+          <div className="space-y-2">
             <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text3)' }}>🎵 Background Music Mood Drop</label>
             <MusicSelector
               selectedTrackId={form.musicTrackId}
               onSelectTrack={(trackId) => set('musicTrackId', trackId)}
             />
+            <div className="pt-1">
+              <label className="block text-[10px] font-bold mb-1" style={{ color: 'var(--text3)' }}>Or paste a Custom Song Link (Spotify, YouTube, or direct MP3)</label>
+              <input
+                value={form.customMusicUrl}
+                onChange={e => set('customMusicUrl', e.target.value)}
+                placeholder="e.g. https://open.spotify.com/track/..."
+                className="w-full px-3 py-2 rounded-lg outline-none text-xs"
+                style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              />
+            </div>
           </div>
 
           {/* Cover image file input with canvas compression */}
@@ -600,6 +678,22 @@ function CustomizePageContent() {
 
       <AmbientBackground />
 
+      <AnimatePresence>
+        {notice && (
+          <motion.div
+            role={notice.tone === 'error' ? 'alert' : 'status'}
+            initial={{ opacity: 0, y: -18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+            className={`vc-form-notice vc-form-notice--${notice.tone}`}
+          >
+            <span>{notice.message}</span>
+            <button type="button" aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Navigation */}
       <nav className="sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b"
         style={{ background: 'rgba(11,15,25,0.85)', backdropFilter: 'blur(20px)', borderColor: 'var(--border)' }}>
@@ -770,8 +864,8 @@ function CustomizePageContent() {
                   >
                     <p className="text-[10px] font-bold text-white">So... what do you say? 👀</p>
                     <div className="flex gap-2 justify-center">
-                      <button className="theme-btn px-4 py-2 rounded-xl text-xs font-bold cursor-not-allowed">YES 💖</button>
-                      <button className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 text-neutral-400 bg-white/5 cursor-not-allowed">No 💔</button>
+                      <button className="theme-btn px-4 py-2 rounded-xl text-xs font-bold cursor-not-allowed">{form.yesBtnText || 'YES 💖'}</button>
+                      <button className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 text-neutral-400 bg-white/5 cursor-not-allowed">{form.noBtnText || 'No 💔'}</button>
                     </div>
                   </div>
                 )}

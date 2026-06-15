@@ -1,11 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Caveat+Brush&family=Dancing+Script:wght@600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Cinzel+Decorative:wght@400;700;900&family=Inter:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 /* ─────────────────────────────────────────────
    EMOJI SAFE FONT STACKS
    Emoji fonts always come LAST so custom fonts
    render text while system handles emoji glyphs.
-───────────────────────────────────────────── */
+ ───────────────────────────────────────────── */
 :root,
 [data-theme="midnight_romance"] {
   --bg: #0B0F19;
@@ -21,8 +20,8 @@
   --border: rgba(255, 46, 147, 0.3);
   --glow: rgba(255, 46, 147, 0.4);
   --glow2: rgba(168, 85, 247, 0.3);
-  --font-display: 'Outfit', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-display: var(--font-outfit), sans-serif;
+  --font-body: var(--font-body), sans-serif;
   --envelope-color: #1a1f35;
   --envelope-flap: #FF2E93;
 }
@@ -41,8 +40,8 @@
   --border: rgba(255, 61, 0, 0.4);
   --glow: rgba(255, 61, 0, 0.5);
   --glow2: rgba(255, 215, 0, 0.3);
-  --font-display: 'Cinzel Decorative', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-display: var(--font-cinzel-decorative), serif;
+  --font-body: var(--font-body), sans-serif;
   --envelope-color: #2A0010;
   --envelope-flap: #FF3D00;
 }
@@ -61,8 +60,8 @@
   --border: rgba(95, 75, 139, 0.2);
   --glow: rgba(95, 75, 139, 0.15);
   --glow2: rgba(255, 184, 28, 0.2);
-  --font-display: 'Caveat Brush', cursive;
-  --font-body: 'Inter', sans-serif;
+  --font-display: var(--font-caveat-brush), cursive;
+  --font-body: var(--font-body), sans-serif;
   --envelope-color: #E8E2D2;
   --envelope-flap: #5F4B8B;
 }
@@ -81,8 +80,8 @@
   --border: rgba(255, 133, 161, 0.25);
   --glow: rgba(255, 133, 161, 0.2);
   --glow2: rgba(125, 130, 184, 0.2);
-  --font-display: 'Dancing Script', cursive;
-  --font-body: 'Inter', sans-serif;
+  --font-display: var(--font-dancing-script), cursive;
+  --font-body: var(--font-body), sans-serif;
   --envelope-color: #F0F0F9;
   --envelope-flap: #FF85A1;
 }
@@ -101,8 +100,8 @@
   --border: rgba(233, 30, 140, 0.25);
   --glow: rgba(233, 30, 140, 0.2);
   --glow2: rgba(212, 160, 23, 0.2);
-  --font-display: 'Cormorant Garamond', serif;
-  --font-body: 'Inter', sans-serif;
+  --font-display: var(--font-cormorant-garamond), serif;
+  --font-body: var(--font-body), sans-serif;
   --envelope-color: #fce4ec;
   --envelope-flap: #e91e8c;
 }
@@ -121,14 +120,15 @@
   --border: rgba(250, 204, 21, 0.4);
   --glow: rgba(250, 204, 21, 0.45);
   --glow2: rgba(217, 119, 6, 0.3);
-  --font-display: 'Cinzel Decorative', serif;
-  --font-body: 'Inter', sans-serif;
+  --font-display: var(--font-cinzel-decorative), serif;
+  --font-body: var(--font-body), sans-serif;
   --envelope-color: #5C0E24;
   --envelope-flap: #FACC15;
 }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+
 
 body {
   background-color: var(--bg);
@@ -138,7 +138,7 @@ body {
   overflow-x: hidden;
 }
 
-/* 
+/*
   EMOJI RENDERING FIX
   Use this on any element that should display emojis properly.
   The emoji segments in text will use system emoji fonts automatically
@@ -210,7 +210,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* 
+/*
   gradient-text: SAFE version
   Use ONLY on elements that contain PURE TEXT — no emojis.
   For headings with mixed text+emoji, wrap the text part in
@@ -252,6 +252,700 @@ body {
   filter: blur(80px);
   animation: orb-drift 8s ease-in-out infinite;
   pointer-events: none;
+}
+
+/* Wax Seal & Heart Float Keyframes and classes */
+@keyframes heart-float {
+  0% {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-100vh) scale(0.6) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.heart-float-item {
+  position: absolute;
+  pointer-events: none;
+  animation: heart-float 6s linear infinite;
+  opacity: 0;
+  z-index: 1;
+}
+
+.wax-seal {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #facc15 0%, #ca8a04 100%);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px solid #ca8a04;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.wax-seal:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 15px rgba(250, 204, 21, 0.6), inset 0 2px 4px rgba(255,255,255,0.4);
+}
+
+.vc-form-notice {
+  position: fixed;
+  top: calc(env(safe-area-inset-top) + 0.9rem);
+  left: 50%;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: min(calc(100% - 1.5rem), 560px);
+  padding: 0.85rem 0.95rem 0.85rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 24%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg), transparent 8%);
+  box-shadow: 0 22px 70px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.1);
+  transform: translateX(-50%);
+  backdrop-filter: blur(22px) saturate(1.25);
+}
+
+.vc-form-notice span {
+  min-width: 0;
+  flex: 1;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.vc-form-notice button {
+  display: grid;
+  flex: none;
+  width: 1.7rem;
+  height: 1.7rem;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.vc-form-notice--error {
+  border-color: rgba(251, 113, 133, 0.35);
+  box-shadow: 0 22px 70px rgba(127, 29, 29, 0.28), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.vc-hero {
+  min-height: min(760px, calc(100svh - 64px));
+  display: grid;
+  place-items: center;
+  padding-bottom: clamp(3.5rem, 8vh, 6rem);
+  isolation: isolate;
+}
+
+.vc-hero__image {
+  position: absolute;
+  inset: 0;
+  background-image: url('/images/hero_image.png');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.45;
+  transform: scale(1.03);
+}
+
+.vc-hero__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.52) 0%, rgba(0,0,0,0.10) 34%, var(--bg) 100%),
+    linear-gradient(90deg, rgba(3,6,10,0.88) 0%, rgba(3,6,10,0.16) 42%, rgba(255,184,28,0.16) 72%, rgba(6,182,212,0.14) 100%);
+}
+
+.vc-hero__content {
+  padding-top: clamp(2rem, 8vh, 5rem);
+}
+
+.vc-container {
+  width: min(100%, 1120px);
+  margin-inline: auto;
+}
+
+.vc-hero-kicker {
+  width: min(100%, 760px);
+  color: color-mix(in srgb, var(--text), #facc15 18%);
+  font-size: clamp(1rem, 2vw, 1.22rem);
+  font-weight: 800;
+}
+
+.vc-proof-strip {
+  width: min(100%, 680px);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 18%);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--border), transparent 66%);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.2);
+}
+
+.vc-proof-strip span {
+  min-width: 0;
+  padding: 0.8rem 0.7rem;
+  background: color-mix(in srgb, var(--surface), transparent 12%);
+  color: var(--text2);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.vc-band {
+  position: relative;
+  border-block: 1px solid color-mix(in srgb, var(--border), transparent 28%);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--surface), transparent 16%), color-mix(in srgb, var(--bg), transparent 12%)),
+    linear-gradient(180deg, rgba(255,255,255,0.035), transparent);
+}
+
+.vc-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 20%);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--border), transparent 70%);
+}
+
+.vc-stat {
+  display: grid;
+  gap: 0.25rem;
+  padding: clamp(1rem, 2.5vw, 1.45rem);
+  background: color-mix(in srgb, var(--surface), transparent 10%);
+}
+
+.vc-stat strong {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 2.45rem);
+  line-height: 1;
+}
+
+.vc-stat span {
+  color: var(--text3);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.vc-experience-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 1.05fr);
+  gap: clamp(2rem, 6vw, 5rem);
+  align-items: center;
+}
+
+.vc-section-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.vc-section-copy--center {
+  width: min(100%, 760px);
+  margin-inline: auto;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.vc-eyebrow {
+  display: inline-flex;
+  margin-bottom: 0.85rem;
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.vc-section-copy h2 {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 4.4rem);
+  font-weight: 950;
+  line-height: 0.96;
+  margin-bottom: 1rem;
+}
+
+.vc-section-copy p {
+  color: var(--text3);
+  font-size: clamp(1rem, 2vw, 1.08rem);
+  line-height: 1.75;
+}
+
+.vc-stack-panel {
+  display: grid;
+  gap: 0.65rem;
+  padding: clamp(0.75rem, 2vw, 1rem);
+  border: 1px solid color-mix(in srgb, var(--border), transparent 12%);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--surface), transparent 4%), color-mix(in srgb, var(--surface2), transparent 18%));
+  box-shadow: 0 30px 90px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.vc-stack-row {
+  display: grid;
+  grid-template-columns: 3.25rem 1fr;
+  gap: 1rem;
+  align-items: center;
+  min-height: 78px;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 42%);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg), transparent 36%);
+}
+
+.vc-stack-row > span {
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 950;
+}
+
+.vc-stack-row strong {
+  display: block;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.vc-stack-row p {
+  color: var(--text3);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.vc-edge-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.vc-edge-card {
+  min-height: 260px;
+  padding: 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 30%);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface), transparent 4%), color-mix(in srgb, var(--bg), transparent 8%));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.vc-edge-card span {
+  display: inline-flex;
+  margin-bottom: 2.6rem;
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 950;
+}
+
+.vc-edge-card h3 {
+  color: var(--text);
+  font-size: 1.08rem;
+  font-weight: 950;
+  line-height: 1.1;
+  margin-bottom: 0.75rem;
+}
+
+.vc-edge-card p {
+  color: var(--text3);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.vc-tier-list {
+  display: grid;
+  gap: 0.42rem;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.vc-tier-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text2);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.vc-tier-list li::before {
+  content: "";
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 16px var(--glow);
+}
+
+.vc-theme-runway {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.vc-theme-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 390px;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 28%);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.22);
+}
+
+.vc-theme-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 25%, rgba(0,0,0,0.72) 100%);
+  pointer-events: none;
+}
+
+.vc-theme-card__image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.02);
+  transition: transform 500ms ease;
+}
+
+.vc-theme-card:hover .vc-theme-card__image {
+  transform: scale(1.08);
+}
+
+.vc-theme-card__body {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: 1.1rem;
+}
+
+.vc-theme-card__body h3 {
+  color: white;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 950;
+  line-height: 1.05;
+  text-shadow: 0 3px 18px rgba(0,0,0,0.65);
+}
+
+.vc-theme-card__body p {
+  margin-top: 0.35rem;
+  color: rgba(255,255,255,0.78);
+  font-size: 0.8rem;
+  font-weight: 780;
+}
+
+.vc-swatch-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+}
+
+.vc-swatch-row span {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid rgba(255,255,255,0.55);
+  border-radius: 999px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+}
+
+.vc-flow-stage {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.vc-flow-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.92fr 1.15fr;
+  gap: 0.9rem;
+  align-items: stretch;
+}
+
+.vc-flow-card {
+  position: relative;
+  min-height: 280px;
+  padding: clamp(1.1rem, 2.4vw, 1.6rem);
+  border: 1px solid color-mix(in srgb, var(--border), transparent 30%);
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--surface), transparent 2%), color-mix(in srgb, var(--bg), transparent 14%));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 24px 80px rgba(0,0,0,0.18);
+}
+
+.vc-flow-card:nth-child(2) {
+  transform: translateY(2rem);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--accent), transparent 78%), color-mix(in srgb, var(--surface), transparent 4%));
+}
+
+.vc-flow-card span {
+  display: inline-flex;
+  margin-bottom: 4rem;
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.vc-flow-card h3 {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 950;
+  line-height: 1;
+  margin-bottom: 0.8rem;
+}
+
+.vc-flow-card p {
+  color: var(--text3);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.vc-ambient__wash {
+  position: absolute;
+  inset: -18%;
+  background:
+    conic-gradient(from 220deg at 50% 42%, color-mix(in srgb, var(--accent), transparent 68%), transparent 24%, color-mix(in srgb, #facc15, transparent 82%), transparent 48%, color-mix(in srgb, var(--accent3), transparent 72%), transparent 72%, color-mix(in srgb, var(--accent2), transparent 74%)),
+    linear-gradient(120deg, transparent 0%, color-mix(in srgb, #fff7d6, transparent 92%) 38%, color-mix(in srgb, var(--accent), transparent 90%) 58%, transparent 100%);
+  opacity: 0.9;
+  filter: blur(42px) saturate(1.08);
+  animation: ambient-sweep 18s ease-in-out infinite alternate;
+}
+
+.vc-ambient__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(180deg, black 0%, transparent 78%);
+}
+
+.vc-ambient__lines {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(115deg, transparent 0 42%, rgba(255,255,255,0.08) 42.2%, transparent 42.6%),
+    linear-gradient(115deg, transparent 0 58%, rgba(255,255,255,0.05) 58.2%, transparent 58.6%);
+  opacity: 0.55;
+}
+
+/*
+  EMOJI RENDERING FIX
+  Use this on any element that should display emojis properly.
+  The emoji segments in text will use system emoji fonts automatically
+  when the custom font lacks those glyphs — but -webkit-text-fill-color
+  can break this. We solve it by NEVER using text-fill on containers
+  that have mixed text + emoji. Instead wrap only the TEXT part in a span.
+*/
+.emoji {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  font-style: normal;
+  -webkit-text-fill-color: initial;
+  color: initial;
+}
+
+.no-capture {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+@media print { body { display: none !important; } }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px var(--glow), 0 0 40px var(--glow2); }
+  50% { box-shadow: 0 0 40px var(--glow), 0 0 80px var(--glow2); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes ambient-sweep {
+  0% { transform: translate3d(-2%, -1%, 0) rotate(0deg) scale(1); }
+  100% { transform: translate3d(2%, 1%, 0) rotate(8deg) scale(1.03); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+  20%, 40%, 60%, 80% { transform: translateX(8px); }
+}
+@keyframes bounce-in {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-spin-slow { animation: spin-slow 3s linear infinite; }
+.animate-shake { animation: shake 0.5s ease both; }
+.animate-bounce-in { animation: bounce-in 0.6s ease both; }
+
+.glow-border {
+  border: 1px solid var(--border);
+  box-shadow: 0 0 20px var(--glow), inset 0 0 20px rgba(255,255,255,0.02);
+}
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/*
+  gradient-text: SAFE version
+  Use ONLY on elements that contain PURE TEXT — no emojis.
+  For headings with mixed text+emoji, wrap the text part in
+  <span className="gradient-text"> and leave emojis outside.
+*/
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.theme-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  border: none;
+  font-family: var(--font-display);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.theme-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px var(--glow);
+}
+.theme-surface { background: var(--surface); border: 1px solid var(--border); }
+.theme-surface2 { background: var(--surface2); border: 1px solid var(--border); }
+
+.tier-popular {
+  position: relative;
+  border: 2px solid transparent;
+  background: linear-gradient(var(--surface), var(--surface)) padding-box,
+              linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3)) border-box;
+  box-shadow: 0 0 30px var(--glow), 0 0 60px var(--glow2);
+}
+
+@media (max-width: 720px) {
+  .vc-conversion-dock {
+    bottom: 12px;
+    width: min(calc(100% - 1rem), 430px);
+  }
+
+  .vc-conversion-dock span {
+    font-size: 0.68rem;
+  }
+
+  .vc-conversion-dock a {
+    padding-inline: 0.75rem;
+  }
+
+  .vc-hero {
+    min-height: 82svh;
+    place-items: end center;
+    text-align: left;
+  }
+
+  .vc-hero__content {
+    padding-top: 7rem;
+  }
+
+  .vc-proof-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-radius: 14px;
+  }
+
+  .vc-proof-strip span {
+    font-size: 0.7rem;
+  }
+
+  .vc-stat-grid,
+  .vc-edge-grid,
+  .vc-experience-grid,
+  .vc-theme-runway,
+  .vc-flow-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vc-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .vc-section-copy--center {
+    text-align: left;
+  }
+
+  .vc-edge-card {
+    min-height: auto;
+  }
+
+  .vc-edge-card span {
+    margin-bottom: 1.2rem;
+  }
+
+  .vc-theme-card {
+    min-height: 340px;
+  }
+
+  .vc-flow-card,
+  .vc-flow-card:nth-child(2) {
+    min-height: auto;
+    transform: none;
+  }
+
+  .vc-flow-card span {
+    margin-bottom: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 /* Wax Seal & Heart Float Keyframes and classes */
