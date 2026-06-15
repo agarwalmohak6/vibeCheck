@@ -8,36 +8,57 @@ import { TIERS } from "@/lib/themes";
 import { LANDING_STRINGS } from "@/lib/strings";
 
 const EXPERIENCE_STACK = [
-  { label: "Envelope reveal", value: "Cinematic open" },
-  { label: "Secret gate", value: "Private passcode" },
-  { label: "Music cue", value: "Tap-to-play safe" },
-  { label: "Live tracker", value: "Creator activity feed" },
+  {
+    id: "feature-envelope-reveal",
+    label: "Envelope reveal",
+    value: "Feels premium before the message appears",
+  },
+  {
+    id: "feature-passcode-gates",
+    label: "Passcode gates",
+    value: "Make the unlock feel personal",
+  },
+  {
+    id: "feature-music-reveal",
+    label: "Music reveal",
+    value: "Add the track that sets the mood",
+  },
+  {
+    id: "feature-live-tracker",
+    label: "Live tracker",
+    value: "See opens, unlocks, and replies",
+  },
+  {
+    id: "feature-follow-up-chat",
+    label: "Follow-up chat",
+    value: "Keep the moment going after they react",
+  },
 ];
 
 const MARKET_EDGES = [
   {
-    title: "More premium than a template",
-    body: "Every card feels like a designed reveal, not a static greeting image with text pasted on top.",
+    title: "Feels paid-for, not pasted together",
+    body: "The reveal, lock, music, photos, and reply flow make one link feel like a tiny custom product.",
   },
   {
-    title: "More personal than a video sticker",
-    body: "Names, themes, passcodes, music, photos, and buttons make each link feel built for one person.",
+    title: "Built for one person",
+    body: "Names, passcodes, photos, music, and buttons make the recipient feel like the card was made only for them.",
   },
   {
-    title: "More useful after sending",
-    body: "Creators get opens, passcode unlocks, dodge attempts, acceptance moments, and follow-up replies.",
+    title: "You know what happened",
+    body: "Track opens, unlocks, yes moments, dodges, accepts, and replies instead of wondering if the link landed.",
   },
   {
-    title: "Made for mobile sharing",
-    body: "The flow is optimized for WhatsApp, DMs, UPI checkout, and one-thumb recipient interactions.",
+    title: "Fast enough to buy today",
+    body: "Create it in minutes, pay once, and send a polished private card while the feeling is still fresh.",
   },
 ];
 
 const LAUNCH_STATS = [
-  { value: "<3 min", label: "to build a card" },
-  { value: "5", label: "emotional templates" },
-  { value: "₹29", label: "starting price" },
-  { value: "0 apps", label: "needed to open" },
+  { value: "<3 min", label: "to make it" },
+  { value: "1 link", label: "ready to send" },
+  { value: "₹29", label: "to start" },
+  { value: "0 apps", label: "for them to open" },
 ];
 
 const SIGNATURE_THEMES = [
@@ -71,7 +92,7 @@ const FLOW_ACTS = [
   {
     act: "Act I",
     title: "The creator feels in control",
-    body: "Pick a template, write the message, add a photo, choose the music, and decide whether the card needs a secret gate.",
+    body: "Pick a scene, write the message, add a photo, choose the music, and decide whether the card needs a secret gate.",
   },
   {
     act: "Act II",
@@ -85,14 +106,35 @@ const FLOW_ACTS = [
   },
 ];
 
+function InstagramIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
+      <circle cx="12" cy="12" r="4.1" />
+      <circle cx="17.2" cy="6.8" r="1" />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M14.2 8.5V7.1c0-.8.4-1.2 1.3-1.2h1.9V3.2c-.8-.1-1.7-.2-2.6-.2-2.7 0-4.5 1.6-4.5 4.5v1H7.5v3.1h2.8V21h3.4v-9.4h2.8l.5-3.1h-3Z" />
+    </svg>
+  );
+}
+
 export default function LandingPage() {
   const [scrollFlipped, setScrollFlipped] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showDock, setShowDock] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
+      setShowDock(window.scrollY > window.innerHeight * 0.8);
     };
+    handleScroll();
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -104,53 +146,38 @@ export default function LandingPage() {
     >
       <AmbientBackground />
 
-      <div className="vc-conversion-dock" aria-label="Quick start">
-        <span>Private cards that feel handcrafted</span>
-        <Link href="/customize">Make yours now</Link>
-      </div>
+      {showDock && (
+        <div className="vc-conversion-dock" aria-label="Quick start">
+          <span>Private cards that feel handcrafted</span>
+          <Link href="/customize">Make yours now</Link>
+        </div>
+      )}
 
       {/* Nav */}
       <nav className={`vc-nav ${scrolled ? "vc-nav--scrolled" : ""}`}>
-        <div className="vc-nav-container flex items-center justify-between mx-auto max-w-6xl w-full">
+        <div className="vc-nav-container flex items-center justify-between mx-auto w-full">
           <Link href="/" className="vc-logo-link flex items-center gap-3">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-2.5"
+              className="vc-brand-lockup"
             >
-              <div className="vc-logo-envelope flex-none">
-                <div className="vc-logo-card">♥</div>
-              </div>
-              <span className="gradient-text font-black font-display tracking-tight text-xl">
+              <span className="vc-wordmark font-black font-display tracking-tight">
                 VibeCheck
               </span>
+              <span className="vc-brand-tagline">Private cards</span>
             </motion.div>
           </Link>
 
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex items-center gap-8 vc-nav-links">
-            <a
-              href="#themes"
-              className="vc-nav-link text-xs font-bold uppercase tracking-widest"
-            >
-              THEMES
-            </a>
-            <a
-              href="#features"
-              className="vc-nav-link text-xs font-bold uppercase tracking-widest"
-            >
+            <a href="#features" className="vc-nav-link">
               FEATURES
             </a>
-            <a
-              href="#demo"
-              className="vc-nav-link text-xs font-bold uppercase tracking-widest"
-            >
+            <a href="#demo" className="vc-nav-link">
               SIMULATOR
             </a>
-            <a
-              href="#pricing"
-              className="vc-nav-link text-xs font-bold uppercase tracking-widest"
-            >
+            <a href="#pricing" className="vc-nav-link">
               PRICING
             </a>
           </div>
@@ -158,15 +185,33 @@ export default function LandingPage() {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-3"
+            className="vc-nav-actions"
           >
-            <Link href="/customize">
+            <div className="vc-social-links" aria-label="Social links">
+              <a
+                href="https://instagram.com/vibecheck.cards"
+                aria-label="VibeCheck on Instagram"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <InstagramIcon />
+              </a>
+              <a
+                href="https://facebook.com/vibecheckcards"
+                aria-label="VibeCheck on Facebook"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FacebookIcon />
+              </a>
+            </div>
+            <Link href="#demo">
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: "0 0 15px var(--glow)" }}
                 whileTap={{ scale: 0.96 }}
-                className="theme-btn px-5 py-2 rounded-full text-[10px] font-black tracking-wide text-white uppercase"
+                className="vc-nav-cta theme-btn rounded-full font-black text-white uppercase"
               >
-                CREATE A CARD ✨
+                VIEW DEMO
               </motion.button>
             </Link>
           </motion.div>
@@ -176,11 +221,8 @@ export default function LandingPage() {
       <div className="vc-page-body-wrap">
         {/* Front Side of the 3D Scroll */}
         <div className="vc-page-body-front">
-          <div className="scroll-roll-top"></div>
           {/* Hero */}
-          <section className="vc-hero relative px-6 pt-16 pb-8 text-center overflow-hidden">
-            <div className="vc-hero__image" aria-hidden />
-            <div className="vc-hero__veil" aria-hidden />
+          <section className="vc-hero relative text-center overflow-hidden">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -188,7 +230,7 @@ export default function LandingPage() {
               className="vc-hero__content relative z-10 max-w-4xl mx-auto"
             >
               <div
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black tracking-widest mb-6 uppercase"
+                className="vc-hero-badge inline-flex items-center gap-2 rounded-full font-black uppercase"
                 style={{
                   background:
                     "color-mix(in srgb, var(--accent), transparent 88%)",
@@ -200,37 +242,18 @@ export default function LandingPage() {
                 ✨ {LANDING_STRINGS.HERO_BADGE}
               </div>
 
-              <h1
-                className="text-4xl md:text-6xl font-black mb-4 leading-tight tracking-tight capitalize"
-                style={{
-                  fontFamily: "var(--font-display)",
-                }}
-              >
-                <span className="gradient-text">VibeCheck</span>
+              <h1 className="vc-hero-kicker mx-auto mb-6 text-center">
+                Make a private card they actually want to open.
               </h1>
 
-              <p className="vc-hero-kicker mx-auto mb-6 text-center">
-                Premium cards for proposals, apologies, birthdays, best friends,
-                and anniversaries.
-              </p>
-
               <p
-                className="text-base md:text-lg mb-8 max-w-2xl mx-auto leading-relaxed text-center"
+                className="vc-hero-body mx-auto text-center"
                 style={{ color: "var(--text2)" }}
               >
-                Create a private experience that feels premium, emotionally
-                loaded, and impossible to ignore.
+                Build a premium reveal for proposals, apologies, birthdays,
+                best friends, and anniversaries. Pay once, send one link, and
+                watch the moment land.
               </p>
-
-              <div className="inline-flex items-center justify-center border border-[color-mix(in srgb,var(--border),transparent_50%)] bg-[color-mix(in srgb,var(--surface),transparent_40%)] backdrop-blur-md rounded-full px-6 py-2.5 mx-auto mb-8 shadow-sm">
-                <span className="px-4 text-xs font-bold text-[var(--text)]">Passcode gates</span>
-                <span className="h-4 w-px bg-[color-mix(in srgb,var(--border),transparent_40%)]"></span>
-                <span className="px-4 text-xs font-bold text-[var(--text)]">Live tracker</span>
-                <span className="h-4 w-px bg-[color-mix(in srgb,var(--border),transparent_40%)]"></span>
-                <span className="px-4 text-xs font-bold text-[var(--text)]">Music reveal</span>
-                <span className="h-4 w-px bg-[color-mix(in srgb,var(--border),transparent_40%)]"></span>
-                <span className="px-4 text-xs font-bold text-[var(--text)]">Follow-up chat</span>
-              </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link href="/customize">
@@ -273,7 +296,7 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* Theme runway */}
+          {/* Scene runway */}
           <section id="themes" className="px-6 py-16">
             <div className="vc-container">
               <motion.div
@@ -283,11 +306,11 @@ export default function LandingPage() {
                 className="vc-section-copy vc-section-copy--center"
               >
                 <span className="vc-eyebrow">Mood before message</span>
-                <h2>Themes that feel like scenes, not skins.</h2>
+                <h2>Pick the scene that makes them curious.</h2>
                 <p>
-                  Every visual direction changes the envelope, surface, glow,
-                  typography, and emotional tone. The card feels personal before
-                  the first sentence is read.
+                  Choose a visual direction that instantly tells them this is
+                  not another forwarded greeting. The card feels bought,
+                  designed, and made for one person before they read a word.
                 </p>
               </motion.div>
 
@@ -330,11 +353,11 @@ export default function LandingPage() {
                 className="vc-section-copy"
               >
                 <span className="vc-eyebrow">Built to feel expensive</span>
-                <h2>Not another e-card. A tiny emotional product.</h2>
+                <h2>Not another e-card. A link worth paying for.</h2>
                 <p>
-                  Competitors stop at templates or videos. VibeCheck combines
-                  the thrill of opening, the privacy of a secret gate, and the
-                  feedback loop creators actually care about.
+                  VibeCheck turns a message into a reveal people want to tap,
+                  unlock, hear, and reply to. It feels premium enough to buy and
+                  personal enough to send.
                 </p>
               </motion.div>
 
@@ -345,6 +368,7 @@ export default function LandingPage() {
                 {EXPERIENCE_STACK.map((item, index) => (
                   <motion.div
                     key={item.label}
+                    id={item.id}
                     initial={{ opacity: 0, x: 18 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true }}
@@ -426,8 +450,8 @@ export default function LandingPage() {
                       Vibe Simulator
                     </span>
                     <p className="text-sm text-[var(--text2)] mt-1">
-                      Design the card cover, select themes, add music/passcodes,
-                      and test recipient choices live.
+                      Design the card cover, choose a scene, add music and a
+                      passcode, then test recipient choices live.
                     </p>
                   </div>
                   <LiveSimulator />
@@ -805,7 +829,7 @@ export default function LandingPage() {
 
           {/* Footer */}
           <footer
-            className="px-6 py-8 text-center border-t"
+            className="vc-footer px-6 py-8 text-center border-t"
             style={{ borderColor: "var(--border)" }}
           >
             <p className="text-sm" style={{ color: "var(--text2)" }}>
@@ -817,6 +841,24 @@ export default function LandingPage() {
                 {LANDING_STRINGS.FOOTER_EMAIL}
               </a>
             </p>
+            <div className="vc-footer-social" aria-label="Social links">
+              <a
+                href="https://instagram.com/vibecheck.cards"
+                aria-label="VibeCheck on Instagram"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <InstagramIcon />
+              </a>
+              <a
+                href="https://facebook.com/vibecheckcards"
+                aria-label="VibeCheck on Facebook"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FacebookIcon />
+              </a>
+            </div>
           </footer>
           <div className="scroll-roll-bottom"></div>
         </div>
@@ -855,7 +897,7 @@ export default function LandingPage() {
                   Midnight Confession #882
                 </h4>
                 <p className="text-xs text-amber-900/80 leading-relaxed font-serif">
-                  {"\"I stayed up till 2 AM drafting this. Added 'Midnight Romance' theme and custom track. She guessed the passcode '2024' on the first try and typed: 'YES of course!' live in the chat. Best ₹29 I ever spent.\""}
+                  {"\"I stayed up till 2 AM drafting this. Added the Midnight Romance scene and a custom track. She guessed the passcode '2024' on the first try and typed: 'YES of course!' live in the chat. Best ₹29 I ever spent.\""}
                 </p>
                 <div className="border-t border-amber-900/10 pt-2 flex justify-between text-[10px] font-bold text-amber-800">
                   <span>Recipient: Priya</span>
