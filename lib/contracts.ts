@@ -21,7 +21,7 @@ export const createCardSchema = z.object({
   recipient_name: trimString(1, 80),
   creator_name: trimString(1, 80),
   template_type: trimString(1, 60),
-  theme_selected: trimString(1, 60).default('midnight_romance'),
+  theme_selected: trimString(1, 60).default('soft_coquette'),
   tier_selected: trimString(1, 40),
   music_track_id: z.string().trim().max(80).optional().nullable(),
   card_data: cardDataSchema,

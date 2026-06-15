@@ -95,7 +95,7 @@ export const TEMPLATE_TYPES: {
     emoji: '💍',
     hasRunaway: true,
     defaultCoverImage: '/themes/midnight_romance.png',
-    recommendedTheme: 'midnight_romance',
+    recommendedTheme: 'soft_coquette',
     defaultYesText: 'YES 💖',
     defaultNoText: 'No 💔',
     messagePresets: [

@@ -8,11 +8,11 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'midnight_romance',
+  theme: 'soft_coquette',
   setTheme: () => {},
 });
 
-export function ThemeProvider({ children, initial = 'midnight_romance' }: { children: React.ReactNode; initial?: ThemeId }) {
+export function ThemeProvider({ children, initial = 'soft_coquette' }: { children: React.ReactNode; initial?: ThemeId }) {
   const [theme, setThemeState] = useState<ThemeId>(initial);
 
   const setTheme = (t: ThemeId) => {
@@ -23,12 +23,8 @@ export function ThemeProvider({ children, initial = 'midnight_romance' }: { chil
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('mc-theme') as ThemeId | null;
-      if (saved) {
-        setTimeout(() => setTheme(saved), 0);
-      } else {
-        setTimeout(() => setTheme(initial), 0);
-      }
+      localStorage.setItem('mc-theme', initial);
+      setTimeout(() => setTheme(initial), 0);
     } catch {
       setTimeout(() => setTheme(initial), 0);
     }
