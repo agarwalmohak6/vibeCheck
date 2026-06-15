@@ -68,11 +68,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme="midnight_romance"
+      data-theme="soft_coquette"
       className={`${inter.variable} ${outfit.variable} ${caveatBrush.variable} ${dancingScript.variable} ${cormorantGaramond.variable} ${cinzelDecorative.variable}`}
     >
       <body data-scroll-behavior="smooth">
-        <ThemeProvider initial="midnight_romance">
+        <ThemeProvider initial="soft_coquette">
           {children}
         </ThemeProvider>
       </body>

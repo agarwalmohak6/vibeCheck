@@ -132,7 +132,7 @@ export default function LiveSimulator() {
                 activeTemplate === t.id
                   ? "linear-gradient(135deg, var(--accent), var(--accent2))"
                   : "var(--surface)",
-              color: activeTemplate === t.id ? "white" : "var(--text3)",
+              color: activeTemplate === t.id ? "white" : "var(--text2)",
               border:
                 activeTemplate === t.id ? "none" : "1px solid var(--border)",
               boxShadow:
@@ -155,7 +155,7 @@ export default function LiveSimulator() {
             className="px-2.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1 cursor-pointer"
             style={{
               background: theme === t.id ? t.preview.accent : "var(--surface2)",
-              color: theme === t.id ? "white" : "var(--text3)",
+              color: theme === t.id ? "white" : "var(--text2)",
               border: `1px solid ${theme === t.id ? t.preview.accent : "var(--border)"}`,
               transition: "all 0.2s ease",
             }}
@@ -198,7 +198,7 @@ export default function LiveSimulator() {
           {/* Status bar */}
           <div
             className="flex justify-between items-center px-5 pt-3 pb-1 z-20 relative"
-            style={{ color: "var(--text3)" }}
+            style={{ color: "var(--text2)" }}
           >
             <span className="text-[9px] font-bold">12:00</span>
             <div
@@ -242,7 +242,7 @@ export default function LiveSimulator() {
 
                   <p
                     className="text-center text-xs font-medium"
-                    style={{ color: "var(--text3)" }}
+                    style={{ color: "var(--text2)" }}
                   >
                     You have an unread vibe from
                   </p>
@@ -406,13 +406,13 @@ export default function LiveSimulator() {
                   >
                     <p
                       className="text-[10px] mb-1.5 font-black text-center"
-                      style={{ color: "var(--text3)" }}
+                      style={{ color: "var(--text2)" }}
                     >
                       So... what do you say? 👀
                     </p>
                     <p
                       className="text-[9px] mb-2 text-center"
-                      style={{ color: "var(--text3)", opacity: 0.7 }}
+                      style={{ color: "var(--text2)", opacity: 0.7 }}
                     >
                       (The NO button has its own opinions 💀)
                     </p>
@@ -434,7 +434,7 @@ export default function LiveSimulator() {
                     className="text-[10px] py-1.5 rounded-xl font-bold cursor-pointer"
                     style={{
                       background: "var(--surface2)",
-                      color: "var(--text3)",
+                      color: "var(--text2)",
                       flexShrink: 0,
                     }}
                   >
@@ -470,7 +470,7 @@ export default function LiveSimulator() {
                   </p>
                   <p
                     className="text-[10px] text-center"
-                    style={{ color: "var(--text3)" }}
+                    style={{ color: "var(--text2)" }}
                   >
                     This is what happens when they click YES 😭✨
                   </p>
@@ -480,7 +480,7 @@ export default function LiveSimulator() {
                     className="px-5 py-2 rounded-xl text-xs font-bold cursor-pointer"
                     style={{
                       background: "var(--surface2)",
-                      color: "var(--text3)",
+                      color: "var(--text2)",
                     }}
                   >
                     ↩ Try another
@@ -500,7 +500,7 @@ export default function LiveSimulator() {
 
       <p
         className="text-[10px] font-semibold text-center max-w-[260px] leading-relaxed"
-        style={{ color: "var(--text3)" }}
+        style={{ color: "var(--text2)" }}
       >
         👆 Live demo · Switch templates & themes · Try to hit NO
       </p>
