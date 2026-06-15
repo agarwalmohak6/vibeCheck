@@ -1,5 +1,5 @@
 // lib/themes.ts
-export type ThemeId = 'midnight_romance' | 'friends_sitcom' | 'kdrama_romance' | 'soft_coquette' | 'desi_festive' | 'bollywood_drama';
+export type ThemeId = 'midnight_romance' | 'kdrama_romance' | 'soft_coquette' | 'desi_festive';
 
 export interface Theme {
   id: ThemeId;
@@ -20,7 +20,7 @@ export const THEMES: Theme[] = [
     id: 'midnight_romance',
     label: 'Midnight Romance',
     emoji: '🌙',
-    description: 'Baddie aesthetic — neon pink & purple aura',
+    description: 'Dark, cinematic, and high-conversion',
     coverImage: '/themes/midnight_romance.png',
     preview: {
       bg: '#0B0F19',
@@ -30,36 +30,10 @@ export const THEMES: Theme[] = [
     },
   },
   {
-    id: 'bollywood_drama',
-    label: 'Bollywood Drama',
-    emoji: '🎬',
-    description: 'Filmi feels — Abba Nahi Maanenge energy',
-    coverImage: '/themes/bollywood_drama.png',
-    preview: {
-      bg: '#1A0008',
-      accent: '#FF3D00',
-      accent2: '#FFD700',
-      text: '#FFE9C8',
-    },
-  },
-  {
-    id: 'friends_sitcom',
-    label: 'F.R.I.E.N.D.S',
-    emoji: '☕',
-    description: 'Central Perk vibes — The one where you say yes',
-    coverImage: '/themes/friends_sitcom.png',
-    preview: {
-      bg: '#F4F1EA',
-      accent: '#5F4B8B',
-      accent2: '#FFB81C',
-      text: '#2B2824',
-    },
-  },
-  {
     id: 'kdrama_romance',
     label: 'K-Drama Magic',
     emoji: '☔',
-    description: 'Slow-mo eye contact & cherry blossoms',
+    description: 'Soft, elegant, and instantly romantic',
     coverImage: '/themes/kdrama_romance.png',
     preview: {
       bg: '#FAFAFD',
@@ -72,7 +46,7 @@ export const THEMES: Theme[] = [
     id: 'soft_coquette',
     label: 'Soft Coquette',
     emoji: '🎀',
-    description: 'Elegant pastel pink & champagne gold',
+    description: 'Delicate pastel pink with luxury shimmer',
     coverImage: '/themes/soft_coquette.png',
     preview: {
       bg: '#fff0f5',
@@ -85,7 +59,7 @@ export const THEMES: Theme[] = [
     id: 'desi_festive',
     label: 'Desi Festive',
     emoji: '✨',
-    description: 'Crimson & gold royalty with Cinzel font',
+    description: 'Crimson and gold with royal ceremony energy',
     coverImage: '/themes/desi_festive.png',
     preview: {
       bg: '#4C0519',
@@ -127,18 +101,18 @@ export const TEMPLATE_TYPES: {
     messagePresets: [
       {
         style: '🎬 Filmy',
-        title: 'Dil ki baat sun le',
-        body: 'Maine yeh moment 47 baar rehearse kiya hai.\nTu literally mera Roman Empire hai.\nBas ek chance de? 🥺',
+        title: 'This one is personal',
+        body: 'I wanted this to feel more special than a text.\nMore honest than a story.\nAnd a lot harder to forget.\nSo here it is — just for you.',
       },
       {
-        style: '💀 GenZ Chaos',
-        title: "okay I'm down bad",
-        body: "Not me spending 3 hours writing this and still fumbling.\nYou're literally it for me ngl.\nPlease say yes I'm begging 😭",
+        style: '💀 Honest',
+        title: "I have to say this properly",
+        body: "I keep trying to send a normal message and it never feels enough.\nYou matter to me more than a quick text can say.\nSo I made this instead.",
       },
       {
-        style: '❤️ Raw Honest',
+        style: '❤️ Direct',
         title: 'No games, just this',
-        body: "I've been trying to say this for a while.\nYou make everything better.\nWould you give us a shot?",
+        body: "I've been trying to say this for a while.\nYou make everything better.\nWould you give us a real chance?",
       },
     ],
   },
@@ -153,19 +127,19 @@ export const TEMPLATE_TYPES: {
     defaultNoText: 'No way 😒',
     messagePresets: [
       {
-        style: '😭 Dramatic',
-        title: 'Please maan jao yaar',
-        body: 'Main maafi maangta/maangti hun.\nGalti ho gayi, I know.\nBus ek baar maaf kar do, I promise I will do better 🥺',
+        style: '😭 Sincere',
+        title: 'Please hear me out',
+        body: 'I know I messed up.\nI am sorry for the hurt.\nIf you can, give me one chance to make it right.',
       },
       {
-        style: '🍕 Humble + Bribe',
-        title: 'I come in peace... and food',
-        body: "Okay I messed up. I know.\nI bought your favourite food as a peace offering.\nCan we please go back to normal? 🙏",
+        style: '🍕 Thoughtful',
+        title: 'I come with peace, not excuses',
+        body: "I know I messed up, and I am not here to dodge it.\nI care enough to show up properly.\nCan we talk and reset this?",
       },
       {
-        style: '😂 Funny Sorry',
+        style: '😂 Light but real',
         title: 'Officially submitting my apology',
-        body: "This is a formal apology from my dumb brain.\nI have no excuse except I'm an idiot sometimes.\nPls forgive me, the world is boring without you 💀",
+        body: "This is me owning the mistake.\nNo excuses, no drama.\nJust a genuine sorry and the hope we can move forward.",
       },
     ],
   },
@@ -175,24 +149,24 @@ export const TEMPLATE_TYPES: {
     emoji: '🎂',
     hasRunaway: true,
     defaultCoverImage: '/themes/birthday_roast_cover.png',
-    recommendedTheme: 'friends_sitcom',
+    recommendedTheme: 'kdrama_romance',
     defaultYesText: 'Aww, thanks! 🎂',
     defaultNoText: 'Still an idiot 🙄',
     messagePresets: [
       {
-        style: '🔥 Pure Roast',
-        title: 'Happy getting older lol',
-        body: "Another year of you surviving on vibes and luck.\nCongrats on not giving up.\nSeriously though, you're my favourite idiot. HBD 🎂",
+        style: '🔥 Playful',
+        title: 'Happy leveling up',
+        body: "Another year older, still somehow iconic.\nThe chaos remains, the standards rise.\nWishing you the best kind of birthday.",
       },
       {
-        style: '🎉 Sweet-Savage',
-        title: 'For my favourite disaster',
-        body: "You're older, wiser, and somehow still as chaotic.\nBut also genuinely one of the best people I know.\nHappy birthday, you absolute legend 🎉",
+        style: '🎉 Warm',
+        title: 'For my favorite person',
+        body: "You're older, wiser, and still very much you.\nThat is exactly why you are loved so much.\nHappy birthday — you deserve a great year.",
       },
       {
-        style: '💅 Senti at the end',
-        title: "Don't cry reading this (you will)",
-        body: "I've been roasting you for years and honestly I'd do it forever.\nBecause having you in my life is the best thing.\nHappy birthday bestie. I love you (don't make it weird) 💖",
+        style: '💅 Soft finish',
+        title: "Don't cry reading this",
+        body: "I've joked with you for years, but the truth is simple.\nHaving you in my life is a gift.\nHappy birthday — I love you a lot.",
       },
     ],
   },
@@ -202,24 +176,24 @@ export const TEMPLATE_TYPES: {
     emoji: '✨',
     hasRunaway: true,
     defaultCoverImage: '/themes/bestie_cover.png',
-    recommendedTheme: 'friends_sitcom',
+    recommendedTheme: 'soft_coquette',
     defaultYesText: 'Love you bestie! 👯‍♀️',
     defaultNoText: 'Eww, cringe 💀',
     messagePresets: [
       {
-        style: '🥺 Senti Mode',
+        style: '🥺 Sincere',
         title: 'This is for you',
-        body: "Okay I'm not being cringe but you need to know.\nYou are genuinely one of the best people in my life.\nThank you for existing, bestie 💗",
+        body: "You should know this without me needing a big reason.\nYou are one of the best people in my life.\nThank you for being you, bestie.",
       },
       {
-        style: '💀 Savage Bestie',
-        title: 'Okay fine I love you',
-        body: "I can't believe I have to send a whole card to say this.\nYou're my person. My chaos partner. My emotional support human.\nNow stop being weird about it 💅",
+        style: '💀 Funny',
+        title: 'Okay fine, I love you',
+        body: "Apparently a normal message was not dramatic enough.\nYou are my person, my chaos partner, my emotional support human.\nNow accept the compliment.",
       },
       {
-        style: '✨ Cringe-Cute',
+        style: '✨ Soft',
         title: 'My forever person 🌟',
-        body: "From day one to forever.\nThrough every spiral, every 2am call, every bad decision.\nYou're stuck with me. No refunds. Love you 🫶",
+        body: "From day one to forever.\nThrough every spiral, every 2am call, every bad decision.\nYou're stuck with me, and I mean that lovingly.",
       },
     ],
   },
@@ -234,19 +208,19 @@ export const TEMPLATE_TYPES: {
     defaultNoText: "I'm busy sleeping 😴",
     messagePresets: [
       {
-        style: '😏 Lowkey Flirty',
+        style: '😏 Lowkey flirty',
         title: 'No plans this weekend?',
-        body: "I may have cleared my entire schedule.\nAnd I may have bought a lot of snacks.\nCome watch something with me? 🍿",
+        body: "I cleared my schedule on purpose.\nI also stocked snacks.\nCome watch something with me?",
       },
       {
-        style: '💬 Bold Move',
-        title: 'Let me shoot my shot casually',
-        body: "Okay so this is half Netflix suggestion, half confession.\nI like hanging out with you more than I should admit.\nWatch something with me? (no pressure, full pressure) 😅",
+        style: '💬 Direct',
+        title: 'Let me be honest',
+        body: "This is half Netflix invite, half confession.\nI like being around you more than I should admit.\nWatch something with me?",
       },
       {
-        style: '🛋️ Chill Invite',
+        style: '🛋️ Cozy',
         title: 'Couch, blanket, good vibes?',
-        body: "It's been a week.\nWe both need a chill night.\nCome over, I'll handle the food. You handle the playlist.",
+        body: "It's been a week.\nWe both need a slow night.\nCome over, I'll handle the food and the playlist.",
       },
     ],
   },
@@ -260,7 +234,7 @@ export const TIERS = [
     duration: '1 Day',
     durationHours: 24,
     icon: '⚡',
-    description: 'Perfect for a quick vibe check',
+    description: 'Best for fast, high-intent sends',
     popular: false,
   },
   {
@@ -270,7 +244,7 @@ export const TIERS = [
     duration: '3 Days',
     durationHours: 72,
     icon: '🔥',
-    description: 'Enough time for them to show everyone',
+    description: 'Best balance of urgency and shareability',
     popular: true,
   },
   {
@@ -280,46 +254,46 @@ export const TIERS = [
     duration: 'Forever',
     durationHours: null,
     icon: '♾️',
-    description: 'This card lives as long as you want it to',
+    description: 'Best for keepsake moments and long runs',
     popular: false,
   },
 ];
 
 export const TEMPLATE_RUNAWAY_TEXTS: Record<string, string[]> = {
   shoot_shot: [
-    "Mummy nahi maanegi 🙈",
-    "Error 404: Option Not Found 🚫",
-    "Abba Nahi Maanenge! 👴",
-    "Log kya kahenge? 👀",
-    "Fine, click YES instead ❤️"
+    "Come on, say yes 🙈",
+    "The answer is clearly yes 🚫",
+    "One chance is all I need 👀",
+    "You know this is cute, right? ❤️",
+    "Fine, tap the yes button already"
   ],
   maan_jao: [
-    "I bought food 🍕",
-    "Pls I'm crying 😭",
-    "It was just one mistake!",
-    "I'll never do it again 🙏",
-    "I'll buy you iced coffee 🧋"
+    "I am genuinely sorry 🥺",
+    "Please hear me out 🙏",
+    "I want to make this right",
+    "I will do better, promise",
+    "Let me earn the forgiveness"
   ],
   birthday_roast: [
-    "Too slow boomer 👴",
-    "Your reflexes are aging 📉",
-    "No cake for you 🎂",
-    "Try again grandpa 🦯",
-    "Maybe next year? 🤡"
+    "Keep up, legend 🎂",
+    "You are too iconic to miss this",
+    "No birthday dodge allowed",
+    "This one is for you, seriously",
+    "Tap yes before the cake melts"
   ],
   bestie_check: [
-    "You literally are 💅",
-    "Stop lying 🙄",
-    "I have your ugly pics 📸",
-    "Accept it bestie ✨",
-    "We both know the truth 👯‍♀️"
+    "You know it is true 💅",
+    "Stop pretending, bestie 🙄",
+    "This is your sign to accept it",
+    "Soft launch the friendship ✨",
+    "We both know this is the answer"
   ],
   netflix_chill: [
-    "You have no plans anyway 🛋️",
-    "I have snacks 🍿",
-    "Don't leave me hanging 🥺",
-    "We can watch whatever you want 📺",
-    "Just click YES already!"
+    "I already made the plan 🍿",
+    "Snacks are included, obviously",
+    "Do not leave me on read 🥺",
+    "You pick the movie, I pick the snacks",
+    "Just tap yes and make my day"
   ]
 };
 

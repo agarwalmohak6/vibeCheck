@@ -59,10 +59,10 @@ const SIGNATURE_THEMES = [
     colors: ['#FACC15', '#D97706', '#4C0519'],
   },
   {
-    name: 'Friends Sitcom',
-    image: '/themes/friends_sitcom.png',
-    mood: 'Warm, funny, familiar',
-    colors: ['#5F4B8B', '#FFB81C', '#F4F1EA'],
+    name: 'K-Drama Magic',
+    image: '/themes/kdrama_romance.png',
+    mood: 'Soft, elegant, cinematic',
+    colors: ['#FF85A1', '#7D82B8', '#FAFAFD'],
   },
 ];
 
@@ -89,8 +89,8 @@ export default function LandingPage() {
     <main className="min-h-screen vc-market" style={{ background: 'var(--bg)' }}>
       <AmbientBackground />
       <div className="vc-conversion-dock" aria-label="Quick start">
-        <span>Launch-ready emotional cards</span>
-        <Link href="/customize">Create one now</Link>
+        <span>Private cards that feel handcrafted</span>
+        <Link href="/customize">Make yours now</Link>
       </div>
 
       {/* Nav */}
@@ -146,11 +146,11 @@ export default function LandingPage() {
           </h1>
 
           <p className="vc-hero-kicker mx-auto mb-5">
-            Premium emotional cards for proposals, apologies, birthdays, best friends, and anniversaries.
+            Premium cards for proposals, apologies, birthdays, best friends, and anniversaries.
           </p>
 
           <p className="text-base md:text-xl mb-8 max-w-2xl mx-auto leading-relaxed" style={{ color: 'var(--text3)' }}>
-            {LANDING_STRINGS.HERO_SUBTITLE}
+            Create a private experience that feels premium, emotionally loaded, and impossible to ignore.
           </p>
 
           <div className="vc-proof-strip mx-auto mb-8">
@@ -209,7 +209,7 @@ export default function LandingPage() {
             <h2>Themes that feel like scenes, not skins.</h2>
             <p>
               Every visual direction changes the envelope, surface, glow, typography, and emotional tone.
-              The card starts feeling personal before the first sentence is read.
+              The card feels personal before the first sentence is read.
             </p>
           </motion.div>
 
@@ -251,7 +251,7 @@ export default function LandingPage() {
             <span className="vc-eyebrow">Built to feel expensive</span>
             <h2>Not another e-card. A tiny emotional product.</h2>
             <p>
-              Competitors stop at templates, videos, or RSVPs. VibeCheck combines the thrill of opening,
+              Competitors stop at templates or videos. VibeCheck combines the thrill of opening,
               the privacy of a secret gate, and the feedback loop creators actually care about.
             </p>
           </motion.div>
@@ -399,8 +399,6 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* Removed Viral Features as per user request */}
-
       {/* Pricing */}
       <section className="px-6 py-12 max-w-4xl mx-auto">
         <motion.div
@@ -441,7 +439,7 @@ export default function LandingPage() {
                 <ul className="vc-tier-list">
                   <li>Interactive reveal</li>
                   <li>Tracker + replies</li>
-                  <li>Mobile share link</li>
+              <li>High-conversion share link</li>
                 </ul>
                 <Link href={`/customize?tier=${tier.id}`}>
                   <motion.button

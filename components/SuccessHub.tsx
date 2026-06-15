@@ -139,7 +139,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
             filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.4))',
           }}
         >
-          Your card is live! ✨
+          Your card is ready ✨
         </motion.h2>
         <motion.p
           initial={{ opacity: 0 }}
@@ -148,7 +148,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
           className="text-sm"
           style={{ color: 'var(--text3)' }}
         >
-          Share this with {recipientName} and watch the magic unfold 💌
+          Share this with {recipientName} and let the moment do the work 💌
         </motion.p>
       </div>
 
@@ -159,7 +159,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
         className="w-full rounded-2xl p-4"
         style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}
       >
-        <p className="text-xs mb-2 font-medium" style={{ color: 'var(--text3)' }}>Your card link 🔗</p>
+        <p className="text-xs mb-2 font-medium" style={{ color: 'var(--text2)' }}>Your share link 🔗</p>
         <p className="text-sm font-mono break-all font-bold select-all" style={{ color: 'var(--accent)' }}>{cardUrl}</p>
       </motion.div>
 
@@ -169,13 +169,13 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
         transition={{ delay: 0.8 }}
         className="w-full rounded-2xl p-4 bg-white/5 border border-white/10"
       >
-        <p className="text-xs mb-2 font-medium text-neutral-400">To check replies on another device (or phone) 📱</p>
-        <p className="text-xs font-mono break-all text-neutral-200 select-all">{creatorUrl}</p>
+        <p className="text-xs mb-2 font-medium text-neutral-200">Open this on another phone or device to see replies 📱</p>
+        <p className="text-xs font-mono break-all text-neutral-100 select-all">{creatorUrl}</p>
         <button
           onClick={() => void handleCreatorCopy()}
-          className="mt-2 text-[10px] font-bold text-neutral-300 hover:text-white underline cursor-pointer"
+          className="mt-2 text-[10px] font-bold text-neutral-200 hover:text-white underline cursor-pointer"
         >
-          {creatorCopied ? 'Creator link copied' : 'Copy Creator Link'}
+          {creatorCopied ? 'Creator link copied' : 'Copy creator link'}
         </button>
       </motion.div>
 
@@ -204,7 +204,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
             transition: 'all 0.3s ease',
           }}
         >
-          {copied ? '✅ Copied!' : '📋 One-Tap Copy'}
+          {copied ? '✅ Copied!' : '📋 Copy link'}
         </motion.button>
 
         <motion.a
@@ -220,7 +220,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
           }}
         >
           <span className="text-xl">📱</span>
-          Send via WhatsApp
+          Share on WhatsApp
         </motion.a>
       </motion.div>
 
@@ -234,15 +234,15 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
         <div className="flex justify-between items-center mb-4 pb-2 border-b border-white/5">
           <h3 className="text-sm font-black flex items-center gap-1.5 uppercase tracking-wider" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
-            Live Vibe Tracker 📡
+            Live activity feed 📡
           </h3>
-          <span className="text-[10px] text-neutral-400 font-bold uppercase">SaaS Premium</span>
+          <span className="text-[10px] text-neutral-300 font-bold uppercase">SaaS Premium</span>
         </div>
 
         {activity.length === 0 ? (
           <div className="text-center py-6">
-            <p className="text-xs text-neutral-400">No activity yet. Share the card link to start tracking!</p>
-            <p className="text-[10px] text-neutral-500 mt-1">Updates live automatically</p>
+            <p className="text-xs text-neutral-200">No activity yet. Once they open it, the timeline starts here.</p>
+            <p className="text-[10px] text-neutral-400 mt-1">Updates live automatically</p>
           </div>
         ) : (
           <div className="space-y-4 max-h-[220px] overflow-y-auto pr-1 select-text">
@@ -341,7 +341,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
         className="text-xs"
         style={{ color: 'var(--text3)' }}
       >
-        💡 The link works on any device. No app needed — pure magic 🪄
+          💡 The link works on any device. No app needed — pure magic 🪄
       </motion.p>
     </motion.div>
   );

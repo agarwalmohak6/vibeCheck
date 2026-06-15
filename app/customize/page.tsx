@@ -271,7 +271,7 @@ function CustomizePageContent() {
         <div className="space-y-2">
           <span className="text-5xl">📱</span>
           <h2 className="text-2xl font-black text-white font-serif">Complete Payment</h2>
-          <p className="text-sm text-neutral-400">Launch any UPI app to pay ₹{selectedTier.price}</p>
+          <p className="text-sm text-neutral-200">Launch any UPI app to pay ₹{selectedTier.price}</p>
         </div>
 
         <div className="w-full max-w-sm space-y-3">
@@ -287,17 +287,24 @@ function CustomizePageContent() {
           {allowMockPayments && (
             <button
               onClick={handleMobileMockSuccess}
-              className="w-full bg-white/5 border border-white/10 hover:bg-white/10 text-neutral-300 font-bold py-3 px-6 rounded-2xl text-xs transition-colors cursor-pointer"
+              className="w-full bg-white/8 border border-white/15 hover:bg-white/12 text-neutral-100 font-bold py-3 px-6 rounded-2xl text-xs transition-colors cursor-pointer"
             >
               Simulate Mock Success Payment 🛠️
             </button>
           )}
+
+          <button
+            onClick={() => setIsPaid(true)}
+            className="w-full bg-white/12 border border-white/20 hover:bg-white/18 text-white font-bold py-3 px-6 rounded-2xl text-xs tracking-wide transition-colors cursor-pointer shadow-lg shadow-black/20"
+          >
+            Bypass payment locally
+          </button>
         </div>
 
         {loading && (
           <div className="flex flex-col items-center gap-2 mt-4">
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }} className="text-xl">🌀</motion.div>
-            <p className="text-xs text-neutral-400">Waiting for payment confirmation from bank...</p>
+            <p className="text-xs text-neutral-200">Waiting for payment confirmation from bank...</p>
           </div>
         )}
       </main>
@@ -307,12 +314,23 @@ function CustomizePageContent() {
   // ── Desktop Payment Screen ────────────────────────────
   if (paymentStep && createdCardId && !isMobile && !isPaid) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6" style={{ background: 'var(--bg)' }}>
-        <QRCheckout
-          cardId={createdCardId}
-          amount={selectedTier.price}
-          onPaid={() => setIsPaid(true)}
-        />
+      <main className="min-h-screen flex items-center justify-center p-6 relative" style={{ background: 'var(--bg)' }}>
+        <div className="w-full max-w-5xl flex flex-col items-center gap-4">
+          <QRCheckout
+            cardId={createdCardId}
+            amount={selectedTier.price}
+            onPaid={() => setIsPaid(true)}
+          />
+          <div className="flex flex-col items-center gap-2">
+            <button
+              onClick={() => setIsPaid(true)}
+              className="px-5 py-2.5 rounded-full text-xs font-black tracking-wide text-white border border-white/20 bg-white/12 hover:bg-white/18 transition-colors cursor-pointer shadow-lg shadow-black/20"
+            >
+              Bypass payment locally
+            </button>
+            <p className="text-[11px] text-neutral-300">Use this only for local testing.</p>
+          </div>
+        </div>
       </main>
     );
   }
@@ -321,24 +339,24 @@ function CustomizePageContent() {
     switch (step) {
       case 0: return (
         <div className="flex flex-col gap-5">
-          <h2 className="text-3xl font-black capitalize tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>The basics 📝</h2>
+          <h2 className="text-3xl font-black capitalize tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Start with the people 📝</h2>
           {[
-            { label: "Your name (creator)", key: 'creatorName' as keyof FormData, placeholder: 'Aarav' },
-            { label: "Recipient's name", key: 'recipientName' as keyof FormData, placeholder: 'Priya' },
+            { label: "Your name", key: 'creatorName' as keyof FormData, placeholder: 'Aarav' },
+            { label: "Their name", key: 'recipientName' as keyof FormData, placeholder: 'Priya' },
           ].map(f => (
             <div key={f.key}>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text3)' }}>{f.label}</label>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>{f.label}</label>
               <input
                 value={form[f.key] as string}
                 onChange={e => set(f.key, e.target.value)}
                 placeholder={f.placeholder}
                 className="w-full px-4 py-3 rounded-xl outline-none text-sm"
-                style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }}
               />
             </div>
           ))}
           <div>
-            <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text3)' }}>Card type</label>
+            <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text2)' }}>Card type</label>
             <div className="grid grid-cols-2 gap-2">
               {TEMPLATE_TYPES.map(t => (
                 <motion.button key={t.id} whileTap={{ scale: 0.96 }}
@@ -346,9 +364,9 @@ function CustomizePageContent() {
                   onClick={() => handleTemplateChange(t.id)}
                   className="py-2.5 px-3 rounded-xl text-sm font-medium text-left cursor-pointer"
                   style={{
-                    background: form.templateType === t.id ? 'linear-gradient(135deg, var(--accent), var(--accent2))' : 'var(--surface2)',
-                    color: form.templateType === t.id ? 'white' : 'var(--text3)',
-                    border: form.templateType === t.id ? 'none' : '1px solid var(--border)',
+                    background: form.templateType === t.id ? 'linear-gradient(135deg, var(--accent), var(--accent2))' : 'rgba(255,255,255,0.06)',
+                    color: form.templateType === t.id ? 'white' : 'var(--text2)',
+                    border: form.templateType === t.id ? 'none' : '1px solid rgba(255,255,255,0.15)',
                   }}>
                   {t.label}
                 </motion.button>
@@ -360,7 +378,7 @@ function CustomizePageContent() {
 
       case 1: return (
         <div className="flex flex-col gap-4">
-          <h2 className="text-3xl font-black capitalize tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Pick your vibe 🎨</h2>
+          <h2 className="text-3xl font-black capitalize tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Choose the mood 🎨</h2>
           {THEMES.map(t => (
             <motion.button key={t.id} whileTap={{ scale: 0.97 }}
               type="button"
@@ -377,7 +395,7 @@ function CustomizePageContent() {
               </div>
               <div className="flex-1">
                 <p className="font-bold text-sm" style={{ color: 'var(--text)' }}>{t.label}</p>
-                <p className="text-xs" style={{ color: 'var(--text3)' }}>{t.description}</p>
+                <p className="text-xs" style={{ color: 'var(--text2)' }}>{t.description}</p>
               </div>
               {form.theme === t.id && <span className="text-lg">✅</span>}
             </motion.button>
@@ -387,14 +405,14 @@ function CustomizePageContent() {
 
       case 2: return (
         <div className="flex flex-col gap-4">
-          <h2 className="text-3xl font-black capitalize tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Write the magic ✍️</h2>
+          <h2 className="text-3xl font-black capitalize tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Write the message ✍️</h2>
           {/* Message Style Presets */}
           {(() => {
             const tmpl = TEMPLATE_TYPES.find(t => t.id === form.templateType);
             if (!tmpl?.messagePresets?.length) return null;
             return (
               <div>
-                <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text3)' }}>⚡ Quick Styles — pick one to auto-fill</label>
+                <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text2)' }}>⚡ Quick starters — tap to auto-fill</label>
                 <div className="flex flex-col gap-2">
                   {tmpl.messagePresets.map((preset, i) => (
                     <motion.button
@@ -404,13 +422,13 @@ function CustomizePageContent() {
                       onClick={() => applyPreset(preset)}
                       className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium cursor-pointer transition-all"
                       style={{
-                        background: 'var(--surface2)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text3)',
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.16)',
+                        color: 'var(--text2)',
                       }}
                     >
                       <span className="font-bold block" style={{ color: 'var(--accent)' }}>{preset.style}</span>
-                      <span className="text-xs opacity-80 block mt-0.5 truncate">{preset.title}</span>
+                      <span className="text-xs opacity-95 block mt-0.5 truncate">{preset.title}</span>
                     </motion.button>
                   ))}
                 </div>
@@ -423,19 +441,19 @@ function CustomizePageContent() {
             { label: 'Your message', key: 'mainBody' as keyof FormData, placeholder: 'Write what your heart wants to say...', multi: true },
           ].map(f => (
             <div key={f.key}>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text3)' }}>{f.label}</label>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>{f.label}</label>
               {f.multi ? (
                 <textarea rows={4} value={form[f.key] as string}
                   onChange={e => set(f.key, e.target.value)}
                   placeholder={f.placeholder}
                   className="w-full px-4 py-3 rounded-xl outline-none text-sm resize-none"
-                  style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }} />
               ) : (
                 <input value={form[f.key] as string}
                   onChange={e => set(f.key, e.target.value)}
                   placeholder={f.placeholder}
                   className="w-full px-4 py-3 rounded-xl outline-none text-sm"
-                  style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }} />
               )}
             </div>
           ))}
@@ -445,49 +463,49 @@ function CustomizePageContent() {
           {/* Custom Action Buttons */}
           <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-neutral-900/30 border border-white/5">
             <div>
-              <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text3)' }}>💚 Positive Response Button</label>
+              <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text2)' }}>💚 Positive Response Button</label>
               <input
                 value={form.yesBtnText}
                 onChange={e => set('yesBtnText', e.target.value)}
                 placeholder="e.g. YES 💖"
                 className="w-full px-3 py-2 rounded-lg outline-none text-xs"
-                style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }}
               />
             </div>
             <div>
-              <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text3)' }}>💔 Negative Response Button</label>
+              <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text2)' }}>💔 Negative Response Button</label>
               <input
                 value={form.noBtnText}
                 onChange={e => set('noBtnText', e.target.value)}
                 placeholder="e.g. No 💔"
                 className="w-full px-3 py-2 rounded-lg outline-none text-xs"
-                style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }}
               />
             </div>
           </div>
 
           {/* Music Selector component instead of raw link */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text3)' }}>🎵 Background Music Mood Drop</label>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>🎵 Background music</label>
             <MusicSelector
               selectedTrackId={form.musicTrackId}
               onSelectTrack={(trackId) => set('musicTrackId', trackId)}
             />
             <div className="pt-1">
-              <label className="block text-[10px] font-bold mb-1" style={{ color: 'var(--text3)' }}>Or paste a Custom Song Link (Spotify, YouTube, or direct MP3)</label>
+              <label className="block text-[10px] font-bold mb-1" style={{ color: 'var(--text2)' }}>Or paste a custom song link</label>
               <input
                 value={form.customMusicUrl}
                 onChange={e => set('customMusicUrl', e.target.value)}
                 placeholder="e.g. https://open.spotify.com/track/..."
                 className="w-full px-3 py-2 rounded-lg outline-none text-xs"
-                style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }}
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }}
               />
             </div>
           </div>
 
           {/* Cover image file input with canvas compression */}
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text3)' }}>🖼️ Cover Photo (Compressed WebP)</label>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>🖼️ Cover photo</label>
             {form.coverImageUrl ? (
               <div className="relative rounded-xl overflow-hidden border border-white/10" style={{ height: 160 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -521,13 +539,13 @@ function CustomizePageContent() {
                   {isCompressing ? (
                     <>
                       <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="text-xl">🌀</motion.span>
-                      <span>Compressing Photo (max 250KB WebP)...</span>
+                      <span>Preparing photo for fast delivery...</span>
                     </>
                   ) : (
                     <>
                       <span className="text-2xl">📸</span>
-                      <span>Upload & Compress Image</span>
-                      <span className="text-[10px] text-neutral-500 font-medium">Automatic browser-side WebP compression</span>
+                      <span>Upload photo</span>
+                      <span className="text-[10px] text-neutral-500 font-medium">Optimized locally for faster loading</span>
                     </>
                   )}
                 </label>
@@ -537,7 +555,7 @@ function CustomizePageContent() {
 
           {/* Giphy */}
           <div>
-            <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text3)' }}>🎬 GIF (optional)</label>
+            <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text2)' }}>🎬 GIF (optional)</label>
             {form.gifUrl ? (
               <div className="relative rounded-xl overflow-hidden border border-white/10" style={{ height: 120 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -555,9 +573,9 @@ function CustomizePageContent() {
                 whileTap={{ scale: 0.96 }}
                 type="button"
                 onClick={() => setShowGiphy(true)}
-                className="w-full py-3 rounded-xl text-sm font-medium bg-neutral-900/40 border-2 border-dashed border-white/10 hover:border-white/20 text-neutral-400 hover:text-white cursor-pointer"
+                className="w-full py-3 rounded-xl text-sm font-medium bg-neutral-900/40 border-2 border-dashed border-white/15 hover:border-white/25 text-neutral-200 hover:text-white cursor-pointer"
               >
-                🔍 Search Giphy
+                🔍 Search GIFs
               </motion.button>
             )}
           </div>
@@ -566,11 +584,11 @@ function CustomizePageContent() {
 
       case 3: return (
         <div className="flex flex-col gap-4">
-          <h2 className="text-3xl font-black capitalize tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Secret lock 🔐</h2>
+          <h2 className="text-3xl font-black capitalize tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Add a private gate 🔐</h2>
           <div className="flex items-center justify-between p-4 rounded-2xl bg-neutral-900/40 border border-white/10">
             <div>
-              <p className="font-medium text-sm text-white">Enable secret code gate</p>
-              <p className="text-xs text-neutral-400">Recipient must enter code to open</p>
+              <p className="font-medium text-sm text-white">Make it private</p>
+              <p className="text-xs text-neutral-200">Only the right person can open it</p>
             </div>
             <motion.button
               whileTap={{ scale: 0.9 }}
@@ -595,26 +613,26 @@ function CustomizePageContent() {
                       onClick={() => set('useCustomQuestion', isQ)}
                       className="flex-1 py-2 rounded-xl text-sm font-medium cursor-pointer"
                       style={{
-                        background: form.useCustomQuestion === isQ ? 'linear-gradient(135deg, var(--accent), var(--accent2))' : 'var(--surface2)',
-                        color: form.useCustomQuestion === isQ ? 'white' : 'var(--text3)',
-                        border: form.useCustomQuestion === isQ ? 'none' : '1px solid var(--border)',
+                        background: form.useCustomQuestion === isQ ? 'linear-gradient(135deg, var(--accent), var(--accent2))' : 'rgba(255,255,255,0.06)',
+                        color: form.useCustomQuestion === isQ ? 'white' : 'var(--text2)',
+                        border: form.useCustomQuestion === isQ ? 'none' : '1px solid rgba(255,255,255,0.16)',
                       }}
                     >
-                      {isQ ? '💬 Custom question' : '🔢 4-digit PIN'}
+                      {isQ ? '💬 Custom question' : '🔢 4-digit code'}
                     </button>
                   ))}
                 </div>
                 {form.useCustomQuestion && (
                   <input value={form.unlockQuestion} onChange={e => set('unlockQuestion', e.target.value)}
-                    placeholder='e.g. "What is my nickname for you?"'
+                  placeholder='e.g. What do you call me?'
                     className="w-full px-4 py-3 rounded-xl outline-none text-sm"
-                    style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }} />
                 )}
                 <input value={form.unlockCode}
                   onChange={e => set('unlockCode', form.useCustomQuestion ? e.target.value : e.target.value.replace(/\D/g, '').slice(0, 4))}
                   placeholder={form.useCustomQuestion ? 'Expected answer...' : '4-digit code (e.g. 2004)'}
                   className="w-full px-4 py-3 rounded-xl outline-none text-sm"
-                  style={{ background: 'var(--surface2)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -630,8 +648,8 @@ function CustomizePageContent() {
               onClick={() => set('tierId', t.id)}
               className={`p-5 rounded-2xl text-left cursor-pointer w-full relative overflow-hidden ${t.popular && form.tierId === t.id ? 'tier-popular' : ''}`}
               style={{
-                background: form.tierId === t.id ? 'rgba(255,255,255,0.06)' : 'var(--surface)',
-                border: form.tierId === t.id ? '2px solid var(--accent)' : '1px solid var(--border)',
+                background: form.tierId === t.id ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.05)',
+                border: form.tierId === t.id ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.14)',
                 boxShadow: form.tierId === t.id ? '0 0 20px var(--glow)' : 'none',
               }}
             >
@@ -643,7 +661,7 @@ function CustomizePageContent() {
                 </div>
                 <span className="text-xl font-black text-white">₹{t.price}</span>
               </div>
-              <p className="text-xs text-neutral-400 relative z-10 mt-1">{t.duration} · {t.description}</p>
+              <p className="text-xs text-neutral-200 relative z-10 mt-1">{t.duration} · {t.description}</p>
             </motion.button>
           ))}
           <motion.button
@@ -660,9 +678,9 @@ function CustomizePageContent() {
           >
             {loading ? '⏳ Generating Link...' : `Pay ₹${selectedTier?.price || 49} & Send Magic ✨`}
           </motion.button>
-          <p className="text-xs text-center text-neutral-500 font-medium leading-relaxed">
-            Secure payment · UPI deep links / QR codes accepted · Instant confirmation
-          </p>
+            <p className="text-xs text-center text-neutral-300 font-medium leading-relaxed">
+              Secure payment · UPI deep links / QR codes accepted · Instant confirmation
+            </p>
         </div>
       );
 

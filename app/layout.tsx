@@ -43,13 +43,13 @@ const cinzelDecorative = Cinzel_Decorative({
 });
 
 export const metadata: Metadata = {
-  title: "VibeCheck — Send Vibes, Not Texts 💌",
+  title: "VibeCheck — Premium cards people actually open 💌",
   description:
-    "Create interactive, chaotic, and ultra-aesthetic digital greeting cards. Proposals, apologies, birthdays — lock your card, drop the beat, and watch them dodge the NO button. High-key obsessed, no cap. 💅",
-  keywords: ["digital greeting card", "interactive card", "Gen Z", "India", "proposal card", "viral card", "vibecheck"],
+    "Create premium interactive cards for proposals, apologies, birthdays, best friends, and anniversaries. Add music, photos, passcode locks, and live reactions in minutes.",
+  keywords: ["digital greeting card", "interactive card", "proposal card", "apology card", "birthday card", "best friend card", "anniversary card", "vibecheck"],
   openGraph: {
-    title: "VibeCheck — Send Vibes, Not Texts 💌",
-    description: "Create interactive cards with chaos mode buttons, secret codes, and viral share mechanics. High-key obsessed, no cap. 💅",
+    title: "VibeCheck — Premium cards people actually open 💌",
+    description: "Create interactive cards with cinematic reveals, secret codes, music, and live reactions.",
     type: "website",
   },
 };

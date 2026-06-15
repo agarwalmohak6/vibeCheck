@@ -16,37 +16,37 @@ const TEMPLATE_SAMPLES: Record<
   shoot_shot: {
     emoji: "💍",
     badge: "Shoot Your Shot",
-    title: "okay I'm down bad 💀",
-    body: "I have rehearsed this in the mirror 47 times.\nYou're literally my Roman Empire.\nPlease be my person? 🥺",
-    yesMsg: "SHE SAID YES!!! 🎉💖",
+    title: "A little something I made for you",
+    body: "I wanted this to feel more personal than a text.\nMore private than a story.\nAnd more memorable than a screenshot.\nSo here it is, just for you.",
+    yesMsg: "That landed beautifully. 💖",
   },
   maan_jao: {
     emoji: "🥺",
     badge: "Maan Jao Na",
-    title: "please maan jao yaar 😭",
-    body: "Galti ho gayi, I know.\nMain maafi maangta hun.\nBas ek baar forgive karo?",
-    yesMsg: "Maaf kar diya 💕 Let's go back!",
+    title: "I want to fix this",
+    body: "I know the vibe went sideways.\nThis is me showing up properly.\nNo excuses, just a real apology and a softer restart.",
+    yesMsg: "Forgiven. Let's reset with peace. 💕",
   },
   birthday_roast: {
     emoji: "🎂",
     badge: "Birthday Roast",
-    title: "Happy getting older 💀",
-    body: "Another year of surviving on vibes and luck.\nYour reflexes are aging but my love isn't.\nHappy birthday you absolute legend 🎉",
-    yesMsg: "🎂 The roast was accepted! 🎉",
+    title: "For the one who still looks good aging",
+    body: "Another year, same legendary chaos.\nA little roast, a little love, and a lot of reasons you matter.\nHappy birthday, icon.",
+    yesMsg: "Birthday card accepted with style 🎉",
   },
   bestie_check: {
     emoji: "✨",
     badge: "Bestie Vibe Check",
-    title: "okay fine I love you 💅",
-    body: "You're my chaos partner. My 2am call person.\nStuck with me forever, no refunds.\nAccept it bestie 👯‍♀️",
-    yesMsg: "Bestie forever accepted! 💗",
+    title: "You matter to me",
+    body: "You’re my safe place, my chaos partner, and the first person I want to send random nonsense to.\nThis is the simple version of a big feeling.",
+    yesMsg: "Bestie energy received 💗",
   },
   netflix_chill: {
     emoji: "🍿",
     badge: "Netflix & Chill",
-    title: "No plans this weekend? 👀",
-    body: "I may have cleared my entire schedule.\nAnd bought a lot of snacks.\nCome watch something with me? 🛋️",
-    yesMsg: "Date night confirmed! 🍿💕",
+    title: "A quiet invite, just for you",
+    body: "No big speech, just a cozy plan.\nA good movie, good snacks, and a little time together.\nFeels simple, but the good kind of simple.",
+    yesMsg: "Invite accepted 🍿💕",
   },
 };
 
@@ -272,7 +272,7 @@ export default function LiveSimulator() {
                     className="cursor-pointer relative"
                     style={{ perspective: 600 }}
                   >
-                    {theme === "desi_festive" || theme === "bollywood_drama" ? (
+                    {theme === "desi_festive" ? (
                       <div className="w-40 h-28 rounded-2xl relative flex items-center justify-center bg-rose-950 border-2 border-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.3)]">
                         <div className="absolute inset-2 border border-yellow-500/20 rounded-xl" />
                         <div className="w-14 h-14 rounded-full bg-linear-to-br from-yellow-300 to-amber-600 border-2 border-amber-500 flex items-center justify-center text-yellow-100 font-serif font-black text-base shadow-xl">
@@ -308,7 +308,7 @@ export default function LiveSimulator() {
                   >
                     {isOpening
                       ? "✨ Opening..."
-                      : theme === "desi_festive" || theme === "bollywood_drama"
+                      : theme === "desi_festive"
                         ? "✨ Tap Wax Seal to Break"
                         : "✨ Tap to open"}
                   </motion.p>
