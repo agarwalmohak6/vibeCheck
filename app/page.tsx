@@ -80,6 +80,14 @@ function FacebookIcon() {
   );
 }
 
+function FacebookIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M14.2 8.5V7.1c0-.8.4-1.2 1.3-1.2h1.9V3.2c-.8-.1-1.7-.2-2.6-.2-2.7 0-4.5 1.6-4.5 4.5v1H7.5v3.1h2.8V21h3.4v-9.4h2.8l.5-3.1h-3Z" />
+    </svg>
+  );
+}
+
 export default function LandingPage() {
   const { setTheme } = useTheme();
   const [scrolled, setScrolled] = useState(false);
