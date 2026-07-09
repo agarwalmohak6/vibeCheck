@@ -6,7 +6,7 @@ export default function Loading() {
         <span />
         <span />
       </div>
-      <p>Preparing the vibe</p>
+      <p>Preparing your card</p>
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import confetti from 'canvas-confetti';
 import { whatsappLink } from '@/lib/utils';
 import type { ChatMessageDTO, TrackerEvent } from '@/types/vibecheck';
@@ -16,11 +17,16 @@ interface SuccessHubProps {
 export default function SuccessHub({ cardId, recipientName, creatorName, creatorToken }: SuccessHubProps) {
   const [copied, setCopied] = useState(false);
   const [creatorCopied, setCreatorCopied] = useState(false);
+  const [roomCopied, setRoomCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
   const [activity, setActivity] = useState<ChatMessageDTO[]>([]);
+  const [showCreatorLink, setShowCreatorLink] = useState(false);
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
   const cardUrl = `${baseUrl}/card/${cardId}`;
   const creatorUrl = creatorToken ? `${cardUrl}?ct=${encodeURIComponent(creatorToken)}` : cardUrl;
+  const creatorRoomUrl = creatorToken
+    ? `${cardUrl}?ct=${encodeURIComponent(creatorToken)}&room=chat`
+    : `${cardUrl}?room=chat`;
   const waLink = whatsappLink(cardUrl, creatorName, recipientName);
 
   const copyText = async (text: string) => {
@@ -47,6 +53,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
         : 'Opened Envelope & Card!',
       passcode_unlocked: 'Unlocked Secret Gate',
       passcode_failed: 'Tried the wrong passcode',
+      story_answered: `Answered "${String(event.metadata?.question || 'a story question')}" with "${String(event.metadata?.answer || '')}"`,
       runaway_dodged: `Tried to click "${String(event.metadata?.label || 'No')}" (Dodge #${String(event.metadata?.dodge_count || 1)})`,
       cta_accepted: `Clicked "${String(event.metadata?.label || 'YES')}"`,
       card_viewed: 'Viewed the card',
@@ -107,12 +114,23 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
     }
   };
 
+  const handleRoomCopy = async () => {
+    try {
+      await copyText(creatorRoomUrl);
+      setCopyError(false);
+      setRoomCopied(true);
+      setTimeout(() => setRoomCopied(false), 2500);
+    } catch {
+      setCopyError(true);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9, y: 40 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-      className="flex flex-col items-center gap-8 py-12 px-8 max-w-lg mx-auto text-center glass glow-border rounded-[2.5rem] relative z-10"
+      className="vc-success-hub flex flex-col items-center gap-8 py-12 px-8 max-w-5xl mx-auto text-center glass glow-border rounded-[2.5rem] relative z-10"
     >
       <motion.div
         animate={{ rotate: [0, 15, -15, 10, -10, 0], scale: [1, 1.2, 1] }}
@@ -139,7 +157,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
             filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.4))',
           }}
         >
-          Your card is ready ✨
+          Your VibeCheck is ready.
         </motion.h2>
         <motion.p
           initial={{ opacity: 0 }}
@@ -148,7 +166,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
           className="text-sm"
           style={{ color: 'var(--text3)' }}
         >
-          Share this with {recipientName} and let the moment do the work 💌
+          Here&apos;s your private link for {recipientName}. Send it when the moment is right.
         </motion.p>
       </div>
 
@@ -159,7 +177,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
         className="w-full rounded-2xl p-4"
         style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}
       >
-        <p className="text-xs mb-2 font-medium" style={{ color: 'var(--text2)' }}>Your share link 🔗</p>
+        <p className="text-xs mb-2 font-medium" style={{ color: 'var(--text2)' }}>Private link</p>
         <p className="text-sm font-mono break-all font-bold select-all" style={{ color: 'var(--accent)' }}>{cardUrl}</p>
       </motion.div>
 
@@ -167,16 +185,56 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
-        className="w-full rounded-2xl p-4 bg-white/5 border border-white/10"
+        className="vc-success-creator-card w-full rounded-2xl p-4 text-left"
       >
-        <p className="text-xs mb-2 font-medium text-neutral-200">Open this on another phone or device to see replies 📱</p>
-        <p className="text-xs font-mono break-all text-neutral-100 select-all">{creatorUrl}</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs mb-1 font-black uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
+              Creator dashboard
+            </p>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--text2)' }}>
+              Keep this private. It lets you see opens, passcode attempts, story answers, and replies.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowCreatorLink((value) => !value)}
+            className="shrink-0 rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-widest"
+          >
+            {showCreatorLink ? 'Hide' : 'Show'}
+          </button>
+        </div>
+        {showCreatorLink && (
+          <div className="vc-success-private-link mt-3 rounded-xl p-3">
+            <p className="text-[10px] font-bold mb-1" style={{ color: 'var(--text3)' }}>
+              Private creator link
+            </p>
+            <p className="text-xs font-mono break-all select-all" style={{ color: 'var(--text)' }}>{creatorUrl}</p>
+          </div>
+        )}
         <button
           onClick={() => void handleCreatorCopy()}
-          className="mt-2 text-[10px] font-bold text-neutral-200 hover:text-white underline cursor-pointer"
+          className="mt-3 text-[10px] font-black uppercase tracking-widest underline underline-offset-4 cursor-pointer"
+          style={{ color: 'var(--accent)' }}
         >
           {creatorCopied ? 'Creator link copied' : 'Copy creator link'}
         </button>
+
+        <div className="vc-success-room-actions mt-4">
+          <div>
+            <p>Private chat room</p>
+            <span>Use this in-app room to reply until the card expires.</span>
+          </div>
+          <Link href={creatorRoomUrl}>
+            Open room
+          </Link>
+          <button
+            type="button"
+            onClick={() => void handleRoomCopy()}
+          >
+            {roomCopied ? 'Room link copied' : 'Copy room link'}
+          </button>
+        </div>
       </motion.div>
 
       {copyError && (
@@ -189,7 +247,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9 }}
-        className="flex flex-col sm:flex-row gap-3 w-full"
+        className="vc-success-actions flex flex-col sm:flex-row gap-3 w-full"
       >
         <motion.button
           onClick={handleCopy}
@@ -204,7 +262,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
             transition: 'all 0.3s ease',
           }}
         >
-          {copied ? '✅ Copied!' : '📋 Copy link'}
+          {copied ? 'Copied' : 'Copy link'}
         </motion.button>
 
         <motion.a
@@ -228,15 +286,15 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.0 }}
-        className="w-full rounded-3xl p-6 text-left glow-border"
+        className="vc-success-activity w-full rounded-3xl p-6 text-left glow-border"
         style={{ background: 'var(--surface)' }}
       >
         <div className="flex justify-between items-center mb-4 pb-2 border-b border-white/5">
           <h3 className="text-sm font-black flex items-center gap-1.5 uppercase tracking-wider" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
-            Live activity feed 📡
+            See how they reacted
           </h3>
-          <span className="text-[10px] text-neutral-300 font-bold uppercase">SaaS Premium</span>
+          <span className="text-[10px] text-neutral-300 font-bold uppercase">Live</span>
         </div>
 
         {activity.length === 0 ? (
@@ -277,6 +335,16 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
                   textColor = 'text-yellow-300';
                   bubbleBg = 'bg-yellow-500/10';
                   borderStyle = 'border-yellow-500/20';
+                } else if (log.text.includes('Answered "')) {
+                  const match = log.text.match(/Answered "([^"]+)" with "([^"]*)"/);
+                  storyText = match
+                    ? `${recipientName} answered: "${match[2]}" to "${match[1]}" ✨`
+                    : `${recipientName} answered a story question ✨`;
+                  isSpecialEvent = true;
+                  icon = '✨';
+                  textColor = 'text-fuchsia-300';
+                  bubbleBg = 'bg-fuchsia-500/10';
+                  borderStyle = 'border-fuchsia-500/20';
                 } else if (log.text.includes('Tried to click "')) {
                   const match = log.text.match(/Tried to click "([^"]+)" \(Dodge #(\d+)\)/);
                   storyText = match
@@ -341,8 +409,12 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
         className="text-xs"
         style={{ color: 'var(--text3)' }}
       >
-          💡 The link works on any device. No app needed — pure magic 🪄
+          The link works on any device. No app needed.
       </motion.p>
+
+      <Link href="/customize" className="text-xs font-black underline underline-offset-4" style={{ color: 'var(--accent)' }}>
+        Make another VibeCheck
+      </Link>
     </motion.div>
   );
 }

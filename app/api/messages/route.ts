@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendMessageSchema } from '@/lib/contracts';
-import { getMessagesForCard, sendCardMessage } from '@/services/server/card-store';
+import { getMessagesForCard, getPublicCard, sendCardMessage } from '@/services/server/card-store';
 import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
+import { isExpired } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const cardId = req.nextUrl.searchParams.get('card_id');
   if (!cardId) return NextResponse.json({ error: 'Missing card_id' }, { status: 400 });
+
+  const card = await getPublicCard(cardId);
+  if (!card) return NextResponse.json({ error: 'Card not found' }, { status: 404 });
+  if (isExpired(card.expires_at)) return NextResponse.json({ error: 'Chat room expired' }, { status: 410 });
 
   const messages = await getMessagesForCard(cardId);
   return NextResponse.json(messages);
@@ -24,6 +29,10 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid message payload', issues: parsed.error.flatten() }, { status: 400 });
     }
+
+    const card = await getPublicCard(parsed.data.card_id);
+    if (!card) return NextResponse.json({ error: 'Card not found' }, { status: 404 });
+    if (isExpired(card.expires_at)) return NextResponse.json({ error: 'Chat room expired' }, { status: 410 });
 
     const creatorToken = req.headers.get('x-vibecheck-creator-token');
     const message = await sendCardMessage(

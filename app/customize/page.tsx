@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
-import { THEMES, TEMPLATE_TYPES, TIERS, ThemeId } from '@/lib/themes';
+import { PRIMARY_TEMPLATE_TYPES, TEMPLATE_TYPES, TIERS, ThemeId, type StoryQuestion } from '@/lib/themes';
 import GiphyModal from '@/components/GiphyModal';
 import SuccessHub from '@/components/SuccessHub';
 import MusicSelector from '@/components/MusicSelector';
@@ -13,6 +13,7 @@ import { compressImage } from '@/lib/imageCompressor';
 import { isMobileDevice, buildUpiIntent } from '@/lib/upi';
 import HeartCanvas from '@/components/HeartCanvas';
 import AmbientBackground from '@/components/AmbientBackground';
+import CardStoryline from '@/components/CardStoryline';
 
 interface FormData {
   recipientName: string;
@@ -31,7 +32,9 @@ interface FormData {
   tierId: string;
   yesBtnText: string;
   noBtnText: string;
-  customMusicUrl: string;
+  selectedMusicUrl: string;
+  musicLabel: string;
+  storyQuestions: StoryQuestion[];
 }
 
 type Notice = {
@@ -39,8 +42,62 @@ type Notice = {
   message: string;
 };
 
-const STEPS = ['basics', 'theme', 'content', 'lock', 'payment'];
-const STEP_LABELS = ['Basics', 'Theme', 'Content', 'Lock', 'Payment'];
+const STEPS = ['basics', 'content', 'lock', 'payment'];
+const STEP_LABELS = ['Card', 'Message', 'Privacy', 'Pay'];
+const DEFAULT_TEMPLATE = 'maan_jao';
+const MIN_STORY_QUESTIONS = 3;
+const MAX_STORY_QUESTIONS = 5;
+const CARD_DECOR: Record<string, string[]> = {
+  maan_jao: ['🥺', '💌', '🧸', '🕊️'],
+  birthday_roast: ['🎂', '🎉', '🎩', '🧸'],
+  bestie_check: ['🍹', '🥂', '✨', '💅'],
+  shoot_shot: ['💌', '💍', '✨', '🌙'],
+  netflix_chill: ['🍿', '🥤', '🎬', '✨'],
+};
+
+function formatPersonName(value: string, fallback = '') {
+  const cleaned = value.trim().replace(/\s+/g, ' ');
+  if (!cleaned) return fallback;
+
+  return cleaned.replace(/[A-Za-zÀ-ÖØ-öø-ÿ]+/g, (part) =>
+    part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+  );
+}
+
+function stripEmojiLabel(label: string) {
+  return label.replace(/\s[^\s]*$/, '').trim();
+}
+
+function cloneStoryQuestions(templateType: string): StoryQuestion[] {
+  const template = TEMPLATE_TYPES.find(t => t.id === templateType) || PRIMARY_TEMPLATE_TYPES[0];
+  return template.storyQuestions.slice(0, MAX_STORY_QUESTIONS).map((question, index) => ({
+    id: question.id || `story-${index + 1}`,
+    eyebrow: question.eyebrow,
+    question: question.question,
+    options: question.options.slice(0, 3),
+  }));
+}
+
+function createBlankStoryQuestion(index: number): StoryQuestion {
+  return {
+    id: `custom-${Date.now()}-${index + 1}`,
+    eyebrow: `Moment ${index + 1}`,
+    question: '',
+    options: ['', '', ''],
+  };
+}
+
+function sanitizeStoryQuestions(questions: StoryQuestion[]): StoryQuestion[] {
+  return questions
+    .slice(0, MAX_STORY_QUESTIONS)
+    .map((question, index) => ({
+      id: question.id?.trim() || `custom-${index + 1}`,
+      eyebrow: question.eyebrow.trim() || `Moment ${index + 1}`,
+      question: question.question.trim(),
+      options: question.options.map(option => option.trim()).filter(Boolean).slice(0, 3),
+    }))
+    .filter(question => question.question && question.options.length >= 2);
+}
 
 function CustomizePageContent() {
   const router = useRouter();
@@ -48,7 +105,8 @@ function CustomizePageContent() {
   const { setTheme } = useTheme();
 
   const [step, setStep] = useState(0);
-  const initialTemplate = params.get('type') || 'shoot_shot';
+  const requestedTemplate = params.get('type') || DEFAULT_TEMPLATE;
+  const initialTemplate = PRIMARY_TEMPLATE_TYPES.some(t => t.id === requestedTemplate) ? requestedTemplate : DEFAULT_TEMPLATE;
   const initialTmplMeta = TEMPLATE_TYPES.find(t => t.id === initialTemplate);
   const [form, setForm] = useState<FormData>({
     recipientName: '',
@@ -57,7 +115,7 @@ function CustomizePageContent() {
     theme: initialTmplMeta?.recommendedTheme || 'soft_coquette',
     messageTitle: '',
     mainBody: '',
-    musicTrackId: 'rom_tum_hi_ho', // default track
+    musicTrackId: '',
     gifUrl: '',
     coverImageUrl: initialTmplMeta?.defaultCoverImage || TEMPLATE_TYPES.find(t => t.id === 'shoot_shot')?.defaultCoverImage || '',
     hasSecretCode: false,
@@ -67,7 +125,9 @@ function CustomizePageContent() {
     tierId: params.get('tier') || '3_day',
     yesBtnText: initialTmplMeta?.defaultYesText || 'YES 💖',
     noBtnText: initialTmplMeta?.defaultNoText || 'No 💔',
-    customMusicUrl: '',
+    selectedMusicUrl: '',
+    musicLabel: '',
+    storyQuestions: cloneStoryQuestions(initialTemplate),
   });
 
   const [showGiphy, setShowGiphy] = useState(false);
@@ -88,23 +148,21 @@ function CustomizePageContent() {
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) => setForm(p => ({ ...p, [k]: v }));
 
-  const handleThemeChange = (t: ThemeId, coverImage: string) => {
-    set('theme', t);
-    set('coverImageUrl', coverImage);
-    setTheme(t);
-  };
-
   const handleTemplateChange = (templateId: string) => {
     const tmpl = TEMPLATE_TYPES.find(t => t.id === templateId);
-    set('templateType', templateId);
     if (tmpl) {
-      // Auto-apply the template's default cover image
-      set('coverImageUrl', tmpl.defaultCoverImage);
-      // Auto-apply the recommended theme
-      handleThemeChange(tmpl.recommendedTheme, THEMES.find(t => t.id === tmpl.recommendedTheme)?.coverImage || '');
-      // Auto-apply default button texts
-      set('yesBtnText', tmpl.defaultYesText);
-      set('noBtnText', tmpl.defaultNoText);
+      setForm(prev => ({
+        ...prev,
+        templateType: templateId,
+        theme: tmpl.recommendedTheme,
+        coverImageUrl: tmpl.defaultCoverImage,
+        yesBtnText: tmpl.defaultYesText,
+        noBtnText: tmpl.defaultNoText,
+        messageTitle: '',
+        mainBody: '',
+        storyQuestions: cloneStoryQuestions(templateId),
+      }));
+      setTheme(tmpl.recommendedTheme);
     }
   };
 
@@ -114,6 +172,162 @@ function CustomizePageContent() {
   };
 
   const selectedTier = TIERS.find(t => t.id === form.tierId)!;
+  const selectedTemplate = TEMPLATE_TYPES.find(t => t.id === form.templateType) || initialTmplMeta || PRIMARY_TEMPLATE_TYPES[0];
+  const previewTitle = form.messageTitle || selectedTemplate.messagePresets[0]?.title || selectedTemplate.label.replace(/\s[^\s]*$/, '');
+  const previewBody = form.mainBody || selectedTemplate.messagePresets[0]?.body || selectedTemplate.builderHint;
+  const displayRecipientName = formatPersonName(form.recipientName, 'Priya');
+  const displayCreatorName = formatPersonName(form.creatorName, 'Aarav');
+  const submitRecipientName = formatPersonName(form.recipientName);
+  const submitCreatorName = formatPersonName(form.creatorName);
+  const gifSearchTerms = selectedTemplate.gifSearchTerms?.length
+    ? selectedTemplate.gifSearchTerms
+    : [`${stripEmojiLabel(selectedTemplate.label)} reaction`];
+  const cleanStoryQuestions = sanitizeStoryQuestions(form.storyQuestions);
+  const hasSelectedSong = Boolean(
+    form.musicTrackId.trim() || form.selectedMusicUrl.trim() || form.musicLabel.trim(),
+  );
+
+  const isStoryQuestionComplete = (question: StoryQuestion) => {
+    const options = question.options.map(option => option.trim()).filter(Boolean);
+    return Boolean(question.question.trim() && options.length >= 2);
+  };
+
+  const getStepIssues = (stepIndex: number): string[] => {
+    const issues: string[] = [];
+
+    if (stepIndex === 0) {
+      if (!submitRecipientName) issues.push('Add the recipient name before moving ahead.');
+      if (!submitCreatorName) issues.push('Add your sender name before moving ahead.');
+    }
+
+    if (stepIndex === 1) {
+      if (!form.messageTitle.trim()) issues.push('Write a headline or choose a starting point.');
+      if (!form.mainBody.trim()) issues.push('Write the main message or choose a starting point.');
+      if (!hasSelectedSong) issues.push('Select one song. The card cannot be created without music.');
+
+      if (form.storyQuestions.length < MIN_STORY_QUESTIONS) {
+        issues.push(`Add at least ${MIN_STORY_QUESTIONS} story questions.`);
+      }
+
+      if (form.storyQuestions.length > MAX_STORY_QUESTIONS) {
+        issues.push(`Keep story questions to ${MAX_STORY_QUESTIONS} or fewer.`);
+      }
+
+      const incompleteIndexes = form.storyQuestions
+        .map((question, index) => isStoryQuestionComplete(question) ? null : index + 1)
+        .filter((index): index is number => index !== null);
+
+      if (incompleteIndexes.length) {
+        issues.push(`Complete question ${incompleteIndexes[0]} with a question and at least 2 answers.`);
+      }
+
+      if (cleanStoryQuestions.length < MIN_STORY_QUESTIONS) {
+        issues.push(`You need ${MIN_STORY_QUESTIONS} complete questions before payment.`);
+      }
+    }
+
+    if (stepIndex === 2 && form.hasSecretCode) {
+      if (form.useCustomQuestion && !form.unlockQuestion.trim()) {
+        issues.push('Add the private lock question.');
+      }
+
+      if (!form.unlockCode.trim()) {
+        issues.push(form.useCustomQuestion ? 'Add the expected lock answer.' : 'Add the 4-digit lock code.');
+      }
+
+      if (!form.useCustomQuestion && form.unlockCode.trim().length !== 4) {
+        issues.push('The private code must be exactly 4 digits.');
+      }
+    }
+
+    return issues;
+  };
+
+  const showStepIssue = (message: string) => {
+    setNotice({
+      tone: 'error',
+      message,
+    });
+  };
+
+  const tryGoToStep = (targetStep: number) => {
+    if (targetStep <= step) {
+      setStep(targetStep);
+      setNotice(null);
+      return;
+    }
+
+    for (let index = 0; index < targetStep; index += 1) {
+      const issues = getStepIssues(index);
+      if (issues.length) {
+        setStep(index);
+        showStepIssue(issues[0]);
+        return;
+      }
+    }
+
+    setNotice(null);
+    setStep(targetStep);
+  };
+
+  const validateBeforeCreate = () => {
+    for (let index = 0; index < STEPS.length - 1; index += 1) {
+      const issues = getStepIssues(index);
+      if (issues.length) {
+        setStep(index);
+        showStepIssue(issues[0]);
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const updateStoryQuestion = (
+    index: number,
+    patch: Partial<StoryQuestion> | { optionIndex: number; option: string },
+  ) => {
+    setForm(prev => ({
+      ...prev,
+      storyQuestions: prev.storyQuestions.map((question, questionIndex) => {
+        if (questionIndex !== index) return question;
+        if ('optionIndex' in patch) {
+          return {
+            ...question,
+            options: question.options.map((option, optionIndex) =>
+              optionIndex === patch.optionIndex ? patch.option : option
+            ),
+          };
+        }
+        return { ...question, ...patch };
+      }),
+    }));
+  };
+
+  const addStoryQuestion = () => {
+    setForm(prev => {
+      if (prev.storyQuestions.length >= MAX_STORY_QUESTIONS) return prev;
+
+      return {
+        ...prev,
+        storyQuestions: [
+          ...prev.storyQuestions,
+          createBlankStoryQuestion(prev.storyQuestions.length),
+        ],
+      };
+    });
+  };
+
+  const removeStoryQuestion = (index: number) => {
+    setForm(prev => {
+      if (prev.storyQuestions.length <= MIN_STORY_QUESTIONS) return prev;
+
+      return {
+        ...prev,
+        storyQuestions: prev.storyQuestions.filter((_, questionIndex) => questionIndex !== index),
+      };
+    });
+  };
 
   // Compress image on select
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -137,7 +351,7 @@ function CustomizePageContent() {
   };
 
   const handleSubmit = async () => {
-    if (!form.recipientName || !form.creatorName) return;
+    if (!validateBeforeCreate()) return;
     setLoading(true);
     setNotice(null);
     try {
@@ -145,22 +359,24 @@ function CustomizePageContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          recipient_name: form.recipientName,
-          creator_name: form.creatorName,
+          recipient_name: submitRecipientName,
+          creator_name: submitCreatorName,
           template_type: form.templateType,
           theme_selected: form.theme,
           tier_selected: form.tierId,
           music_track_id: form.musicTrackId,
           card_data: {
-            message_title: form.messageTitle || `A message from ${form.creatorName}`,
-            main_body: form.mainBody || "Tap YES to accept!",
+            message_title: form.messageTitle.trim(),
+            main_body: form.mainBody.trim(),
             gif_url: form.gifUrl,
             cover_image_url: form.coverImageUrl,
             unlock_code: form.hasSecretCode ? form.unlockCode : '',
             unlock_question: form.hasSecretCode && form.useCustomQuestion ? form.unlockQuestion : '',
             yes_btn_text: form.yesBtnText,
             no_btn_text: form.noBtnText,
-            music_url: form.customMusicUrl || undefined,
+            music_url: form.selectedMusicUrl || undefined,
+            music_label: form.musicLabel || undefined,
+            story_questions: cleanStoryQuestions,
           },
         }),
       });
@@ -254,8 +470,8 @@ function CustomizePageContent() {
         <AmbientBackground />
         <SuccessHub
           cardId={createdCardId}
-          recipientName={form.recipientName}
-          creatorName={form.creatorName}
+          recipientName={displayRecipientName}
+          creatorName={displayCreatorName}
           creatorToken={creatorToken || localStorage.getItem(`creator_token_${createdCardId}`) || undefined}
         />
       </main>
@@ -339,96 +555,94 @@ function CustomizePageContent() {
     switch (step) {
       case 0: return (
         <div className="flex flex-col gap-5">
-          <h2 className="text-3xl font-black capitalize tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Start with the people 📝</h2>
+          <div className="space-y-2">
+            <p className="vc-builder-eyebrow">Choose your card</p>
+            <h2 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>What&apos;s the moment?</h2>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text2)' }}>
+              Pick the card first. The cover, colors, buttons, and mood will match automatically.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text2)' }}>Card type</label>
+            <div className="grid md:grid-cols-3 gap-3">
+              {PRIMARY_TEMPLATE_TYPES.map(t => (
+                <motion.button key={t.id} whileTap={{ scale: 0.96 }}
+                  type="button"
+                  onClick={() => handleTemplateChange(t.id)}
+                  className={`vc-template-option ${form.templateType === t.id ? 'is-active' : ''}`}
+                  style={{
+                    '--template-cover': `url(${t.defaultCoverImage})`,
+                  } as React.CSSProperties}
+                >
+                  <span className="vc-template-option__image" aria-hidden />
+                  <span className="vc-template-option__copy">
+                    <strong>{t.label}</strong>
+                    <small>{t.description}</small>
+                  </span>
+                  <span
+                    className="vc-template-option__tone"
+                    style={{
+                      background: form.templateType === t.id ? 'rgba(255,255,255,0.18)' : 'color-mix(in srgb, var(--accent), transparent 86%)',
+                      color: form.templateType === t.id ? 'white' : 'var(--accent)',
+                    }}
+                  >
+                    {t.emoji}
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+            <p className="mt-3 text-xs leading-relaxed" style={{ color: 'var(--text2)' }}>
+              {selectedTemplate.builderHint}
+            </p>
+          </div>
+
           {[
-            { label: "Your name", key: 'creatorName' as keyof FormData, placeholder: 'Aarav' },
-            { label: "Their name", key: 'recipientName' as keyof FormData, placeholder: 'Priya' },
+            { label: "Who's this for? *", helper: 'Required. This appears the moment they open it.', key: 'recipientName' as keyof FormData, placeholder: 'e.g. Meera' },
+            { label: "Who's it from? *", helper: 'Required. Use your name or a nickname so it feels personal.', key: 'creatorName' as keyof FormData, placeholder: 'You (or a nickname)' },
           ].map(f => (
             <div key={f.key}>
               <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>{f.label}</label>
               <input
                 value={form[f.key] as string}
                 onChange={e => set(f.key, e.target.value)}
+                onBlur={() => setForm(prev => ({ ...prev, [f.key]: formatPersonName(prev[f.key] as string) }))}
                 placeholder={f.placeholder}
-                className="w-full px-4 py-3 rounded-xl outline-none text-sm"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }}
+                className="vc-builder-input w-full px-4 py-3 outline-none text-sm"
               />
+              <p className="mt-1 text-[11px]" style={{ color: 'var(--text3)' }}>{f.helper}</p>
             </div>
           ))}
-          <div>
-            <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text2)' }}>Card type</label>
-            <div className="grid grid-cols-2 gap-2">
-              {TEMPLATE_TYPES.map(t => (
-                <motion.button key={t.id} whileTap={{ scale: 0.96 }}
-                  type="button"
-                  onClick={() => handleTemplateChange(t.id)}
-                  className="py-2.5 px-3 rounded-xl text-sm font-medium text-left cursor-pointer"
-                  style={{
-                    background: form.templateType === t.id ? 'linear-gradient(135deg, var(--accent), var(--accent2))' : 'rgba(255,255,255,0.06)',
-                    color: form.templateType === t.id ? 'white' : 'var(--text2)',
-                    border: form.templateType === t.id ? 'none' : '1px solid rgba(255,255,255,0.15)',
-                  }}>
-                  {t.label}
-                </motion.button>
-              ))}
-            </div>
-          </div>
         </div>
       );
 
       case 1: return (
-        <div className="flex flex-col gap-4">
-          <h2 className="text-3xl font-black capitalize tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Choose the mood 🎨</h2>
-          {THEMES.map(t => (
-            <motion.button key={t.id} whileTap={{ scale: 0.97 }}
-              type="button"
-              onClick={() => handleThemeChange(t.id as ThemeId, t.coverImage)}
-              className="flex items-center gap-4 p-4 rounded-2xl text-left cursor-pointer w-full"
-              style={{
-                background: form.theme === t.id ? 'rgba(255,255,255,0.06)' : 'var(--surface)',
-                border: form.theme === t.id ? '2px solid var(--accent)' : '1px solid var(--border)',
-                boxShadow: form.theme === t.id ? '0 0 20px var(--glow)' : 'none',
-              }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0"
-                style={{ background: t.preview.bg, border: `2px solid ${t.preview.accent}` }}>
-                {t.emoji}
-              </div>
-              <div className="flex-1">
-                <p className="font-bold text-sm" style={{ color: 'var(--text)' }}>{t.label}</p>
-                <p className="text-xs" style={{ color: 'var(--text2)' }}>{t.description}</p>
-              </div>
-              {form.theme === t.id && <span className="text-lg">✅</span>}
-            </motion.button>
-          ))}
-        </div>
-      );
+        <div className="flex flex-col gap-5">
+          <div className="space-y-2">
+            <p className="vc-builder-eyebrow">Write your message</p>
+            <h2 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Make it sound like you.</h2>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text2)' }}>
+              Pick a starting point, then make it yours. Short and honest works better than perfect.
+            </p>
+          </div>
 
-      case 2: return (
-        <div className="flex flex-col gap-4">
-          <h2 className="text-3xl font-black capitalize tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Write the message ✍️</h2>
-          {/* Message Style Presets */}
           {(() => {
             const tmpl = TEMPLATE_TYPES.find(t => t.id === form.templateType);
             if (!tmpl?.messagePresets?.length) return null;
             return (
               <div>
-                <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text2)' }}>⚡ Quick starters — tap to auto-fill</label>
-                <div className="flex flex-col gap-2">
+                <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text2)' }}>Pick a starting point</label>
+                <div className="grid md:grid-cols-3 gap-2">
                   {tmpl.messagePresets.map((preset, i) => (
                     <motion.button
                       key={i}
                       type="button"
                       whileTap={{ scale: 0.97 }}
                       onClick={() => applyPreset(preset)}
-                      className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium cursor-pointer transition-all"
-                      style={{
-                        background: 'rgba(255,255,255,0.06)',
-                        border: '1px solid rgba(255,255,255,0.16)',
-                        color: 'var(--text2)',
-                      }}
+                      className="vc-preset-option"
                     >
                       <span className="font-bold block" style={{ color: 'var(--accent)' }}>{preset.style}</span>
-                      <span className="text-xs opacity-95 block mt-0.5 truncate">{preset.title}</span>
+                      <span className="text-xs opacity-95 block mt-1">{preset.title}</span>
                     </motion.button>
                   ))}
                 </div>
@@ -437,75 +651,143 @@ function CustomizePageContent() {
           })()}
 
           {[
-            { label: 'Card headline', key: 'messageTitle' as keyof FormData, placeholder: "okay I'm down bad 💀", multi: false },
-            { label: 'Your message', key: 'mainBody' as keyof FormData, placeholder: 'Write what your heart wants to say...', multi: true },
+            { label: 'Headline *', key: 'messageTitle' as keyof FormData, placeholder: previewTitle, multi: false },
+            { label: 'Your message *', key: 'mainBody' as keyof FormData, placeholder: previewBody, multi: true },
           ].map(f => (
             <div key={f.key}>
               <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>{f.label}</label>
               {f.multi ? (
-                <textarea rows={4} value={form[f.key] as string}
-                  onChange={e => set(f.key, e.target.value)}
-                  placeholder={f.placeholder}
-                  className="w-full px-4 py-3 rounded-xl outline-none text-sm resize-none"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }} />
+                <>
+                  <textarea rows={5} value={form[f.key] as string}
+                    onChange={e => set(f.key, e.target.value)}
+                    placeholder={f.placeholder}
+                    className="vc-builder-input w-full px-4 py-3 outline-none text-sm resize-none" />
+                  <p className="mt-1 text-[11px]" style={{ color: 'var(--text3)' }}>Short and honest works better than perfect.</p>
+                </>
               ) : (
                 <input value={form[f.key] as string}
                   onChange={e => set(f.key, e.target.value)}
                   placeholder={f.placeholder}
-                  className="w-full px-4 py-3 rounded-xl outline-none text-sm"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }} />
+                  className="vc-builder-input w-full px-4 py-3 outline-none text-sm" />
               )}
             </div>
           ))}
 
-
-
-          {/* Custom Action Buttons */}
-          <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-neutral-900/30 border border-white/5">
+          <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl vc-soft-panel">
             <div>
-              <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text2)' }}>💚 Positive Response Button</label>
+              <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text2)' }}>Positive button</label>
               <input
                 value={form.yesBtnText}
                 onChange={e => set('yesBtnText', e.target.value)}
-                placeholder="e.g. YES 💖"
-                className="w-full px-3 py-2 rounded-lg outline-none text-xs"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }}
+                placeholder={selectedTemplate.defaultYesText}
+                className="vc-builder-input w-full px-3 py-2 outline-none text-xs"
               />
             </div>
             <div>
-              <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text2)' }}>💔 Negative Response Button</label>
+              <label className="block text-[11px] font-bold mb-1" style={{ color: 'var(--text2)' }}>Playful no button</label>
               <input
                 value={form.noBtnText}
                 onChange={e => set('noBtnText', e.target.value)}
-                placeholder="e.g. No 💔"
-                className="w-full px-3 py-2 rounded-lg outline-none text-xs"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }}
+                placeholder={selectedTemplate.defaultNoText}
+                className="vc-builder-input w-full px-3 py-2 outline-none text-xs"
               />
             </div>
           </div>
 
-          {/* Music Selector component instead of raw link */}
+          <div className="vc-question-editor vc-soft-panel">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text2)' }}>Tiny story questions *</label>
+                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text3)' }}>
+                  Add {MIN_STORY_QUESTIONS}-{MAX_STORY_QUESTIONS} questions. Each one needs a question and at least 2 answer choices.
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={addStoryQuestion}
+                  disabled={form.storyQuestions.length >= MAX_STORY_QUESTIONS}
+                  className="vc-mini-action disabled:opacity-45 disabled:cursor-not-allowed"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => set('storyQuestions', cloneStoryQuestions(form.templateType))}
+                  className="vc-mini-action"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {form.storyQuestions.map((question, questionIndex) => (
+                <div key={question.id} className="vc-question-editor__item">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span>{questionIndex + 1}</span>
+                    <input
+                      value={question.eyebrow}
+                      onChange={e => updateStoryQuestion(questionIndex, { eyebrow: e.target.value })}
+                      placeholder="Tiny label"
+                      maxLength={60}
+                      className="vc-builder-input flex-1 px-3 py-2 outline-none text-xs"
+                    />
+                    {form.storyQuestions.length > MIN_STORY_QUESTIONS && (
+                      <button
+                        type="button"
+                        onClick={() => removeStoryQuestion(questionIndex)}
+                        className="vc-question-editor__remove"
+                        aria-label={`Remove question ${questionIndex + 1}`}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    value={question.question}
+                    onChange={e => updateStoryQuestion(questionIndex, { question: e.target.value })}
+                    placeholder="Question they will answer..."
+                    maxLength={160}
+                    className="vc-builder-input w-full px-3 py-2.5 outline-none text-xs mb-2"
+                  />
+                  <div className="grid md:grid-cols-3 gap-2">
+                    {question.options.slice(0, 3).map((option, optionIndex) => (
+                      <input
+                        key={`${question.id}-option-${optionIndex}`}
+                        value={option}
+                        onChange={e => updateStoryQuestion(questionIndex, { optionIndex, option: e.target.value })}
+                        placeholder={`Answer ${optionIndex + 1}`}
+                        maxLength={60}
+                        className="vc-builder-input px-3 py-2 outline-none text-xs"
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-2">
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>🎵 Background music</label>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>Add a song *</label>
+            <p className="text-[11px]" style={{ color: 'var(--text3)' }}>Required. One good song does more than a paragraph.</p>
             <MusicSelector
               selectedTrackId={form.musicTrackId}
-              onSelectTrack={(trackId) => set('musicTrackId', trackId)}
+              selectedLabel={form.musicLabel}
+              onSelectTrack={(trackId, musicUrl, label) => {
+                setForm(prev => ({
+                  ...prev,
+                  musicTrackId: trackId,
+                  selectedMusicUrl: musicUrl || '',
+                  musicLabel: label || '',
+                }));
+              }}
             />
-            <div className="pt-1">
-              <label className="block text-[10px] font-bold mb-1" style={{ color: 'var(--text2)' }}>Or paste a custom song link</label>
-              <input
-                value={form.customMusicUrl}
-                onChange={e => set('customMusicUrl', e.target.value)}
-                placeholder="e.g. https://open.spotify.com/track/..."
-                className="w-full px-3 py-2 rounded-lg outline-none text-xs"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }}
-              />
-            </div>
           </div>
 
-          {/* Cover image file input with canvas compression */}
           <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>🖼️ Cover photo</label>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>Add a cover photo</label>
+            <p className="mb-2 text-[11px]" style={{ color: 'var(--text3)' }}>A photo of you two makes it ten times more personal.</p>
             {form.coverImageUrl ? (
               <div className="relative rounded-xl overflow-hidden border border-white/10" style={{ height: 160 }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -553,17 +835,23 @@ function CustomizePageContent() {
             )}
           </div>
 
-          {/* Giphy */}
           <div>
-            <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text2)' }}>🎬 GIF (optional)</label>
+            <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text2)' }}>Add a reveal cameo GIF</label>
             {form.gifUrl ? (
-              <div className="relative rounded-xl overflow-hidden border border-white/10" style={{ height: 120 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={form.gifUrl} alt="GIF" className="w-full h-full object-cover animate-pulse" />
+              <div className="vc-gif-cameo-picker">
+                <div className="vc-gif-cameo-picker__thumb">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={form.gifUrl} alt="Selected reveal GIF" />
+                </div>
+                <div>
+                  <strong>Shown while the envelope opens</strong>
+                  <span>It spins in for a second, then disappears before the card starts.</span>
+                </div>
                 <button
                   type="button"
                   onClick={() => set('gifUrl', '')}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-black/80 hover:bg-black text-white cursor-pointer"
+                  className="vc-gif-cameo-picker__remove"
+                  aria-label="Remove reveal GIF"
                 >
                   ✕
                 </button>
@@ -575,20 +863,26 @@ function CustomizePageContent() {
                 onClick={() => setShowGiphy(true)}
                 className="w-full py-3 rounded-xl text-sm font-medium bg-neutral-900/40 border-2 border-dashed border-white/15 hover:border-white/25 text-neutral-200 hover:text-white cursor-pointer"
               >
-                🔍 Search GIFs
+                Search GIFs
               </motion.button>
             )}
           </div>
         </div>
       );
 
-      case 3: return (
+      case 2: return (
         <div className="flex flex-col gap-4">
-          <h2 className="text-3xl font-black capitalize tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Add a private gate 🔐</h2>
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-neutral-900/40 border border-white/10">
+          <div className="space-y-2">
+            <p className="vc-builder-eyebrow">Private lock</p>
+            <h2 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Keep it just between you two.</h2>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text2)' }}>
+              Set a PIN or answer only they would know, so the card stays private.
+            </p>
+          </div>
+          <div className="flex items-center justify-between p-4 rounded-2xl vc-soft-panel">
             <div>
-              <p className="font-medium text-sm text-white">Make it private</p>
-              <p className="text-xs text-neutral-200">Only the right person can open it</p>
+              <p className="font-bold text-sm" style={{ color: 'var(--text)' }}>Add a private lock</p>
+              <p className="text-xs" style={{ color: 'var(--text2)' }}>Only the right person can open it</p>
             </div>
             <motion.button
               whileTap={{ scale: 0.9 }}
@@ -618,56 +912,58 @@ function CustomizePageContent() {
                         border: form.useCustomQuestion === isQ ? 'none' : '1px solid rgba(255,255,255,0.16)',
                       }}
                     >
-                      {isQ ? '💬 Custom question' : '🔢 4-digit code'}
+                      {isQ ? 'Custom question' : '4-digit code'}
                     </button>
                   ))}
                 </div>
                 {form.useCustomQuestion && (
                   <input value={form.unlockQuestion} onChange={e => set('unlockQuestion', e.target.value)}
                   placeholder='e.g. What do you call me?'
-                    className="w-full px-4 py-3 rounded-xl outline-none text-sm"
-                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }} />
+                    className="vc-builder-input w-full px-4 py-3 outline-none text-sm" />
                 )}
                 <input value={form.unlockCode}
                   onChange={e => set('unlockCode', form.useCustomQuestion ? e.target.value : e.target.value.replace(/\D/g, '').slice(0, 4))}
                   placeholder={form.useCustomQuestion ? 'Expected answer...' : '4-digit code (e.g. 2004)'}
-                  className="w-full px-4 py-3 rounded-xl outline-none text-sm"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text)' }} />
+                  className="vc-builder-input w-full px-4 py-3 outline-none text-sm" />
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       );
 
-      case 4: return (
+      case 3: return (
         <div className="flex flex-col gap-4">
-          <h2 className="text-3xl font-black capitalize tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Choose your plan 💳</h2>
+          <div className="space-y-2">
+            <p className="vc-builder-eyebrow">Preview and send</p>
+            <h2 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>This is exactly what they&apos;ll see.</h2>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text2)' }}>
+              Pay once, get the private link, and share it while the moment is still warm.
+            </p>
+          </div>
           {TIERS.map(t => (
             <motion.button key={t.id} whileTap={{ scale: 0.97 }}
               type="button"
               onClick={() => set('tierId', t.id)}
-              className={`p-5 rounded-2xl text-left cursor-pointer w-full relative overflow-hidden ${t.popular && form.tierId === t.id ? 'tier-popular' : ''}`}
+              className={`p-5 rounded-2xl text-left cursor-pointer w-full relative overflow-hidden vc-plan-option ${form.tierId === t.id ? 'is-active' : ''}`}
               style={{
-                background: form.tierId === t.id ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.05)',
-                border: form.tierId === t.id ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.14)',
-                boxShadow: form.tierId === t.id ? '0 0 20px var(--glow)' : 'none',
+                borderColor: form.tierId === t.id ? 'var(--accent)' : 'var(--border)',
               }}
             >
               <div className="flex items-center justify-between mb-1 relative z-10">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{t.icon}</span>
-                  <span className="font-bold text-sm text-white">{t.label}</span>
-                  {t.popular && <span className="text-[10px] px-2 py-0.5 rounded-full font-extrabold text-black bg-yellow-400">🔥 POPULAR</span>}
+                  <span className="font-bold text-sm" style={{ color: 'var(--text)' }}>{t.label}</span>
+                  {t.popular && <span className="text-[10px] px-2 py-0.5 rounded-full font-extrabold text-white" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent2))' }}>Popular</span>}
                 </div>
-                <span className="text-xl font-black text-white">₹{t.price}</span>
+                <span className="text-xl font-black" style={{ color: 'var(--text)' }}>₹{t.price}</span>
               </div>
-              <p className="text-xs text-neutral-200 relative z-10 mt-1">{t.duration} · {t.description}</p>
+              <p className="text-xs relative z-10 mt-1" style={{ color: 'var(--text2)' }}>{t.duration} · {t.description}</p>
             </motion.button>
           ))}
           <motion.button
             type="button"
             onClick={handleSubmit}
-            disabled={loading || !form.recipientName || !form.creatorName}
+            disabled={loading}
             whileHover={{ scale: 1.02, boxShadow: '0 20px 60px var(--glow)' }}
             whileTap={{ scale: 0.96 }}
             className="w-full py-4 rounded-2xl text-lg font-black text-white mt-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -676,11 +972,11 @@ function CustomizePageContent() {
               boxShadow: '0 8px 30px var(--glow)',
             }}
           >
-            {loading ? '⏳ Generating Link...' : `Pay ₹${selectedTier?.price || 49} & Send Magic ✨`}
+            {loading ? 'Generating link...' : `Looks good - send it for ₹${selectedTier?.price || 49}`}
           </motion.button>
-            <p className="text-xs text-center text-neutral-300 font-medium leading-relaxed">
-              Secure payment · UPI deep links / QR codes accepted · Instant confirmation
-            </p>
+          <p className="text-xs text-center font-medium leading-relaxed" style={{ color: 'var(--text2)' }}>
+            Secure payment · UPI deep links / QR codes accepted · instant confirmation
+          </p>
         </div>
       );
 
@@ -689,12 +985,17 @@ function CustomizePageContent() {
   };
 
   return (
-    <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
+    <main className="min-h-screen vc-customize-shell" data-theme={form.theme} data-card={form.templateType}>
 
       {/* Soft Coquette background canvas */}
       {form.theme === 'soft_coquette' && <HeartCanvas />}
 
       <AmbientBackground />
+      <div className="vc-card-decor" aria-hidden>
+        {(CARD_DECOR[form.templateType] || CARD_DECOR.maan_jao).map((item, index) => (
+          <span key={`${item}-${index}`}>{item}</span>
+        ))}
+      </div>
 
       <AnimatePresence>
         {notice && (
@@ -714,10 +1015,14 @@ function CustomizePageContent() {
 
       {/* Navigation */}
       <nav className="sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b"
-        style={{ background: 'rgba(11,15,25,0.85)', backdropFilter: 'blur(20px)', borderColor: 'var(--border)' }}>
+        style={{
+          background: 'color-mix(in srgb, var(--bg), white 12%)',
+          backdropFilter: 'blur(20px) saturate(1.15)',
+          borderColor: 'color-mix(in srgb, var(--border), transparent 30%)',
+        }}>
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push('/')} className="text-lg text-neutral-400 hover:text-white cursor-pointer select-none">←</button>
-          <span className="text-lg font-black" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>VibeCheck 🎴</span>
+          <button onClick={() => router.push('/')} className="text-lg cursor-pointer select-none" style={{ color: 'var(--text2)' }}>←</button>
+          <span className="text-lg font-black" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>VibeCheck</span>
         </div>
 
         {/* Stepper headers */}
@@ -727,12 +1032,8 @@ function CustomizePageContent() {
             return (
               <button
                 key={idx}
-                onClick={() => setStep(idx)}
-                className={`px-3 py-1 rounded-full text-xs font-bold select-none cursor-pointer transition-all duration-200 ${
-                  isActive
-                    ? 'bg-linear-to-r from-pink-500 to-purple-600 text-white shadow-lg'
-                    : 'bg-neutral-900 border border-white/5 text-neutral-400 hover:text-white'
-                }`}
+                onClick={() => tryGoToStep(idx)}
+                className={`vc-step-pill ${isActive ? 'is-active' : ''}`}
               >
                 {label}
               </button>
@@ -742,25 +1043,25 @@ function CustomizePageContent() {
       </nav>
 
       {/* Main layout container (2 Columns on large screen, 1 Column on mobile) */}
-      <div className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-8 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-[1.15fr_0.95fr] gap-10 relative z-10">
 
         {/* Column 1: Customizer Form */}
         <div className="space-y-6">
           {/* Progress bar */}
-          <div className="w-full h-1.5 rounded-full" style={{ background: 'var(--surface2)' }}>
+          <div className="w-full h-1.5 rounded-full vc-progress-track">
             <motion.div className="h-full rounded-full"
               animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
               style={{ background: 'linear-gradient(90deg, var(--accent), var(--accent2))' }} />
           </div>
 
-          <div className="bg-neutral-950/40 backdrop-blur rounded-3xl p-6 border border-white/5 shadow-2xl relative overflow-hidden">
+          <div className="vc-builder-panel relative overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.div
                 key={step}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: 12, filter: 'blur(4px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
+                transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
               >
                 {renderStep()}
               </motion.div>
@@ -770,16 +1071,16 @@ function CustomizePageContent() {
             <div className="flex gap-3 mt-8 pt-4 border-t border-white/5">
               {step > 0 && (
                 <button
-                  onClick={() => setStep(s => s - 1)}
-                  className="flex-1 py-3.5 rounded-xl font-extrabold text-sm bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-white/10 transition-colors cursor-pointer select-none"
+                  onClick={() => tryGoToStep(step - 1)}
+                  className="flex-1 py-3.5 rounded-xl font-extrabold text-sm vc-secondary-action transition-colors cursor-pointer select-none"
                 >
                   ← Back
                 </button>
               )}
               {step < STEPS.length - 1 && (
                 <button
-                  onClick={() => setStep(s => s + 1)}
-                  className="flex-1 py-3.5 rounded-xl font-extrabold text-sm text-white bg-linear-to-r from-pink-500 to-purple-600 hover:opacity-95 shadow-xl transition-all cursor-pointer select-none"
+                  onClick={() => tryGoToStep(step + 1)}
+                  className="flex-1 py-3.5 rounded-xl font-extrabold text-sm text-white theme-btn hover:opacity-95 shadow-xl transition-all cursor-pointer select-none"
                 >
                   Next →
                 </button>
@@ -797,13 +1098,16 @@ function CustomizePageContent() {
             </div>
 
             {/* Mock Viewport Container */}
-            <div
-              className="w-full max-w-sm mx-auto aspect-9/16 rounded-[36px] border-8 border-neutral-900 shadow-2xl overflow-y-auto no-scrollbar relative flex flex-col justify-between p-4"
-              style={{ background: 'var(--bg)' }}
+            <motion.div
+              key={`${form.templateType}-${form.theme}`}
+              initial={{ opacity: 0.82, y: 10, scale: 0.985 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+              className="vc-live-phone w-full max-w-sm mx-auto aspect-9/16 rounded-[36px] border-8 shadow-2xl overflow-hidden relative flex flex-col justify-between p-4"
               data-theme={form.theme}
             >
               {/* Phone Status Notch */}
-              <div className="absolute top-0 inset-x-0 h-4 flex justify-between items-center px-6 text-[9px] font-mono text-neutral-500 pointer-events-none z-30">
+              <div className="absolute top-0 inset-x-0 h-4 flex justify-between items-center px-6 text-[9px] font-mono pointer-events-none z-30" style={{ color: 'var(--text3)' }}>
                 <span>9:41</span>
                 <div className="w-16 h-3.5 bg-black rounded-b-xl absolute left-1/2 -translate-x-1/2 top-0"></div>
                 <div className="flex gap-1">
@@ -813,27 +1117,44 @@ function CustomizePageContent() {
               </div>
 
               {/* Live Card Content Preview */}
-              <div className="pt-6 pb-4 flex flex-col gap-4 w-full">
+              <div className="vc-preview-stack w-full">
 
-                {/* Creator Badge */}
-                <div className="text-center mt-2">
+                {/* People Badge */}
+                <div className="vc-preview-badge text-center space-y-2">
                   <div
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold text-white"
                     style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent2))' }}
                   >
-                    <span>💍</span>
-                    <span>from {form.creatorName || 'Aarav'}</span>
+                    <span>{selectedTemplate.emoji}</span>
+                    <span>{stripEmojiLabel(selectedTemplate.label)}</span>
+                  </div>
+                  <div className="vc-preview-people">
+                    <span>
+                      <em>For</em>
+                      <strong>{displayRecipientName}</strong>
+                    </span>
+                    <span>
+                      <em>From</em>
+                      <strong>{displayCreatorName}</strong>
+                    </span>
                   </div>
                 </div>
 
+                {form.gifUrl && (
+                  <div className="vc-preview-cameo-chip">
+                    <span>✨</span>
+                    <strong>Reveal GIF cameo selected</strong>
+                  </div>
+                )}
+
                 {/* Uploaded Cover Image preview */}
                 {form.coverImageUrl && (
-                  <div className="rounded-2xl overflow-hidden border border-white/5 bg-black/20 flex justify-center">
+                  <div className="vc-preview-cover rounded-2xl overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={form.coverImageUrl}
                       alt="Cover Preview"
-                      className="w-full h-auto max-h-[350px] object-contain rounded-2xl mx-auto block"
+                      className="vc-preview-cover__image rounded-2xl mx-auto block"
                       draggable={false}
                     />
                   </div>
@@ -841,49 +1162,40 @@ function CustomizePageContent() {
 
                 {/* Main Message Display */}
                 <div
-                  className="rounded-2xl p-4 border shadow-md space-y-2 text-left glow-border"
-                  style={{ background: 'var(--surface)' }}
+                  className="vc-preview-message vc-preview-copy rounded-2xl p-4 space-y-2 text-left"
                 >
                   <h3
-                    className="text-2xl font-black mb-2 capitalize tracking-tight drop-shadow-md"
+                    className="vc-preview-title text-2xl font-black mb-2 tracking-tight drop-shadow-md"
                     style={{
                       fontFamily: 'var(--font-display)',
                       color: 'var(--accent)',
                     }}
                   >
-                    {form.messageTitle || "headline preview"}
+                    {previewTitle}
                   </h3>
                   <p
-                    className="text-xs leading-relaxed font-medium first-letter:uppercase first-letter:text-lg first-letter:font-bold"
+                    className="vc-preview-body text-xs leading-relaxed font-medium first-letter:uppercase first-letter:text-lg first-letter:font-bold whitespace-pre-line"
                     style={{ color: 'var(--text2)' }}
                   >
-                    {form.mainBody || "Your main message contents will render live in this card container."}
+                    {previewBody}
                   </p>
                 </div>
 
-                {/* Custom GIF preview */}
-                {form.gifUrl && (
-                  <div className="rounded-xl overflow-hidden border border-white/5">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={form.gifUrl}
-                      alt="GIF Preview"
-                      className="w-full object-cover"
-                      draggable={false}
-                    />
-                  </div>
-                )}
+                <CardStoryline
+                  templateType={form.templateType}
+                  questions={cleanStoryQuestions}
+                  compact
+                />
 
                 {/* Runaway buttons mock */}
                 {TEMPLATE_TYPES.find(t => t.id === form.templateType)?.hasRunaway && (
                   <div
-                    className="rounded-2xl p-4 border space-y-3 text-center"
-                    style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+                    className="vc-preview-message vc-preview-actions rounded-2xl p-4 space-y-3 text-center"
                   >
-                    <p className="text-[10px] font-bold text-white">So... what do you say? 👀</p>
-                    <div className="flex gap-2 justify-center">
-                      <button className="theme-btn px-4 py-2 rounded-xl text-xs font-bold cursor-not-allowed">{form.yesBtnText || 'YES 💖'}</button>
-                      <button className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 text-neutral-400 bg-white/5 cursor-not-allowed">{form.noBtnText || 'No 💔'}</button>
+                    <p className="text-[10px] font-bold" style={{ color: 'var(--text)' }}>So, what feels right?</p>
+                    <div className="flex gap-2 justify-center min-w-0">
+                      <button className="theme-btn min-w-0 flex-1 px-3 py-2 rounded-xl text-xs font-bold cursor-not-allowed truncate">{form.yesBtnText || 'YES 💖'}</button>
+                      <button className="min-w-0 flex-1 px-3 py-2 rounded-xl text-xs font-bold cursor-not-allowed vc-preview-no truncate">{form.noBtnText || 'No 💔'}</button>
                     </div>
                   </div>
                 )}
@@ -891,9 +1203,9 @@ function CustomizePageContent() {
 
               {/* Watermark brand overlay */}
               <div className="text-center py-2 border-t border-white/5 pointer-events-none mt-auto">
-                <span className="text-[8px] text-neutral-500 uppercase tracking-widest">VibeCheck · Live Preview</span>
+                <span className="text-[8px] uppercase tracking-widest" style={{ color: 'var(--text3)' }}>VibeCheck · Live Preview</span>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
 
@@ -903,6 +1215,9 @@ function CustomizePageContent() {
         <GiphyModal
           onSelect={url => { set('gifUrl', url); setShowGiphy(false); }}
           onClose={() => setShowGiphy(false)}
+          initialQuery={gifSearchTerms[0]}
+          suggestedQueries={gifSearchTerms}
+          cardLabel={stripEmojiLabel(selectedTemplate.label)}
         />
       )}
     </main>

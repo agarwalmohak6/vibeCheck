@@ -10,25 +10,82 @@ import VinylDisk from "@/components/VinylDisk";
 import SecretCodeGate from "@/components/SecretCodeGate";
 import HeartCanvas from "@/components/HeartCanvas";
 import AmbientBackground from "@/components/AmbientBackground";
+import CardStoryline from "@/components/CardStoryline";
 import confetti from "canvas-confetti";
-import { RECIPIENT_STRINGS } from "@/lib/strings";
+import {
+  RECIPIENT_COPY,
+  formatPersonName,
+  getLocalizedActionLabels,
+  getTemplateLocaleCopy,
+  type RecipientLocale,
+} from "@/lib/recipientI18n";
 import FollowUpReplies from "./FollowUpReplies";
 import type { PublicCard } from "@/types/vibecheck";
 
 interface RecipientViewProps {
   card: PublicCard;
+  initialRoomMode?: boolean;
 }
 
-export default function RecipientView({ card }: RecipientViewProps) {
-  const [envelopeOpened, setEnvelopeOpened] = useState(false);
+export default function RecipientView({ card, initialRoomMode = false }: RecipientViewProps) {
+  const [envelopeOpened, setEnvelopeOpened] = useState(initialRoomMode);
   const [secretUnlocked, setSecretUnlocked] = useState(
-    !card.card_data.has_secret_code,
+    initialRoomMode || !card.card_data.has_secret_code,
   );
+  const [language, setLanguage] = useState<RecipientLocale>("en");
   const templateMeta = TEMPLATE_TYPES.find((t) => t.id === card.template_type);
   const hasRunaway = templateMeta?.hasRunaway || false;
+  const localizedTemplate = getTemplateLocaleCopy(card.template_type, language);
+  const localizedActionLabels = getLocalizedActionLabels(card.template_type, language);
+  const recipientCopy = RECIPIENT_COPY[language];
+  const creatorName = formatPersonName(card.creator_name, "Someone");
+  const recipientName = formatPersonName(card.recipient_name, language === "hi" ? "आप" : "you");
+  const templateLabel = localizedTemplate?.label || templateMeta?.label || "Private card";
+  const rawMessageTitle = card.card_data.message_title?.trim() || "";
+  const rawMainBody = card.card_data.main_body?.trim() || "";
+  const titlePresetIndex =
+    !rawMessageTitle || /^A message from\s+/i.test(rawMessageTitle)
+      ? 0
+      : templateMeta?.messagePresets?.findIndex(
+          (preset) => preset.title.trim() === rawMessageTitle,
+        ) ?? -1;
+  const bodyPresetIndex =
+    !rawMainBody || rawMainBody === "Tap YES to accept!"
+      ? 0
+      : templateMeta?.messagePresets?.findIndex(
+          (preset) => preset.body.trim() === rawMainBody,
+        ) ?? -1;
+  const displayMessageTitle =
+    titlePresetIndex >= 0
+      ? localizedTemplate?.messagePresets?.[titlePresetIndex]?.title ||
+        templateMeta?.messagePresets?.[titlePresetIndex]?.title ||
+        templateMeta?.label.replace(/\s[^\s]*$/, "") ||
+        rawMessageTitle
+      : rawMessageTitle;
+  const displayMainBody =
+    bodyPresetIndex >= 0
+      ? localizedTemplate?.messagePresets?.[bodyPresetIndex]?.body ||
+        templateMeta?.messagePresets?.[bodyPresetIndex]?.body ||
+        templateMeta?.builderHint ||
+        rawMainBody
+      : rawMainBody;
+  const cardYesText = card.card_data.yes_btn_text?.trim();
+  const cardNoText = card.card_data.no_btn_text?.trim();
+  const displayYesText =
+    localizedActionLabels &&
+    (!cardYesText || cardYesText === templateMeta?.defaultYesText)
+      ? localizedActionLabels.yesText
+      : card.card_data.yes_btn_text;
+  const displayNoText =
+    localizedActionLabels &&
+    (!cardNoText || cardNoText === templateMeta?.defaultNoText)
+      ? localizedActionLabels.noText
+      : card.card_data.no_btn_text;
 
   const [yesClicked, setYesClicked] = useState(false);
   const [isCreator, setIsCreator] = useState(false);
+  const [storyComplete, setStoryComplete] = useState(false);
+  const [roomMode, setRoomMode] = useState(initialRoomMode);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -36,6 +93,9 @@ export default function RecipientView({ card }: RecipientViewProps) {
       const creatorToken =
         new URLSearchParams(window.location.search).get("ct") ||
         localStorage.getItem(`creator_token_${card.id}`);
+      if (creatorToken) {
+        localStorage.setItem(`creator_token_${card.id}`, creatorToken);
+      }
       if (creatorFlag === "true" || creatorToken) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsCreator(true);
@@ -81,6 +141,7 @@ export default function RecipientView({ card }: RecipientViewProps) {
 
   const handleYes = () => {
     setYesClicked(true);
+    setRoomMode(true);
     const colors = ["#FACC15", "#FF2E93", "#a855f7", "#00FF66", "#ffffff"];
     // Massive blast from bottom
     [0, 200, 400, 600, 800].forEach((d) =>
@@ -98,7 +159,7 @@ export default function RecipientView({ card }: RecipientViewProps) {
     );
 
     // Automatically send an acceptance message to the database
-    const positiveLabel = card.card_data.yes_btn_text || "YES 💖";
+    const positiveLabel = displayYesText || card.card_data.yes_btn_text || "YES 💖";
     void fetch(`/api/cards/${card.id}/events`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -109,15 +170,29 @@ export default function RecipientView({ card }: RecipientViewProps) {
     });
   };
 
+  const handleDodge = (label: string, dodgeCount: number) => {
+    void fetch(`/api/cards/${card.id}/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_type: "runaway_dodged",
+        metadata: { label, dodge_count: dodgeCount },
+      }),
+    });
+  };
+
   return (
     <div
-      className="no-capture min-h-screen relative overflow-hidden flex flex-col"
+      className="vc-recipient-shell no-capture min-h-screen relative overflow-hidden flex flex-col"
       style={{
         background: "var(--bg)",
         color: "var(--text)",
         fontFamily: "var(--font-body)",
       }}
       data-theme={card.theme_selected}
+      lang={language === "hi" ? "hi" : "en"}
+      data-locale={language}
+      data-room-mode={roomMode ? "true" : "false"}
     >
       {/* Floating hearts canvas background for Soft Coquette theme */}
       {card.theme_selected === "soft_coquette" && <HeartCanvas />}
@@ -132,7 +207,7 @@ export default function RecipientView({ card }: RecipientViewProps) {
             className="fixed inset-0 pointer-events-none z-1"
             style={{
               background:
-                "radial-gradient(circle at center, #ff007f 0%, #7928ca 50%, #000000 100%)",
+                "radial-gradient(circle at center, color-mix(in srgb, var(--accent), transparent 58%) 0%, color-mix(in srgb, var(--accent2), transparent 68%) 42%, color-mix(in srgb, var(--bg), #000 8%) 100%)",
             }}
           />
         )}
@@ -153,6 +228,9 @@ export default function RecipientView({ card }: RecipientViewProps) {
       {!envelopeOpened && (
         <EnvelopeReveal
           creatorName={card.creator_name}
+          recipientName={recipientName}
+          templateType={card.template_type}
+          gifUrl={card.card_data.gif_url || undefined}
           theme={card.theme_selected}
           onOpen={handleEnvelopeOpen}
         />
@@ -165,6 +243,7 @@ export default function RecipientView({ card }: RecipientViewProps) {
           <VinylDisk
             trackId={card.music_track_id || undefined}
             musicUrl={card.card_data.music_url || undefined}
+            musicLabel={card.card_data.music_label || undefined}
           />
         )}
 
@@ -174,191 +253,256 @@ export default function RecipientView({ card }: RecipientViewProps) {
           <motion.main
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-lg w-full mx-auto px-4 py-10 flex flex-col gap-6 relative z-10"
+            className="vc-recipient-stage"
+            data-room-mode={roomMode ? "true" : "false"}
           >
-            {/* Header badge */}
+            {/* Recipient identity header */}
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring" }}
-              className="text-center"
+              initial={{ opacity: 0, y: -12, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 230, damping: 21 }}
+              className="vc-recipient-badge-row"
             >
-              <div
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold shadow-md"
-                style={{
-                  background:
-                    "linear-gradient(135deg, var(--accent), var(--accent2))",
-                  color: "var(--bg)",
-                }}
-              >
-                {templateMeta?.label} · from {card.creator_name}
-              </div>
+              <header className="vc-recipient-card-header" aria-label={recipientCopy.privateCard}>
+                <div className="vc-recipient-card-mark">
+                  <span className="vc-recipient-card-mark__emoji" aria-hidden>
+                    {templateMeta?.emoji || "💌"}
+                  </span>
+                  <span>
+                    <small>{recipientCopy.privateCard}</small>
+                    <strong>{templateLabel}</strong>
+                  </span>
+                </div>
+
+                <div className="vc-recipient-people" aria-label="Sender and recipient">
+                  <div className="vc-recipient-person-chip">
+                    <span>{recipientCopy.forLabel}</span>
+                    <strong>{recipientName}</strong>
+                  </div>
+                  <div className="vc-recipient-person-chip">
+                    <span>{recipientCopy.fromLabel}</span>
+                    <strong>{creatorName}</strong>
+                  </div>
+                </div>
+
+                <div className="vc-recipient-language" aria-label={recipientCopy.languageLabel}>
+                  {(["en", "hi"] as const).map((locale) => (
+                    <button
+                      key={locale}
+                      type="button"
+                      className={language === locale ? "is-active" : ""}
+                      aria-pressed={language === locale}
+                      onClick={() => setLanguage(locale)}
+                    >
+                      {locale === "en" ? "EN" : "हिंदी"}
+                    </button>
+                  ))}
+                </div>
+              </header>
             </motion.div>
 
-            {/* Cover image (Compressed WebP base64 or raw URL) */}
-            {card.card_data.cover_image_url && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="rounded-3xl overflow-hidden shadow-xl border border-white/5 bg-black/20 flex justify-center"
+            <div className="vc-recipient-scene">
+              <motion.section
+                initial={{ opacity: 0, x: -18 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.25, duration: 0.45 }}
+                className="vc-recipient-visual-panel"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={card.card_data.cover_image_url}
-                  alt="Cover"
-                  className="w-full h-auto max-h-[450px] object-contain rounded-3xl mx-auto block"
-                  draggable={false}
-                />
-              </motion.div>
-            )}
+                {card.card_data.cover_image_url && (
+                  <div className="vc-recipient-cover">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={card.card_data.cover_image_url}
+                      alt="Cover"
+                      className="w-full h-full object-cover rounded-3xl mx-auto block"
+                      draggable={false}
+                    />
+                  </div>
+                )}
 
-            {/* Main card text */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="rounded-3xl p-6 glow-border"
-              style={{ background: "var(--surface)" }}
-            >
-              <h1
-                className="text-4xl sm:text-5xl lg:text-6xl font-black mb-6 capitalize tracking-tight drop-shadow-lg"
-                style={{
-                  fontFamily: "var(--font-display)",
-                  color: "var(--accent)",
-                  filter: "drop-shadow(0px 8px 16px rgba(0,0,0,0.6))",
-                }}
+              </motion.section>
+
+              <motion.section
+                initial={{ opacity: 0, x: 18 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.35, duration: 0.45 }}
+                className="vc-recipient-content-panel"
               >
-                {card.card_data.message_title}
-              </h1>
-              <p
-                className="text-lg leading-relaxed whitespace-pre-wrap font-medium first-letter:uppercase first-letter:text-2xl first-letter:font-bold"
-                style={{ color: "var(--text2)" }}
-              >
-                {card.card_data.main_body}
-              </p>
-            </motion.div>
-
-            {/* GIF */}
-            {card.card_data.gif_url && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="rounded-2xl overflow-hidden shadow-lg border border-white/5"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={card.card_data.gif_url}
-                  alt="GIF"
-                  className="w-full"
-                  draggable={false}
-                />
-              </motion.div>
-            )}
-
-            {/* Runaway button or YES success */}
-            {hasRunaway && !yesClicked && !isCreator && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className="rounded-3xl p-5"
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                <p
-                  className="text-sm font-bold mb-1 text-center"
-                  style={{ color: "var(--text)" }}
-                >
-                  {RECIPIENT_STRINGS.SO_WHAT_DO_YOU_SAY}
-                </p>
-                <p
-                  className="text-xs text-center mb-4"
-                  style={{ color: "var(--text3)" }}
-                >
-                  {RECIPIENT_STRINGS.NO_BUTTON_WARNING}
-                </p>
-                <RunawayButton
-                  onYes={handleYes}
-                  memeMode={card.template_type === "shoot_shot"}
-                  templateType={card.template_type}
-                  yesText={card.card_data.yes_btn_text}
-                  noText={card.card_data.no_btn_text}
-                />
-              </motion.div>
-            )}
-
-            {/* Creator Follow-Up replies list (when YES not clicked yet) */}
-            {isCreator && !yesClicked && (
-              <FollowUpReplies card={card} isCreator={true} />
-            )}
-
-            {/* YES success state */}
-            <AnimatePresence>
-              {yesClicked && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.8, y: 50 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                  className="rounded-3xl p-8 text-center glass glow-border relative z-20"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="vc-recipient-message rounded-3xl p-6 glow-border"
+                  style={{ background: "var(--surface)" }}
                 >
-                  <motion.div
-                    animate={{ scale: [1, 1.3, 1], rotate: [0, 5, -5, 0] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                    className="text-6xl mb-6"
-                  >
-                    {RECIPIENT_STRINGS.SUCCESS_EMOJI}
-                  </motion.div>
-                  <h2
-                    className="text-3xl md:text-4xl font-black mb-4 capitalize tracking-tighter"
+                  <h1
+                    className="vc-recipient-title"
                     style={{
                       fontFamily: "var(--font-display)",
-                      backgroundImage:
-                        "linear-gradient(135deg, #00FF66, #00ccff)",
-                      backgroundSize: "cover",
-                      WebkitBackgroundClip: "text",
-                      color: "transparent",
-                      filter: "drop-shadow(0px 4px 8px rgba(0,0,0,0.4))",
+                      color: "var(--accent)",
                     }}
                   >
-                    {RECIPIENT_STRINGS.SUCCESS_HEADING}
-                  </h2>
+                    {displayMessageTitle}
+                  </h1>
                   <p
-                    className="text-base font-bold text-white shadow-sm leading-relaxed mb-6"
-                    style={{ textShadow: "0 2px 10px rgba(0,0,0,0.8)" }}
+                    className="vc-recipient-body text-lg leading-relaxed whitespace-pre-wrap font-medium"
+                    style={{ color: "var(--text2)" }}
                   >
-                    {RECIPIENT_STRINGS.SUCCESS_SUBTEXT}
+                    {displayMainBody}
                   </p>
-
-                  {/* Follow-up Replies for Recipient */}
-                  <FollowUpReplies card={card} isCreator={false} />
                 </motion.div>
-              )}
-            </AnimatePresence>
+
+                <AnimatePresence mode="wait">
+                  {roomMode && !yesClicked && (
+                    <motion.div
+                      key="room-mode"
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -14 }}
+                      className="vc-recipient-chat-direct"
+                    >
+                      <div className="vc-recipient-chat-direct__intro">
+                        <span>💬</span>
+                        <div>
+                          <p>Private room</p>
+                          <h2>{creatorName} + {recipientName}</h2>
+                        </div>
+                      </div>
+                      <FollowUpReplies card={card} isCreator={isCreator} locale={language} />
+                    </motion.div>
+                  )}
+
+                  {!roomMode && !yesClicked && !isCreator && !storyComplete && (
+                    <motion.div
+                      key="story"
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -14, scale: 0.98 }}
+                      transition={{ duration: 0.28 }}
+                    >
+                      <CardStoryline
+                        cardId={card.id}
+                        templateType={card.template_type}
+                        questions={card.card_data.story_questions}
+                        recipientName={recipientName}
+                        locale={language}
+                        onComplete={() => setStoryComplete(true)}
+                      />
+                    </motion.div>
+                  )}
+
+                  {!roomMode && hasRunaway && !yesClicked && !isCreator && storyComplete && (
+                    <motion.div
+                      key="cta"
+                      initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -12, scale: 0.98 }}
+                      transition={{ type: "spring", stiffness: 220, damping: 22 }}
+                      className="vc-recipient-cta rounded-3xl p-5"
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                      }}
+                    >
+                      <p
+                        className="text-sm font-bold mb-1 text-center"
+                        style={{ color: "var(--text)" }}
+                      >
+                        {recipientCopy.ctaPrompt}
+                      </p>
+                      <p
+                        className="text-xs text-center mb-4"
+                        style={{ color: "var(--text3)" }}
+                      >
+                        {recipientCopy.noButtonWarning}
+                      </p>
+                      <RunawayButton
+                        onYes={handleYes}
+                        memeMode={card.template_type === "shoot_shot"}
+                        templateType={card.template_type}
+                        yesText={displayYesText}
+                        noText={displayNoText}
+                        onDodge={handleDodge}
+                      />
+                    </motion.div>
+                  )}
+
+                  {!roomMode && isCreator && !yesClicked && (
+                    <motion.div
+                      key="creator-replies"
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -14 }}
+                      className="vc-recipient-reply-direct"
+                    >
+                      <FollowUpReplies card={card} isCreator={true} />
+                    </motion.div>
+                  )}
+
+                  {yesClicked && (
+                    <motion.div
+                      key="success"
+                      initial={{ opacity: 0, scale: 0.8, y: 50 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.96 }}
+                      transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                      className="vc-recipient-success rounded-3xl p-8 text-center glass glow-border relative z-20"
+                    >
+                      <motion.div
+                        animate={{ scale: [1, 1.3, 1], rotate: [0, 5, -5, 0] }}
+                        transition={{ repeat: Infinity, duration: 2 }}
+                        className="text-6xl mb-6"
+                      >
+                        {recipientCopy.successEmoji}
+                      </motion.div>
+                      <h2
+                        className="text-3xl md:text-4xl font-black mb-4 tracking-tighter"
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          backgroundImage:
+                            "linear-gradient(135deg, var(--accent), var(--accent2))",
+                          backgroundSize: "cover",
+                          WebkitBackgroundClip: "text",
+                          color: "transparent",
+                          filter: "drop-shadow(0px 4px 8px rgba(0,0,0,0.4))",
+                        }}
+                      >
+                        {recipientCopy.successHeading}
+                      </h2>
+                      <p
+                        className="text-base font-bold leading-relaxed mb-6"
+                        style={{ color: "var(--text2)" }}
+                      >
+                        {recipientCopy.successSubtext}
+                      </p>
+
+                      <FollowUpReplies card={card} isCreator={false} locale={language} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.section>
+            </div>
 
             {/* Footer */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9 }}
-              className="text-center py-4 mt-6"
+              className="vc-recipient-footer text-center py-4 mt-2"
             >
               <p
                 className="text-xs font-semibold"
                 style={{ color: "var(--text3)" }}
               >
-                {RECIPIENT_STRINGS.FOOTER_MADE_WITH}
+                {recipientCopy.footerMadeWith}
                 <Link
                   href="/"
                   style={{ color: "var(--accent)" }}
                   className="font-bold underline hover:opacity-80"
                 >
-                  {RECIPIENT_STRINGS.FOOTER_LINK}
+                  {recipientCopy.footerLink}
                 </Link>
-                {RECIPIENT_STRINGS.FOOTER_SUFFIX}
+                {recipientCopy.footerSuffix}
               </p>
             </motion.div>
           </motion.main>

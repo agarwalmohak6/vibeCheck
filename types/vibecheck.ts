@@ -3,6 +3,7 @@ export type CardEventType =
   | 'envelope_opened'
   | 'passcode_failed'
   | 'passcode_unlocked'
+  | 'story_answered'
   | 'runaway_dodged'
   | 'cta_accepted';
 
@@ -15,11 +16,18 @@ export interface PublicCardData {
   compressed_media_url?: string;
   gif_url?: string;
   music_url?: string;
+  music_label?: string;
   cover_image_url?: string;
   yes_btn_text?: string;
   no_btn_text?: string;
   unlock_question?: string;
   has_secret_code?: boolean;
+  story_questions?: Array<{
+    id: string;
+    eyebrow: string;
+    question: string;
+    options: string[];
+  }>;
 }
 
 export interface PublicCard {

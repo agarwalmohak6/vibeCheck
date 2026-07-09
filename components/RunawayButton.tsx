@@ -13,6 +13,7 @@ interface RunawayButtonProps {
   compact?: boolean;
   yesText?: string;
   noText?: string;
+  onDodge?: (label: string, dodgeCount: number) => void;
 }
 
 const FAREWELL_MESSAGES = [
@@ -24,6 +25,8 @@ const FAREWELL_MESSAGES = [
 ];
 
 const DODGE_LIMIT = 5; // After this many dodges, NO disappears
+const FAREWELL_HOLD_MS = 3600;
+const YES_EMOJI_HOLD_MS = 1050;
 
 export default function RunawayButton({
   onYes,
@@ -32,6 +35,7 @@ export default function RunawayButton({
   compact = false,
   yesText = "YES 💖",
   noText: initialNoText = "No 💔",
+  onDodge,
 }: RunawayButtonProps) {
   const [dodgeCount, setDodgeCount] = useState(0);
   const [noText, setNoText] = useState(initialNoText);
@@ -61,6 +65,7 @@ export default function RunawayButton({
       const texts =
         TEMPLATE_RUNAWAY_TEXTS[templateType] ||
         TEMPLATE_RUNAWAY_TEXTS["shoot_shot"];
+      onDodge?.(noText, next);
       setNoText(texts[next % texts.length]);
 
       if (next >= DODGE_LIMIT) {
@@ -74,8 +79,8 @@ export default function RunawayButton({
         setNoTranslate({ x: 300, y: -200 });
         setTimeout(() => {
           setNoGone(true);
-          // Clear farewell after 2.5s
-          setTimeout(() => setFarewellMsg(null), 2500);
+          // Give the final reaction enough time to land before clearing it.
+          setTimeout(() => setFarewellMsg(null), FAREWELL_HOLD_MS);
         }, 600);
         return next;
       }
@@ -140,7 +145,7 @@ export default function RunawayButton({
         }),
       400,
     );
-    setTimeout(() => onYes(), 500);
+    setTimeout(() => onYes(), YES_EMOJI_HOLD_MS);
   };
 
   const handleNoClick = (e: React.MouseEvent) => {
@@ -252,34 +257,19 @@ export default function RunawayButton({
         )}
       </AnimatePresence>
 
-      {/* Dodge counter */}
-      <AnimatePresence>
-        {dodgeCount > 0 && !noGone && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="text-center mt-1"
-          >
-            <span
-              className="text-[9px] font-extrabold px-2 py-0.5 rounded-full"
-              style={{ background: "var(--accent)", color: "var(--bg)" }}
-            >
-              {dodgeCount} dodge{dodgeCount > 1 ? "s" : ""} 💀
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Hearts on YES */}
       <AnimatePresence>
         {yesClicked &&
           [...Array(6)].map((_, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 1, y: 0, scale: 1 }}
-              animate={{ opacity: 0, y: -70, scale: 0.4 }}
-              transition={{ duration: 0.9, delay: i * 0.07 }}
+              initial={{ opacity: 0, y: 0, scale: 0.6 }}
+              animate={{
+                opacity: [0, 1, 1, 0],
+                y: [0, -18, -44, -82],
+                scale: [0.6, 1.15, 1, 0.45],
+              }}
+              transition={{ duration: 1.45, times: [0, 0.2, 0.7, 1], delay: i * 0.08 }}
               className="absolute text-lg pointer-events-none"
               style={{ bottom: "60%", left: `${10 + i * 14}%` }}
             >

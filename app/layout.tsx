@@ -43,13 +43,13 @@ const cinzelDecorative = Cinzel_Decorative({
 });
 
 export const metadata: Metadata = {
-  title: "VibeCheck — Premium cards people actually open 💌",
+  title: "VibeCheck - Private cards made for one person",
   description:
-    "Create premium interactive cards for proposals, apologies, birthdays, best friends, and anniversaries. Add music, photos, passcode locks, and live reactions in minutes.",
-  keywords: ["digital greeting card", "interactive card", "proposal card", "apology card", "birthday card", "best friend card", "anniversary card", "vibecheck"],
+    "Make a private interactive card for Sorry, Happy Birthday, or Bestie moments. Add your words, a photo, a song, and send one private link.",
+  keywords: ["digital greeting card", "interactive card", "apology card", "birthday card", "best friend card", "private card", "vibecheck"],
   openGraph: {
-    title: "VibeCheck — Premium cards people actually open 💌",
-    description: "Create interactive cards with cinematic reveals, secret codes, music, and live reactions.",
+    title: "VibeCheck - Private cards made for one person",
+    description: "Turn a text into a private interactive card they'll actually keep.",
     type: "website",
   },
 };

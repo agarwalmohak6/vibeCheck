@@ -61,8 +61,11 @@ export default function WaxSeal({ onOpen }: WaxSealProps) {
   };
 
   return (
-    <div
-      className="relative w-24 h-24 flex items-center justify-center cursor-pointer select-none z-10"
+    <button
+      type="button"
+      aria-label="Open wax seal"
+      disabled={clicked}
+      className="relative w-24 h-24 flex items-center justify-center cursor-pointer select-none z-10 border-0 bg-transparent p-0 disabled:cursor-wait"
       onClick={handleClick}
     >
       {/* Dynamic SVG Filter for high-end procedural tearing/melting */}
@@ -146,6 +149,6 @@ export default function WaxSeal({ onOpen }: WaxSealProps) {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </button>
   );
 }

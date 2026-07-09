@@ -3,6 +3,13 @@ import { z } from 'zod';
 const trimString = (min: number, max: number) =>
   z.string().trim().min(min).max(max);
 
+export const storyQuestionSchema = z.object({
+  id: z.string().trim().min(1).max(80),
+  eyebrow: z.string().trim().min(1).max(60),
+  question: z.string().trim().min(1).max(160),
+  options: z.array(z.string().trim().min(1).max(60)).min(2).max(3),
+});
+
 export const cardDataSchema = z.object({
   message_title: trimString(1, 120),
   main_body: trimString(1, 2500),
@@ -10,11 +17,13 @@ export const cardDataSchema = z.object({
   compressed_media_url: z.string().url().optional().or(z.literal('')),
   gif_url: z.string().url().optional().or(z.literal('')),
   music_url: z.string().url().optional().or(z.literal('')),
+  music_label: z.string().trim().max(160).optional().or(z.literal('')),
   cover_image_url: z.string().max(400_000).optional().or(z.literal('')),
   unlock_code: z.string().trim().min(2).max(80).optional().or(z.literal('')),
   unlock_question: z.string().trim().max(160).optional().or(z.literal('')),
   yes_btn_text: z.string().trim().min(1).max(36).optional(),
   no_btn_text: z.string().trim().min(1).max(36).optional(),
+  story_questions: z.array(storyQuestionSchema).min(3).max(5),
 });
 
 export const createCardSchema = z.object({
@@ -25,6 +34,15 @@ export const createCardSchema = z.object({
   tier_selected: trimString(1, 40),
   music_track_id: z.string().trim().max(80).optional().nullable(),
   card_data: cardDataSchema,
+}).superRefine((value, ctx) => {
+  const hasSong = Boolean(value.music_track_id?.trim() || value.card_data.music_url?.trim());
+  if (!hasSong) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['music_track_id'],
+      message: 'A song is required before creating a card.',
+    });
+  }
 });
 
 export const unlockCardSchema = z.object({
@@ -37,6 +55,7 @@ export const trackerEventSchema = z.object({
     'envelope_opened',
     'passcode_failed',
     'passcode_unlocked',
+    'story_answered',
     'runaway_dodged',
     'cta_accepted',
   ]),

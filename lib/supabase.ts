@@ -17,12 +17,19 @@ export interface CardData {
   compressed_media_url?: string;
   gif_url?: string;
   music_url?: string;
+  music_label?: string;
   unlock_code?: string;
   unlock_question?: string;
   cover_image_url?: string;
   yes_btn_text?: string;
   no_btn_text?: string;
   has_secret_code?: boolean;
+  story_questions?: Array<{
+    id: string;
+    eyebrow: string;
+    question: string;
+    options: string[];
+  }>;
 }
 
 export interface Card {

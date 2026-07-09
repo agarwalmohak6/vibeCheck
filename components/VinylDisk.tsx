@@ -1,85 +1,44 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
-import { getTrackById } from '@/lib/tracks';
 
 interface VinylDiskProps {
-  musicUrl?: string; // v1 compatibility
-  trackId?: string;  // v2 track ID
+  musicUrl?: string;
+  trackId?: string; // Kept for old saved payloads; live search now stores musicUrl.
+  musicLabel?: string;
 }
 
-function getMusicType(url: string): 'youtube' | 'spotify' | 'mp3' | 'none' {
-  if (!url) return 'none';
-  if (url.includes('youtube.com') || url.includes('youtu.be') || /^[a-zA-Z0-9_-]{11}$/.test(url)) return 'youtube';
-  if (url.includes('spotify.com')) return 'spotify';
-  if (url.match(/\.(mp3|ogg|wav|m4a)(\?.*)?$/i)) return 'mp3';
-  return 'none';
+function isAudioPreviewUrl(url?: string): url is string {
+  if (!url) return false;
+  return /\.(mp3|ogg|wav|m4a|aac)(\?.*)?$/i.test(url) || url.includes('audio-ssl.itunes.apple.com');
 }
 
-function getYouTubeId(url: string): string {
-  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
-  const match = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
-  return match ? match[1] : '';
-}
-
-function getSpotifyEmbed(url: string): string {
-  if (url.includes('spotify.com/embed/')) return url;
-  return url.replace('https://open.spotify.com/', 'https://open.spotify.com/embed/');
-}
-
-export default function VinylDisk({ musicUrl, trackId }: VinylDiskProps) {
+export default function VinylDisk({ musicUrl, musicLabel }: VinylDiskProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [showPlayer, setShowPlayer] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // 1. Resolve track details from catalog or direct URL
-  const resolvedTrack = trackId ? getTrackById(trackId) : null;
-  let type: 'youtube' | 'spotify' | 'mp3' | 'none' = 'none';
-  let resolvedUrl = '';
-  let trackLabel = 'Background Music';
+  const resolvedUrl = isAudioPreviewUrl(musicUrl) ? musicUrl : '';
+  const trackLabel = musicLabel || 'Background Music Preview';
 
-  if (resolvedTrack) {
-    trackLabel = `${resolvedTrack.label} · ${resolvedTrack.artist}`;
-    // Prefer mp3 preview if it exists, otherwise fall back to spotify/youtube embed
-    if (resolvedTrack.previewUrl) {
-      type = 'mp3';
-      resolvedUrl = resolvedTrack.previewUrl;
-    } else if (resolvedTrack.spotifyId) {
-      type = 'spotify';
-      resolvedUrl = `https://open.spotify.com/embed/track/${resolvedTrack.spotifyId}`;
-    } else if (resolvedTrack.youtubeId) {
-      type = 'youtube';
-      resolvedUrl = resolvedTrack.youtubeId;
-    }
-  } else if (musicUrl) {
-    type = getMusicType(musicUrl);
-    resolvedUrl = musicUrl;
-    if (type === 'youtube') trackLabel = 'YouTube Track';
-    else if (type === 'spotify') trackLabel = 'Spotify Track';
-    else trackLabel = 'Background MP3';
-  }
-
-  // 2. Initialize and trigger autoplay once gesture starts
+  // Start the saved live-search preview after the recipient taps the card.
   useEffect(() => {
-    if (!hasStarted) return;
+    if (!hasStarted || !resolvedUrl) return;
     
-    if (type === 'mp3' && resolvedUrl) {
-      if (!audioRef.current) {
-        audioRef.current = new Audio(resolvedUrl);
-        audioRef.current.loop = true;
-      }
-      audioRef.current.play()
-        .then(() => setIsPlaying(true))
-        .catch(err => {
-          console.warn("Autoplay audio failed:", err);
-          setIsPlaying(false);
-        });
-    } else if (type !== 'none') {
-      setTimeout(() => setIsPlaying(true), 0);
+    if (!audioRef.current || audioRef.current.src !== resolvedUrl) {
+      audioRef.current?.pause();
+      audioRef.current = new Audio(resolvedUrl);
+      audioRef.current.loop = true;
     }
-  }, [hasStarted, type, resolvedUrl]);
+
+    audioRef.current.play()
+      .then(() => setIsPlaying(true))
+      .catch(err => {
+        console.warn('Autoplay audio failed:', err);
+        setIsPlaying(false);
+      });
+  }, [hasStarted, resolvedUrl]);
 
   // Exposed globally so EnvelopeReveal can trigger on user tap
   useEffect(() => {
@@ -93,21 +52,20 @@ export default function VinylDisk({ musicUrl, trackId }: VinylDiskProps) {
   }, []);
 
   const toggle = () => {
+    if (!resolvedUrl) return;
+
     if (!hasStarted) {
       setHasStarted(true);
       return;
     }
 
-    if (type === 'mp3' && audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-      }
+    if (!audioRef.current) return;
+
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
     } else {
-      setIsPlaying(!isPlaying);
-      setShowPlayer(!showPlayer && (type === 'youtube' || type === 'spotify' || !!resolvedTrack?.spotifyId));
+      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
   };
 
@@ -120,58 +78,10 @@ export default function VinylDisk({ musicUrl, trackId }: VinylDiskProps) {
     };
   }, []);
 
-  if (type === 'none' && !resolvedTrack) return null;
-
-  // Calculate secondary embed URL in case preview MP3 is playing but user wants to open Spotify iframe player
-  const spotifyEmbedUrl = resolvedTrack?.spotifyId 
-    ? `https://open.spotify.com/embed/track/${resolvedTrack.spotifyId}`
-    : type === 'spotify' 
-      ? getSpotifyEmbed(resolvedUrl) 
-      : null;
-
-  const youtubeEmbedId = resolvedTrack?.youtubeId 
-    ? resolvedTrack.youtubeId 
-    : type === 'youtube' 
-      ? getYouTubeId(resolvedUrl) 
-      : null;
+  if (!resolvedUrl) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3 select-none">
-      
-      {/* Embedded Spotify/YouTube player overlay */}
-      <AnimatePresence>
-        {showPlayer && (spotifyEmbedUrl || youtubeEmbedId) && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            className="rounded-2xl overflow-hidden shadow-2xl bg-neutral-950/80 backdrop-blur"
-            style={{ width: 280, border: '1px solid var(--border)' }}
-          >
-            {spotifyEmbedUrl && (
-              <iframe
-                src={spotifyEmbedUrl}
-                width="280"
-                height="152"
-                frameBorder="0"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                className="w-full"
-              />
-            )}
-            {!spotifyEmbedUrl && youtubeEmbedId && (
-              <iframe
-                width="280"
-                height="158"
-                src={`https://www.youtube.com/embed/${youtubeEmbedId}?autoplay=1&controls=1`}
-                allow="autoplay; encrypted-media"
-                frameBorder="0"
-                className="w-full"
-              />
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Vinyl disk button */}
       <motion.button
         onClick={toggle}

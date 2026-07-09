@@ -1,78 +1,155 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { PublicCard, ChatMessageDTO } from '@/types/vibecheck';
-
-// Map of template_type to preset follow-up replies
-const PRESET_REPLIES: Record<string, string[]> = {
-  shoot_shot: [
-    "Abba nahi maanenge, par main toh maan gayi/gaya 🤭",
-    "Kuch kuch hota hai... okay let's do this! ✨",
-    "Only if we go out for food first 🍕",
-    "Okay fine, you got me 💖"
-  ],
-  maan_jao: [
-    "Drama over. I missed you too 😭❤️",
-    "Where is my iced coffee first? 🧋",
-    "You're lucky you are cute 😒",
-    "Fine, you are forgiven! 🍕"
-  ],
-  birthday_roast: [
-    "Loved this! But you're still an idiot 🫶",
-    "Where is my party? 🍻",
-    "You are paying for the dinner tonight 💸",
-    "Officially the best birthday card ever 😭✨"
-  ],
-  bestie_check: [
-    "Aww, you got senti! 🥺",
-    "No refunds, we are stuck together forever 👯‍♀️",
-    "Love you too, now delete those ugly pictures 💅",
-    "You are literally my favorite disaster too ❤️"
-  ],
-  netflix_chill: [
-    "I'll bring the snacks, you pick the movie 🍿",
-    "Deal! But no horror movies please ❌",
-    "I was literally waiting for you to ask 😏",
-    "Sure, let's chill! 🛋️"
-  ]
-};
-
-// Fallback presets if type doesn't match
-const DEFAULT_PRESETS = [
-  "You had me at hello... and the food 🍕",
-  "Okay fine, I'm sold 💖",
-  "So you're saying there's a chance? 👀",
-  "This is the best thing ever! ✨"
-];
+import {
+  RECIPIENT_COPY,
+  formatPersonName,
+  type RecipientLocale,
+} from '@/lib/recipientI18n';
 
 interface FollowUpRepliesProps {
   card: PublicCard;
   isCreator: boolean;
+  locale?: RecipientLocale;
 }
 
-export default function FollowUpReplies({ card, isCreator }: FollowUpRepliesProps) {
+type RoomMeta = {
+  emoji: string;
+  name: string;
+};
+
+const SENT_FEEDBACK_MS = 3200;
+const ROOM_COPY_FEEDBACK_MS = 3000;
+
+const ROOM_NAMES: Record<string, Record<RecipientLocale, RoomMeta>> = {
+  maan_jao: {
+    en: { emoji: '🕊️', name: 'The Reset Room' },
+    hi: { emoji: '🕊️', name: 'रीसेट रूम' },
+  },
+  birthday_roast: {
+    en: { emoji: '🎂', name: 'Birthday Backstage' },
+    hi: { emoji: '🎂', name: 'बर्थडे बैकस्टेज' },
+  },
+  bestie_check: {
+    en: { emoji: '🍹', name: 'Bestie Hotline' },
+    hi: { emoji: '🍹', name: 'बेस्टी हॉटलाइन' },
+  },
+  shoot_shot: {
+    en: { emoji: '💌', name: 'Soft Launch Room' },
+    hi: { emoji: '💌', name: 'सॉफ्ट लॉन्च रूम' },
+  },
+  netflix_chill: {
+    en: { emoji: '🍿', name: 'Snack Pact Room' },
+    hi: { emoji: '🍿', name: 'स्नैक पैक्ट रूम' },
+  },
+};
+
+const CHAT_COPY = {
+  en: {
+    roomLabel: 'Private reply room',
+    live: 'Live',
+    copyRoom: 'Copy room link',
+    copied: 'Room link copied',
+    sendFailed: 'Could not send that message. Check the room link and try again.',
+    expired: 'This room is closed because the card expired.',
+    emptyCreator: (recipientName: string) =>
+      `${recipientName} has not replied yet. When they do, it will feel like a tiny private chat, not a comments section.`,
+    emptyRecipient: (creatorName: string) =>
+      `Write back to ${creatorName} in your own words. No canned quick answers here.`,
+    placeholderCreator: (recipientName: string) => `Reply to ${recipientName}...`,
+    placeholderRecipient: 'Write your real reply...',
+    sending: 'Sending...',
+    sent: 'Message sent.',
+    you: 'You',
+    emptyTime: 'just now',
+  },
+  hi: {
+    roomLabel: 'निजी जवाब रूम',
+    live: 'लाइव',
+    copyRoom: 'रूम लिंक कॉपी करें',
+    copied: 'रूम लिंक कॉपी हो गया',
+    sendFailed: 'मैसेज नहीं भेज पाए। रूम लिंक चेक करके फिर कोशिश करें।',
+    expired: 'कार्ड expire हो गया है, इसलिए यह रूम बंद है।',
+    emptyCreator: (recipientName: string) =>
+      `${recipientName} ने अभी जवाब नहीं दिया है। जवाब आएगा तो यह comments section नहीं, एक छोटा private chat लगेगा।`,
+    emptyRecipient: (creatorName: string) =>
+      `${creatorName} को अपने शब्दों में जवाब लिखें। यहां canned quick answers नहीं हैं।`,
+    placeholderCreator: (recipientName: string) => `${recipientName} को जवाब लिखें...`,
+    placeholderRecipient: 'अपना सच्चा जवाब लिखें...',
+    sending: 'भेज रहे हैं...',
+    sent: 'मैसेज भेज दिया गया।',
+    you: 'आप',
+    emptyTime: 'अभी',
+  },
+} satisfies Record<RecipientLocale, {
+  roomLabel: string;
+  live: string;
+  copyRoom: string;
+  copied: string;
+  sendFailed: string;
+  expired: string;
+  emptyCreator: (recipientName: string) => string;
+  emptyRecipient: (creatorName: string) => string;
+  placeholderCreator: (recipientName: string) => string;
+  placeholderRecipient: string;
+  sending: string;
+  sent: string;
+  you: string;
+  emptyTime: string;
+}>;
+
+function getInitial(name: string) {
+  return name.trim().charAt(0).toLocaleUpperCase() || 'V';
+}
+
+function getRoomMeta(templateType: string, locale: RecipientLocale) {
+  return ROOM_NAMES[templateType]?.[locale] || ROOM_NAMES.maan_jao[locale];
+}
+
+export default function FollowUpReplies({ card, isCreator, locale = 'en' }: FollowUpRepliesProps) {
   const [messages, setMessages] = useState<ChatMessageDTO[]>([]);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [sentSuccess, setSentSuccess] = useState(false);
+  const [sendError, setSendError] = useState('');
+  const [roomCopied, setRoomCopied] = useState(false);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
 
-  const presets = PRESET_REPLIES[card.template_type] || DEFAULT_PRESETS;
+  const copy = RECIPIENT_COPY[locale].followUp;
+  const chatCopy = CHAT_COPY[locale];
+  const creatorName = formatPersonName(card.creator_name, locale === 'hi' ? 'भेजने वाले' : 'someone');
+  const recipientName = formatPersonName(card.recipient_name, locale === 'hi' ? 'आप' : 'you');
   const senderType = isCreator ? 'creator' : 'recipient';
+  const room = getRoomMeta(card.template_type, locale);
+
+  const getRoomHref = () => {
+    if (typeof window === 'undefined') return '';
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', 'chat');
+    if (isCreator && !url.searchParams.get('ct')) {
+      const token = localStorage.getItem(`creator_token_${card.id}`);
+      if (token) url.searchParams.set('ct', token);
+    }
+    return url.toString();
+  };
 
   const fetchMessages = useCallback(async () => {
     try {
-      const res = await fetch(`/api/messages?card_id=${card.id}`);
+      const res = await fetch(`/api/messages?card_id=${card.id}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setMessages(data);
+        setSendError('');
+      } else if (res.status === 410) {
+        setSendError(chatCopy.expired);
       }
     } catch (err) {
       console.error('Failed to fetch replies:', err);
     }
-  }, [card.id]);
+  }, [card.id, chatCopy.expired]);
 
-  // Poll for replies every 3.5 seconds
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchMessages();
@@ -80,202 +157,183 @@ export default function FollowUpReplies({ card, isCreator }: FollowUpRepliesProp
     return () => clearInterval(interval);
   }, [fetchMessages]);
 
+  useEffect(() => {
+    bodyRef.current?.scrollTo({
+      top: bodyRef.current.scrollHeight,
+      behavior: 'smooth',
+    });
+  }, [messages.length]);
+
+  const getCreatorToken = () => {
+    if (typeof window === 'undefined') return '';
+    return (
+      new URLSearchParams(window.location.search).get('ct') ||
+      localStorage.getItem(`creator_token_${card.id}`) ||
+      ''
+    );
+  };
+
   const handleSend = async (text: string) => {
     if (!text.trim() || isSending) return;
     setIsSending(true);
+    setSendError('');
 
     try {
       const res = await fetch('/api/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(isCreator && typeof window !== 'undefined'
-            ? { 'x-vibecheck-creator-token': localStorage.getItem(`creator_token_${card.id}`) || '' }
+          ...(isCreator
+            ? { 'x-vibecheck-creator-token': getCreatorToken() }
             : {}),
         },
         body: JSON.stringify({
           card_id: card.id,
           sender: senderType,
-          text: text.trim()
+          text: text.trim(),
         }),
       });
 
       if (res.ok) {
         setInputText('');
         setSentSuccess(true);
-        setTimeout(() => setSentSuccess(false), 2500);
+        setTimeout(() => setSentSuccess(false), SENT_FEEDBACK_MS);
         await fetchMessages();
+      } else if (res.status === 410) {
+        setSendError(chatCopy.expired);
+      } else {
+        setSendError(chatCopy.sendFailed);
       }
     } catch (err) {
       console.error('Failed to send reply:', err);
+      setSendError(chatCopy.sendFailed);
     } finally {
       setIsSending(false);
     }
   };
 
-  const recipientReplies = messages.filter(m => m.sender === 'recipient');
-  const creatorReplies = messages.filter(m => m.sender === 'creator');
+  const copyRoomLink = async () => {
+    const roomHref = getRoomHref();
+    if (!roomHref) return;
+    try {
+      await navigator.clipboard?.writeText(roomHref);
+      setRoomCopied(true);
+      setTimeout(() => setRoomCopied(false), ROOM_COPY_FEEDBACK_MS);
+    } catch {
+      setSendError(roomHref);
+    }
+  };
 
-  if (isCreator) {
-    return (
-      <div 
-        className="rounded-3xl p-6 glow-border mt-6 text-left" 
-        style={{ background: 'var(--surface)' }}
-      >
-        <h3 className="text-lg font-black mb-4 flex items-center gap-2" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>
-          <span>💬</span> Recipient Responses
-        </h3>
-        
-        {recipientReplies.length === 0 ? (
-          <div className="text-center py-6">
-            <p className="text-sm text-neutral-400">Waiting for {card.recipient_name} to say YES and reply...</p>
-            <div className="mt-2 text-xs text-neutral-500 animate-pulse">Updates automatically</div>
+  const emptyText = isCreator
+    ? chatCopy.emptyCreator(recipientName)
+    : chatCopy.emptyRecipient(creatorName);
+  const placeholder = isCreator
+    ? chatCopy.placeholderCreator(recipientName)
+    : chatCopy.placeholderRecipient;
+
+  return (
+    <section className="vc-chat-room" aria-label={chatCopy.roomLabel}>
+      <div className="vc-chat-room__floaters" aria-hidden>
+        <span>{room.emoji}</span>
+        <span>💬</span>
+        <span>✨</span>
+        <span>💌</span>
+      </div>
+
+      <div className="vc-chat-room__header">
+        <div className="vc-chat-room__avatars" aria-hidden>
+          <span>{getInitial(creatorName)}</span>
+          <span>{getInitial(recipientName)}</span>
+        </div>
+        <div className="min-w-0">
+          <p>{chatCopy.roomLabel}</p>
+          <h3>
+            <span>{room.emoji}</span>
+            {room.name}
+          </h3>
+          <small>{creatorName} + {recipientName}</small>
+        </div>
+        <div className="vc-chat-room__header-actions">
+          <span>{chatCopy.live}</span>
+          <button type="button" onClick={() => void copyRoomLink()}>
+            {roomCopied ? chatCopy.copied : chatCopy.copyRoom}
+          </button>
+        </div>
+      </div>
+
+      <p className="vc-chat-room__statusline">
+        This room stays open inside VibeCheck until the card expires. Keep the link private.
+      </p>
+
+      <div className="vc-chat-room__body" ref={bodyRef}>
+        {messages.length === 0 ? (
+          <div className="vc-chat-room__empty">
+            <span>{room.emoji}</span>
+            <p>{emptyText}</p>
           </div>
         ) : (
-          <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1">
-            {recipientReplies.map((msg) => (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+          messages.map((msg) => {
+            const isMine = msg.sender === senderType;
+            const senderName = msg.sender === 'creator' ? creatorName : recipientName;
+            return (
+              <motion.div
                 key={msg.id}
-                className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-1"
+                initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                className={`vc-chat-bubble ${isMine ? 'is-mine' : 'is-theirs'}`}
               >
-                <div className="flex justify-between items-center text-[10px] text-neutral-400 font-bold">
-                  <span>{card.recipient_name}</span>
-                  <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <div>
+                  <strong>{isMine ? chatCopy.you : senderName}</strong>
+                  <time dateTime={msg.created_at}>
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || chatCopy.emptyTime}
+                  </time>
                 </div>
-                <p className="text-sm text-white font-medium">{msg.text}</p>
+                <p>{msg.text}</p>
               </motion.div>
-            ))}
-          </div>
-        )}
-
-        {/* Creator reply interface (simple follow up if needed) */}
-        {recipientReplies.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-white/5">
-            <h4 className="text-xs font-bold text-neutral-400 mb-2">Send a follow-up:</h4>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend(inputText)}
-                placeholder={`Reply to ${card.recipient_name}...`}
-                className="flex-1 bg-white/5 border border-white/10 text-white rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-pink-500/50 transition-colors"
-              />
-              <button
-                onClick={() => handleSend(inputText)}
-                disabled={!inputText.trim() || isSending}
-                className="bg-pink-500 hover:bg-pink-400 disabled:opacity-50 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-colors shrink-0"
-              >
-                Send
-              </button>
-            </div>
-            {creatorReplies.length > 0 && (
-              <div className="mt-3 space-y-2">
-                <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">Your Follow-Ups:</p>
-                {creatorReplies.map(m => (
-                  <div key={m.id} className="text-xs text-neutral-300 bg-white/5 py-1 px-3 rounded-lg inline-block mr-2 border border-white/5">
-                    {m.text}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+            );
+          })
         )}
       </div>
-    );
-  }
 
-  // Recipient view: Simple Preset Chips and Custom input
-  return (
-    <div className="mt-8 text-left">
-      <h3 className="text-base font-bold text-white mb-3" style={{ textShadow: '0 2px 5px rgba(0,0,0,0.5)' }}>
-        Send {card.creator_name} a reply:
-      </h3>
-
-      {/* Preset replies grid */}
-      <div className="flex flex-wrap gap-2.5 mb-5">
-        {presets.map((reply, index) => (
-          <motion.button
-            key={index}
-            whileHover={{ scale: 1.02, y: -1 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => handleSend(reply)}
-            disabled={isSending}
-            className="bg-black/30 hover:bg-black/50 border border-white/10 text-white text-xs px-3.5 py-2 rounded-full transition-colors font-medium cursor-pointer"
-          >
-            {reply}
-          </motion.button>
-        ))}
-      </div>
-
-      {/* Custom reply input */}
-      <div className="flex gap-2">
+      <form
+        className="vc-chat-room__composer"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSend(inputText);
+        }}
+      >
         <input
           type="text"
           value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSend(inputText)}
-          placeholder="Or write a custom reply..."
-          className="flex-1 bg-white/5 border border-white/10 text-white rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-pink-500/50 transition-colors"
+          onChange={(event) => setInputText(event.target.value)}
+          placeholder={placeholder}
+          maxLength={500}
         />
-        <button
-          onClick={() => handleSend(inputText)}
-          disabled={!inputText.trim() || isSending}
-          className="bg-pink-500 hover:bg-pink-400 disabled:opacity-50 text-white font-black text-sm px-5 py-3 rounded-2xl transition-colors shrink-0"
-        >
-          Send
+        <button type="submit" disabled={!inputText.trim() || isSending}>
+          {isSending ? chatCopy.sending : copy.send}
         </button>
-      </div>
+      </form>
 
-      {/* Message sent success message banner */}
+      {sendError && (
+        <p className="vc-chat-room__error" role="status">
+          {sendError}
+        </p>
+      )}
+
       <AnimatePresence>
         {sentSuccess && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mt-3 text-xs text-green-400 font-extrabold flex items-center gap-1.5"
+            initial={{ opacity: 0, y: 10, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.96 }}
+            transition={{ duration: 0.24 }}
+            className="vc-chat-room__sent"
           >
-            <span>✨</span> Reply sent to {card.creator_name}!
+            <span>✨</span>
+            {chatCopy.sent}
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* History of sent replies */}
-      {recipientReplies.length > 0 && (
-        <div className="mt-6 pt-4 border-t border-white/10">
-          <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mb-2">Sent Replies:</p>
-          <div className="flex flex-wrap gap-2">
-            {recipientReplies.map((msg) => (
-              <div 
-                key={msg.id} 
-                className="text-xs bg-white/10 text-white border border-white/5 px-3 py-1.5 rounded-xl flex items-center gap-1.5"
-              >
-                <span>💬</span>
-                <span>{msg.text}</span>
-              </div>
-            ))}
-          </div>
-          {creatorReplies.length > 0 && (
-            <div className="mt-4">
-              <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mb-2">{card.creator_name}&apos;s Replies:</p>
-              <div className="flex flex-wrap gap-2">
-                {creatorReplies.map((msg) => (
-                  <div 
-                    key={msg.id} 
-                    className="text-xs bg-pink-500/20 text-pink-300 border border-pink-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5"
-                  >
-                    <span>💌</span>
-                    <span>{msg.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+    </section>
   );
 }

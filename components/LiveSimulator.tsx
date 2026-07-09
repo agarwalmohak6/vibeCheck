@@ -2,75 +2,67 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import Link from "next/link";
 import confetti from "canvas-confetti";
 import { useTheme } from "@/components/ThemeProvider";
-import { THEMES, TEMPLATE_TYPES, ThemeId } from "@/lib/themes";
-import RunawayButton from "@/components/RunawayButton";
+import { PRIMARY_TEMPLATE_TYPES, TEMPLATE_TYPES } from "@/lib/themes";
 import HeartCanvas from "@/components/HeartCanvas";
 
 // Per-template sample content for the simulator
 const TEMPLATE_SAMPLES: Record<
   string,
-  { emoji: string; badge: string; title: string; body: string; yesMsg: string }
+  { emoji: string; badge: string; title: string; body: string }
 > = {
   shoot_shot: {
     emoji: "💍",
     badge: "Shoot Your Shot",
     title: "A little something I made for you",
     body: "I wanted this to feel more personal than a text.\nMore private than a story.\nAnd more memorable than a screenshot.\nSo here it is, just for you.",
-    yesMsg: "That landed beautifully. 💖",
   },
   maan_jao: {
     emoji: "🥺",
-    badge: "Maan Jao Na",
-    title: "I want to fix this",
-    body: "I know the vibe went sideways.\nThis is me showing up properly.\nNo excuses, just a real apology and a softer restart.",
-    yesMsg: "Forgiven. Let's reset with peace. 💕",
+    badge: "Sorry Card",
+    title: "I was wrong",
+    body: "I was wrong, and I'm not going to dress it up with excuses.\nWhat I said hurt you, and you did not deserve that.\nI'm sorry, truly. Give me one more chance to be the person you know I can be.",
   },
   birthday_roast: {
     emoji: "🎂",
-    badge: "Birthday Roast",
-    title: "For the one who still looks good aging",
-    body: "Another year, same legendary chaos.\nA little roast, a little love, and a lot of reasons you matter.\nHappy birthday, icon.",
-    yesMsg: "Birthday card accepted with style 🎉",
+    badge: "Happy Birthday",
+    title: "Still iconic",
+    body: "Another year down, and somehow you're still this iconic.\nWishing you a birthday as extra as you are, cake first, adulting later.\nHere's to more stories, more chaos, and more reasons to celebrate you.",
   },
   bestie_check: {
     emoji: "✨",
-    badge: "Bestie Vibe Check",
-    title: "You matter to me",
-    body: "You’re my safe place, my chaos partner, and the first person I want to send random nonsense to.\nThis is the simple version of a big feeling.",
-    yesMsg: "Bestie energy received 💗",
+    badge: "Bestie Card",
+    title: "One of the best parts",
+    body: "I don't say this enough, but you're one of the best parts of my life.\nThank you for being exactly who you are, every late-night call, every ridiculous plan.\nI've got you, always.",
   },
   netflix_chill: {
     emoji: "🍿",
     badge: "Netflix & Chill",
     title: "A quiet invite, just for you",
     body: "No big speech, just a cozy plan.\nA good movie, good snacks, and a little time together.\nFeels simple, but the good kind of simple.",
-    yesMsg: "Invite accepted 🍿💕",
   },
 };
 
 export default function LiveSimulator() {
   const { theme, setTheme } = useTheme();
-  const [activeTemplate, setActiveTemplate] = useState("shoot_shot");
+  const [activeTemplate, setActiveTemplate] = useState("maan_jao");
+  const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">("mobile");
   const [envelopeOpen, setEnvelopeOpen] = useState(false);
-  const [yesClicked, setYesClicked] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
 
-  const currentThemeData = THEMES.find((t) => t.id === theme);
   const sample =
     TEMPLATE_SAMPLES[activeTemplate] || TEMPLATE_SAMPLES.shoot_shot;
   const tmplMeta = TEMPLATE_TYPES.find((t) => t.id === activeTemplate);
-  const yesText = tmplMeta?.defaultYesText || "YES 💖";
-  const noText = tmplMeta?.defaultNoText || "No 💔";
+  const coverImage = tmplMeta?.defaultCoverImage;
 
   const handleSwitchTemplate = (templateId: string) => {
     setActiveTemplate(templateId);
     // Auto-switch theme to match template's recommended theme
     const tmpl = TEMPLATE_TYPES.find((t) => t.id === templateId);
-    if (tmpl?.recommendedTheme) setTheme(tmpl.recommendedTheme as ThemeId);
+    if (tmpl?.recommendedTheme) setTheme(tmpl.recommendedTheme);
     setEnvelopeOpen(false);
-    setYesClicked(false);
     setIsOpening(false);
   };
 
@@ -86,47 +78,20 @@ export default function LiveSimulator() {
 
   const handleReset = () => {
     setEnvelopeOpen(false);
-    setYesClicked(false);
     setIsOpening(false);
   };
 
-  const handleYes = () => {
-    setYesClicked(true);
-    const colors = ["#FACC15", "#FF2E93", "#a855f7", "#00FF66", "#ffffff"];
-    confetti({ particleCount: 200, spread: 160, origin: { y: 0.5 }, colors });
-    setTimeout(
-      () =>
-        confetti({
-          particleCount: 100,
-          spread: 90,
-          origin: { y: 0.6, x: 0.3 },
-          colors,
-        }),
-      300,
-    );
-    setTimeout(
-      () =>
-        confetti({
-          particleCount: 100,
-          spread: 90,
-          origin: { y: 0.6, x: 0.7 },
-          colors,
-        }),
-      500,
-    );
-  };
-
   return (
-    <div className="flex flex-col items-center gap-5">
+    <div className="flex flex-col items-center gap-4">
       {/* Template tabs */}
-      <div className="flex flex-wrap justify-center gap-2 max-w-sm">
-        {TEMPLATE_TYPES.map((t) => (
+      <div className="flex flex-wrap justify-center gap-2 max-w-2xl">
+        {PRIMARY_TEMPLATE_TYPES.map((t) => (
           <motion.button
             key={t.id}
             onClick={() => handleSwitchTemplate(t.id)}
             whileTap={{ scale: 0.92 }}
             whileHover={{ scale: 1.05, y: -1 }}
-            className="px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 cursor-pointer"
+            className="px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 cursor-pointer"
             style={{
               background:
                 activeTemplate === t.id
@@ -145,30 +110,25 @@ export default function LiveSimulator() {
         ))}
       </div>
 
-      {/* Theme tabs */}
-      <div className="flex flex-wrap justify-center gap-1.5 max-w-sm">
-        {THEMES.map((t) => (
-          <motion.button
-            key={t.id}
-            onClick={() => setTheme(t.id as ThemeId)}
-            whileTap={{ scale: 0.92 }}
-            className="px-2.5 py-1 rounded-full text-[10px] font-semibold flex items-center gap-1 cursor-pointer"
-            style={{
-              background: theme === t.id ? t.preview.accent : "var(--surface2)",
-              color: theme === t.id ? "white" : "var(--text2)",
-              border: `1px solid ${theme === t.id ? t.preview.accent : "var(--border)"}`,
-              transition: "all 0.2s ease",
-            }}
+      <div className="vc-simulator-view-toggle" aria-label="Choose preview size">
+        {(["mobile", "desktop"] as const).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            aria-pressed={previewMode === mode}
+            className={previewMode === mode ? "is-active" : ""}
+            onClick={() => setPreviewMode(mode)}
           >
-            {t.emoji} {t.label}
-          </motion.button>
+            {mode === "mobile" ? "Mobile view" : "Desktop view"}
+          </button>
         ))}
       </div>
 
       {/* Phone frame */}
+      {previewMode === "mobile" && (
       <motion.div
         className="relative mx-auto"
-        style={{ width: 288, height: 590 }}
+        style={{ width: 320, height: 660 }}
         animate={{ y: [0, -5, 0] }}
         transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
       >
@@ -177,9 +137,9 @@ export default function LiveSimulator() {
           className="absolute inset-0 rounded-[2.5rem] pointer-events-none"
           animate={{
             boxShadow: [
-              "0 0 30px var(--glow)",
-              "0 0 60px var(--glow)",
-              "0 0 30px var(--glow)",
+              "0 0 24px var(--glow)",
+              "0 0 48px var(--glow)",
+              "0 0 24px var(--glow)",
             ],
           }}
           transition={{ repeat: Infinity, duration: 2.5 }}
@@ -189,10 +149,11 @@ export default function LiveSimulator() {
         <div
           className="absolute inset-0 rounded-[2.5rem] border-[7px] overflow-hidden shadow-2xl"
           style={{
-            background: "var(--bg)",
-            borderColor: "#1a1a2e",
+            background:
+              "linear-gradient(180deg, color-mix(in srgb, var(--surface), white 6%), var(--surface2))",
+            borderColor: "color-mix(in srgb, var(--border), transparent 10%)",
             boxShadow:
-              "0 35px 90px rgba(0,0,0,0.7), inset 0 0 80px rgba(0,0,0,0.3)",
+              "0 30px 70px rgba(0,0,0,0.22), inset 0 0 60px rgba(255,255,255,0.05)",
           }}
         >
           {/* Status bar */}
@@ -203,7 +164,7 @@ export default function LiveSimulator() {
             <span className="text-[9px] font-bold">12:00</span>
             <div
               className="w-14 h-3.5 rounded-b-xl mx-auto absolute left-1/2 -translate-x-1/2 top-0"
-              style={{ background: "#0a0a0f" }}
+              style={{ background: "rgba(11,15,25,0.88)" }}
             />
             <div className="flex gap-1 text-[9px]">📶 🔋</div>
           </div>
@@ -225,7 +186,7 @@ export default function LiveSimulator() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 1.08, y: -20 }}
                   transition={{ duration: 0.35 }}
-                  className="flex flex-col items-center justify-center h-full gap-3 px-5 relative z-10"
+                  className="vc-sim-phone-closed flex flex-col items-center h-full gap-3 px-5 relative z-10"
                 >
                   {/* Badge */}
                   <motion.div
@@ -244,7 +205,7 @@ export default function LiveSimulator() {
                     className="text-center text-xs font-medium"
                     style={{ color: "var(--text2)" }}
                   >
-                    You have an unread vibe from
+                    You have a private card from
                   </p>
                   <p
                     className="text-2xl font-black text-center"
@@ -283,9 +244,10 @@ export default function LiveSimulator() {
                       <div
                         className="w-40 h-28 rounded-2xl relative flex items-end justify-center pb-3"
                         style={{
-                          background: "var(--surface)",
-                          border: "2px solid var(--accent)",
-                          boxShadow: "0 0 40px var(--glow)",
+                          background:
+                            "linear-gradient(135deg, color-mix(in srgb, var(--surface), white 6%), color-mix(in srgb, var(--surface2), white 4%))",
+                          border: "1px solid color-mix(in srgb, var(--border), transparent 5%)",
+                          boxShadow: "0 0 32px var(--glow)",
                         }}
                       >
                         <div
@@ -309,182 +271,132 @@ export default function LiveSimulator() {
                     {isOpening
                       ? "✨ Opening..."
                       : theme === "desi_festive"
-                        ? "✨ Tap Wax Seal to Break"
+                        ? "✨ Tap the seal to open"
                         : "✨ Tap to open"}
                   </motion.p>
+
+                  <div className="vc-sim-unlock-stack">
+                    <div className="vc-sim-unlock-card vc-sim-unlock-card--cover">
+                      {coverImage && (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={coverImage} alt="" draggable={false} />
+                        </>
+                      )}
+                      <span>Cover reveal</span>
+                      <strong>{sample.badge}</strong>
+                    </div>
+                    <div className="vc-sim-unlock-card">
+                      <span>Tiny story</span>
+                      <strong>3 questions before the answer</strong>
+                    </div>
+                    <div className="vc-sim-unlock-card">
+                      <span>After they reply</span>
+                      <strong>Private chat opens live</strong>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
-              {/* ── CARD OPEN ── */}
-              {envelopeOpen && !yesClicked && (
+              {/* ── CARD TEASER ── */}
+              {envelopeOpen && (
                 <motion.div
                   key={`card-${activeTemplate}`}
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.4 }}
-                  className="h-full flex flex-col overflow-y-auto px-3 gap-2.5 pt-2 pb-14 relative z-10"
-                  style={{ scrollbarWidth: "none" }}
+                  className="vc-simulator-teaser-screen h-full relative z-10"
                 >
-                  {/* Template badge */}
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.15, type: "spring", stiffness: 260 }}
-                    className="text-center"
-                  >
-                    <span
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black text-white"
+                  <div className="vc-simulator-teaser-blur h-full flex flex-col overflow-y-auto px-4 gap-3 pt-3 pb-14">
+                    {/* Template badge */}
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.15, type: "spring", stiffness: 260 }}
+                      className="text-center"
+                    >
+                      <span
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black text-white"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, var(--accent), var(--accent2))",
+                        }}
+                      >
+                        {sample.emoji} {sample.badge}
+                      </span>
+                    </motion.div>
+
+                    {coverImage && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.25 }}
+                        className="rounded-xl overflow-hidden border border-white/5 shadow-lg shrink-0 bg-black/20"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={coverImage}
+                          alt="Cover"
+                          className="w-full h-auto aspect-video object-contain"
+                          draggable={false}
+                        />
+                      </motion.div>
+                    )}
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.35 }}
+                      className="rounded-2xl p-3.5 glow-border text-left"
                       style={{
                         background:
-                          "linear-gradient(135deg, var(--accent), var(--accent2))",
+                          "linear-gradient(145deg, color-mix(in srgb, var(--surface), white 5%), color-mix(in srgb, var(--surface2), white 4%))",
+                        flexShrink: 0,
                       }}
                     >
-                      {sample.emoji} {sample.badge}
-                    </span>
-                  </motion.div>
-
-                  {/* Cover image — fixed aspect, no overflow */}
-                  {currentThemeData?.coverImage && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.25 }}
-                      className="rounded-xl overflow-hidden border border-white/5 shadow-lg shrink-0 bg-black/20"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={currentThemeData.coverImage}
-                        alt="Cover"
-                        className="w-full h-auto aspect-video object-contain"
-                        draggable={false}
-                      />
+                      <h3
+                        className="text-base font-black mb-2 capitalize tracking-tight"
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          color: "var(--accent)",
+                        }}
+                      >
+                        {sample.title}
+                      </h3>
+                      <p
+                        className="text-[11px] leading-relaxed font-medium"
+                        style={{ color: "var(--text2)" }}
+                      >
+                        {sample.body.split("\n").map((line, i) => (
+                          <span key={i}>
+                            {line}
+                            <br />
+                          </span>
+                        ))}
+                      </p>
                     </motion.div>
-                  )}
 
-                  {/* Message card */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.35 }}
-                    className="rounded-2xl p-3.5 glow-border text-left"
-                    style={{ background: "var(--surface)", flexShrink: 0 }}
-                  >
-                    <h3
-                      className="text-base font-black mb-2 capitalize tracking-tight"
-                      style={{
-                        fontFamily: "var(--font-display)",
-                        color: "var(--accent)",
-                      }}
-                    >
-                      {sample.title}
-                    </h3>
-                    <p
-                      className="text-[11px] leading-relaxed font-medium"
-                      style={{ color: "var(--text2)" }}
-                    >
-                      {sample.body.split("\n").map((line, i) => (
-                        <span key={i}>
-                          {line}
-                          <br />
-                        </span>
-                      ))}
+                    <div className="vc-simulator-locked-card">
+                      <span>A tiny story before the answer</span>
+                      <strong>Questions, buttons, and replies continue here.</strong>
+                    </div>
+                  </div>
+
+                  <div className="vc-simulator-paywall">
+                    <span>Preview unlocked</span>
+                    <h3>Want to see the full card?</h3>
+                    <p>
+                      Create your card and pay to unlock the full reveal,
+                      answer flow, reply room, and private send link.
                     </p>
-                  </motion.div>
-
-                  {/* YES/NO interactive section */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="rounded-2xl px-3 py-3"
-                    style={{
-                      background: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <p
-                      className="text-[10px] mb-1.5 font-black text-center"
-                      style={{ color: "var(--text2)" }}
-                    >
-                      So... what do you say? 👀
-                    </p>
-                    <p
-                      className="text-[9px] mb-2 text-center"
-                      style={{ color: "var(--text2)", opacity: 0.7 }}
-                    >
-                      (The NO button has its own opinions 💀)
-                    </p>
-                    <RunawayButton
-                      key={`${activeTemplate}-${yesText}-${noText}`}
-                      onYes={handleYes}
-                      memeMode={false}
-                      templateType={activeTemplate}
-                      compact={true}
-                      yesText={yesText}
-                      noText={noText}
-                    />
-                  </motion.div>
-
-                  {/* Reset */}
-                  <motion.button
-                    onClick={handleReset}
-                    whileTap={{ scale: 0.95 }}
-                    className="text-[10px] py-1.5 rounded-xl font-bold cursor-pointer"
-                    style={{
-                      background: "var(--surface2)",
-                      color: "var(--text2)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    ↩ Reset demo
-                  </motion.button>
-                </motion.div>
-              )}
-
-              {/* ── YES SUCCESS ── */}
-              {envelopeOpen && yesClicked && (
-                <motion.div
-                  key="yes"
-                  initial={{ opacity: 0, scale: 0.75 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 18 }}
-                  className="h-full flex flex-col items-center justify-center gap-3 px-4 relative z-10"
-                >
-                  <motion.div
-                    animate={{ scale: [1, 1.4, 1], rotate: [0, 15, -15, 0] }}
-                    transition={{ repeat: Infinity, duration: 1.2 }}
-                    className="text-5xl"
-                  >
-                    🎉
-                  </motion.div>
-                  <p
-                    className="text-base font-black text-center leading-snug"
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      color: "var(--accent)",
-                    }}
-                  >
-                    {sample.yesMsg}
-                  </p>
-                  <p
-                    className="text-[10px] text-center"
-                    style={{ color: "var(--text2)" }}
-                  >
-                    This is what happens when they click YES 😭✨
-                  </p>
-                  <motion.button
-                    onClick={handleReset}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-5 py-2 rounded-xl text-xs font-bold cursor-pointer"
-                    style={{
-                      background: "var(--surface2)",
-                      color: "var(--text2)",
-                    }}
-                  >
-                    ↩ Try another
-                  </motion.button>
+                    <Link href={`/customize?type=${activeTemplate}`}>
+                      See full card & pay
+                    </Link>
+                    <button type="button" onClick={handleReset}>
+                      Reset demo
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -497,12 +409,116 @@ export default function LiveSimulator() {
           style={{ background: "rgba(255,255,255,0.15)" }}
         />
       </motion.div>
+      )}
+
+      {previewMode === "desktop" && (
+        <motion.div
+          key={`desktop-${activeTemplate}`}
+          initial={{ opacity: 0, y: 18, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.32 }}
+          className="vc-simulator-desktop"
+        >
+          <div className="vc-simulator-desktop__chrome">
+            <span />
+            <span />
+            <span />
+            <strong>recipient preview · desktop</strong>
+          </div>
+
+          <div className="vc-simulator-desktop__grid">
+            <section className="vc-simulator-desktop__visual">
+              <div className="vc-simulator-desktop__badge">
+                {sample.emoji} {sample.badge} · for Priya
+              </div>
+
+              {coverImage && (
+                <div className="vc-simulator-desktop__cover">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={coverImage} alt={`${sample.badge} preview`} draggable={false} />
+                </div>
+              )}
+
+              <div className="vc-simulator-desktop__mini-timeline" aria-label="Demo flow">
+                <span className={envelopeOpen ? "is-done" : "is-active"}>Envelope</span>
+                <span className={envelopeOpen ? "is-active" : ""}>Preview</span>
+                <span className={envelopeOpen ? "is-locked" : ""}>Pay</span>
+              </div>
+            </section>
+
+            <section className="vc-simulator-desktop__content">
+              {!envelopeOpen && (
+                <motion.div
+                  key="desktop-closed"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="vc-simulator-desktop__sealed"
+                >
+                  <span>{sample.emoji} Private card from Aarav</span>
+                  <h3>Open the card to reveal the full moment.</h3>
+                  <p>
+                    The recipient gets a polished card preview first. The full
+                    story, answers, replies, and private link stay locked until
+                    it feels worth paying for.
+                  </p>
+                  <button type="button" onClick={handleOpen} disabled={isOpening}>
+                    {isOpening ? "Opening..." : "Open demo card"}
+                  </button>
+                </motion.div>
+              )}
+
+              {envelopeOpen && (
+                <motion.div
+                  key="desktop-open"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="vc-simulator-desktop__open vc-simulator-desktop__teaser"
+                >
+                  <div className="vc-simulator-desktop__teaser-blur">
+                    <div className="vc-simulator-desktop__message">
+                      <span>{sample.emoji} Message preview</span>
+                      <h3>{sample.title}</h3>
+                      <p>{sample.body}</p>
+                    </div>
+
+                    <div className="vc-simulator-desktop__story">
+                      <small>A tiny story before the answer</small>
+                      <strong>The questions, choices, replies, and ending unlock after payment.</strong>
+                      <div>
+                        <span>Custom questions</span>
+                        <span>Private answer</span>
+                        <span>Reply room</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="vc-simulator-paywall vc-simulator-paywall--desktop">
+                    <span>Preview unlocked</span>
+                    <h3>See the full card</h3>
+                    <p>
+                      Pay only when the demo feels send-worthy. The real card
+                      opens with the complete story, answer flow, and private
+                      link for your person.
+                    </p>
+                    <Link href={`/customize?type=${activeTemplate}`}>
+                      See full card & pay
+                    </Link>
+                    <button type="button" onClick={handleReset}>
+                      Reset demo
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </section>
+          </div>
+        </motion.div>
+      )}
 
       <p
         className="text-[10px] font-semibold text-center max-w-[260px] leading-relaxed"
         style={{ color: "var(--text2)" }}
       >
-        👆 Live demo · Switch templates & themes · Try to hit NO
+        Live demo · Switch views · Open the teaser
       </p>
     </div>
   );

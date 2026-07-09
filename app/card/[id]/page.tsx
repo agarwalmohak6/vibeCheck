@@ -24,8 +24,15 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-export default async function CardPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CardPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const { id } = await params;
+  const query = await searchParams;
   const card = await getPublicCard(id);
 
   if (!card) return notFound();
@@ -34,5 +41,10 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
     return <ExpiredView card={card} />;
   }
 
-  return <RecipientView card={card} />;
+  const roomParam = query.room;
+  const initialRoomMode = Array.isArray(roomParam)
+    ? roomParam.includes('chat')
+    : roomParam === 'chat';
+
+  return <RecipientView card={card} initialRoomMode={initialRoomMode} />;
 }

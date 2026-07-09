@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { ThemeId } from '@/lib/themes';
 
 interface ThemeContextValue {
@@ -15,20 +15,13 @@ const ThemeContext = createContext<ThemeContextValue>({
 export function ThemeProvider({ children, initial = 'soft_coquette' }: { children: React.ReactNode; initial?: ThemeId }) {
   const [theme, setThemeState] = useState<ThemeId>(initial);
 
-  const setTheme = (t: ThemeId) => {
+  const setTheme = useCallback((t: ThemeId) => {
     setThemeState(t);
-    document.documentElement.setAttribute('data-theme', t);
-    try { localStorage.setItem('mc-theme', t); } catch {}
-  };
+  }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('mc-theme', initial);
-      setTimeout(() => setTheme(initial), 0);
-    } catch {
-      setTimeout(() => setTheme(initial), 0);
-    }
-  }, [initial]);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>

@@ -39,7 +39,7 @@ export default function SecretCodeGate({ cardId, unlockQuestion, onUnlock }: Sec
     } else {
       setAttempts((p) => {
         const next = p + 1;
-        if (next >= 3) setHint('Psst... ask them for the code 😏');
+        if (next >= 3) setHint('Psst... ask them for the code.');
         return next;
       });
       setShake(true);
@@ -74,7 +74,7 @@ export default function SecretCodeGate({ cardId, unlockQuestion, onUnlock }: Sec
 
         <div className="text-center">
           <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>
-            {unlockQuestion ? 'Answer to unlock 💭' : 'Enter the secret code 🔑'}
+            This one&apos;s locked.
           </h3>
           {unlockQuestion && (
             <p className="text-sm mb-2" style={{ color: 'var(--accent)' }}>
@@ -82,7 +82,7 @@ export default function SecretCodeGate({ cardId, unlockQuestion, onUnlock }: Sec
             </p>
           )}
           <p className="text-xs" style={{ color: 'var(--text3)' }}>
-            {isNumeric ? 'Enter the 4-digit code' : 'Type your answer below'}
+            {isNumeric ? 'Enter the PIN to open it.' : 'Type the answer to open it.'}
           </p>
         </div>
 
@@ -116,7 +116,7 @@ export default function SecretCodeGate({ cardId, unlockQuestion, onUnlock }: Sec
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && void handleSubmit()}
-              placeholder="Type your answer..."
+              placeholder="Write your answer..."
               className="w-full px-4 py-3 rounded-xl text-center text-base outline-none mb-4"
               style={{
                 background: 'var(--surface2)',
@@ -172,7 +172,7 @@ export default function SecretCodeGate({ cardId, unlockQuestion, onUnlock }: Sec
             className="text-xs"
             style={{ color: '#ff4444' }}
           >
-            ❌ Wrong! Try again
+            That&apos;s not it - give it another try.
           </motion.p>
         )}
 
@@ -188,7 +188,7 @@ export default function SecretCodeGate({ cardId, unlockQuestion, onUnlock }: Sec
             transition: 'all 0.2s ease',
           }}
         >
-          {checking ? 'Checking...' : 'Unlock 🗝️'}
+          {checking ? 'Checking...' : 'Open card'}
         </motion.button>
       </motion.div>
     </motion.div>
