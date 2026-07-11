@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { buildUpiIntent, isValidUpiVpa } from '@/lib/upi';
 import { supabase } from '@/lib/supabase';
+import PaymentReferenceForm from '@/components/PaymentReferenceForm';
 
 interface QRCheckoutProps {
   cardId: string;
@@ -16,6 +17,7 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa }: QRCheckoutPr
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
   const [isVerifying, setIsVerifying] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [referenceSubmitted, setReferenceSubmitted] = useState(false);
   const allowMockPayments = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS !== 'false';
   const configuredVpa = (vpa || process.env.NEXT_PUBLIC_UPI_VPA || '').trim();
   const hasValidVpa = isValidUpiVpa(configuredVpa);
@@ -77,6 +79,8 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa }: QRCheckoutPr
           const card = await res.json();
           if (card.is_paid) {
             onPaid();
+          } else if (card.payment_reference_submitted) {
+            setReferenceSubmitted(true);
           }
         }
       } catch (err) {
@@ -190,9 +194,21 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa }: QRCheckoutPr
           Open Google Pay, PhonePe, Paytm, or any UPI app to scan.
         </p>
         <p className="text-[9px] text-neutral-500 italic">
-          The card unlocks once this payment is marked verified.
+          After paying, submit the UTR/ref number below. The card unlocks once verified.
         </p>
       </div>
+
+      <PaymentReferenceForm
+        cardId={cardId}
+        variant="dark"
+        onSubmitted={() => setReferenceSubmitted(true)}
+      />
+
+      {referenceSubmitted && (
+        <div className="w-full rounded-xl border border-emerald-400/15 bg-emerald-400/10 px-3 py-2 text-[10px] font-bold leading-relaxed text-emerald-200">
+          UTR received. Keep this page open; we are still waiting for verification.
+        </div>
+      )}
 
       {/* Dev Mock Sandbox Shortcut */}
       {allowMockPayments && (

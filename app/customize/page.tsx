@@ -9,6 +9,7 @@ import GiphyModal from '@/components/GiphyModal';
 import SuccessHub from '@/components/SuccessHub';
 import MusicSelector from '@/components/MusicSelector';
 import QRCheckout from '@/components/QRCheckout';
+import PaymentReferenceForm from '@/components/PaymentReferenceForm';
 import { compressImage } from '@/lib/imageCompressor';
 import { isMobileDevice, buildUpiIntent, isValidUpiVpa } from '@/lib/upi';
 import HeartCanvas from '@/components/HeartCanvas';
@@ -530,6 +531,12 @@ function CustomizePageContent() {
               Bypass payment locally
             </button>
           )}
+
+          <PaymentReferenceForm
+            cardId={createdCardId}
+            variant="dark"
+            onSubmitted={() => setLoading(true)}
+          />
         </div>
 
         {loading && (

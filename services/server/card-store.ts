@@ -19,6 +19,11 @@ type MockState = {
   __MOCK_CHATS?: ChatMessageDTO[];
   __MOCK_SECRETS?: Record<string, StoredSecret>;
   __MOCK_EVENTS?: TrackerEvent[];
+  __MOCK_PAYMENT_REFERENCES?: Record<string, {
+    payment_reference: string;
+    status: 'created' | 'paid';
+    submitted_at: string;
+  }>;
 };
 
 const globalStore = globalThis as unknown as MockState;
@@ -26,6 +31,8 @@ const MOCK_STORE = globalStore.__MOCK_STORE || (globalStore.__MOCK_STORE = {});
 const MOCK_CHATS = globalStore.__MOCK_CHATS || (globalStore.__MOCK_CHATS = []);
 const MOCK_SECRETS = globalStore.__MOCK_SECRETS || (globalStore.__MOCK_SECRETS = {});
 const MOCK_EVENTS = globalStore.__MOCK_EVENTS || (globalStore.__MOCK_EVENTS = []);
+const MOCK_PAYMENT_REFERENCES =
+  globalStore.__MOCK_PAYMENT_REFERENCES || (globalStore.__MOCK_PAYMENT_REFERENCES = {});
 
 function sanitizeCardData(input: CreateCardInput['card_data'], hasSecretCode: boolean) {
   const { unlock_question, cover_image_url, ...rest } = input;
@@ -52,6 +59,10 @@ function toPublicCard(row: Card): PublicCard {
       unlock_question: hasSecretCode ? safeData.unlock_question || '' : '',
     },
   };
+}
+
+function normalizePaymentReference(reference: string) {
+  return reference.trim().replace(/\s+/g, '').toUpperCase();
 }
 
 export async function createCardDraft(input: CreateCardInput) {
@@ -151,10 +162,117 @@ export async function getPublicCard(id: string) {
 export async function getPaymentStatus(id: string) {
   const card = await getPublicCard(id);
   if (!card) return null;
+
+  const admin = getSupabaseAdmin();
+  let paymentReference: {
+    payment_reference: string;
+    status: string;
+    submitted_at?: string | null;
+  } | null = null;
+
+  if (!admin) {
+    paymentReference = MOCK_PAYMENT_REFERENCES[id] || null;
+  } else {
+    const { data, error } = await admin
+      .from('payments')
+      .select('provider_payment_id, status, created_at')
+      .eq('card_id', id)
+      .eq('provider', 'upi_manual')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (data?.provider_payment_id) {
+      paymentReference = {
+        payment_reference: data.provider_payment_id,
+        status: data.status,
+        submitted_at: data.created_at,
+      };
+    }
+  }
+
   return {
     id: card.id,
     is_paid: card.is_paid,
     payment_id: card.payment_id || null,
+    payment_status: card.is_paid ? 'paid' : 'pending',
+    payment_reference: paymentReference?.payment_reference || null,
+    payment_reference_submitted: Boolean(paymentReference),
+    payment_reference_status: paymentReference?.status || null,
+    expires_at: card.expires_at || null,
+  };
+}
+
+export async function submitUpiPaymentReference(id: string, reference: string) {
+  const card = await getPublicCard(id);
+  if (!card) return null;
+
+  const admin = getSupabaseAdmin();
+  const paymentReference = normalizePaymentReference(reference);
+  const submittedAt = new Date().toISOString();
+
+  if (!admin) {
+    MOCK_PAYMENT_REFERENCES[id] = {
+      payment_reference: paymentReference,
+      status: 'created',
+      submitted_at: submittedAt,
+    };
+    await captureServerEvent('payment_reference_submitted', id, {
+      provider: 'upi_manual',
+      payment_reference: paymentReference,
+      mock: true,
+    });
+    return {
+      id: card.id,
+      is_paid: card.is_paid,
+      payment_id: card.payment_id || null,
+      payment_reference: paymentReference,
+      payment_reference_submitted: true,
+      payment_reference_status: 'created',
+      expires_at: card.expires_at || null,
+    };
+  }
+
+  const { data: existing, error: lookupError } = await admin
+    .from('payments')
+    .select('card_id, status, provider_payment_id, created_at')
+    .eq('provider_payment_id', paymentReference)
+    .maybeSingle();
+
+  if (lookupError) throw lookupError;
+  if (existing && existing.card_id !== id) {
+    throw new Error('PAYMENT_REFERENCE_ALREADY_USED');
+  }
+
+  if (!existing) {
+    const { error } = await admin.from('payments').insert({
+      card_id: id,
+      provider: 'upi_manual',
+      provider_payment_id: paymentReference,
+      status: 'created',
+      raw_payload: {
+        source: 'upi_reference_form',
+        card_id: id,
+        payment_reference: paymentReference,
+        submitted_at: submittedAt,
+      },
+    });
+    if (error) throw error;
+  }
+
+  await captureServerEvent('payment_reference_submitted', id, {
+    provider: 'upi_manual',
+    payment_reference: paymentReference,
+  });
+
+  return {
+    id: card.id,
+    is_paid: card.is_paid,
+    payment_id: card.payment_id || null,
+    payment_reference: paymentReference,
+    payment_reference_submitted: true,
+    payment_reference_status: existing?.status || 'created',
     expires_at: card.expires_at || null,
   };
 }
