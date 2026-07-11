@@ -6,7 +6,7 @@ export const LANDING_STRINGS = {
   HERO_TITLE_2: 'it was made just for them.',
   HERO_SUBTITLE: "Pick a moment, add your words, send one private link. VibeCheck turns a text into something they'll actually keep.",
   HERO_BUTTON: 'Make a VibeCheck',
-  HERO_PRICE_NOTE: 'Starts at ₹29 · no subscription · one private link',
+  HERO_PRICE_NOTE: 'Starts at ₹49 · no subscription · one private link',
   SIMULATOR_TITLE: 'See how it works',
   SIMULATOR_SUBTITLE: 'Watch a Sorry card come together. This is what your person will see.',
   HOW_IT_WORKS_TITLE: 'How it works ⚡',

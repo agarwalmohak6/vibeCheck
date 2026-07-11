@@ -295,8 +295,8 @@ export const PRIMARY_TEMPLATE_TYPES = TEMPLATE_TYPES.filter((template) =>
 export const TIERS = [
   {
     id: '1_day',
-    label: 'Short & Sweet',
-    price: 29,
+    label: 'One Day',
+    price: 49,
     duration: '1 Day',
     durationHours: 24,
     icon: '⚡',
@@ -304,14 +304,24 @@ export const TIERS = [
     popular: false,
   },
   {
-    id: '3_day',
+    id: '2_day',
     label: 'Most Popular',
-    price: 49,
-    duration: '3 Days',
-    durationHours: 72,
+    price: 69,
+    duration: '2 Days',
+    durationHours: 48,
     icon: '🔥',
     description: 'Best balance of urgency and shareability',
     popular: true,
+  },
+  {
+    id: 'lifetime',
+    label: 'Lifetime',
+    price: 99,
+    duration: 'Lifetime',
+    durationHours: null,
+    icon: '💎',
+    description: 'Best for keepsake cards they can revisit anytime',
+    popular: false,
   },
 ];
 

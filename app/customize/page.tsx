@@ -45,6 +45,7 @@ type Notice = {
 const STEPS = ['basics', 'content', 'lock', 'payment'];
 const STEP_LABELS = ['Card', 'Message', 'Privacy', 'Pay'];
 const DEFAULT_TEMPLATE = 'maan_jao';
+const DEFAULT_TIER = '2_day';
 const MIN_STORY_QUESTIONS = 3;
 const MAX_STORY_QUESTIONS = 5;
 const CARD_DECOR: Record<string, string[]> = {
@@ -108,6 +109,8 @@ function CustomizePageContent() {
   const requestedTemplate = params.get('type') || DEFAULT_TEMPLATE;
   const initialTemplate = PRIMARY_TEMPLATE_TYPES.some(t => t.id === requestedTemplate) ? requestedTemplate : DEFAULT_TEMPLATE;
   const initialTmplMeta = TEMPLATE_TYPES.find(t => t.id === initialTemplate);
+  const requestedTier = params.get('tier') || DEFAULT_TIER;
+  const initialTier = TIERS.some(t => t.id === requestedTier) ? requestedTier : DEFAULT_TIER;
   const [form, setForm] = useState<FormData>({
     recipientName: '',
     creatorName: '',
@@ -122,7 +125,7 @@ function CustomizePageContent() {
     unlockCode: '',
     unlockQuestion: '',
     useCustomQuestion: false,
-    tierId: params.get('tier') || '3_day',
+    tierId: initialTier,
     yesBtnText: initialTmplMeta?.defaultYesText || 'YES 💖',
     noBtnText: initialTmplMeta?.defaultNoText || 'No 💔',
     selectedMusicUrl: '',
@@ -166,7 +169,7 @@ function CustomizePageContent() {
     set('mainBody', preset.body);
   };
 
-  const selectedTier = TIERS.find(t => t.id === form.tierId)!;
+  const selectedTier = TIERS.find(t => t.id === form.tierId) || TIERS.find(t => t.id === DEFAULT_TIER) || TIERS[0];
   const selectedTemplate = TEMPLATE_TYPES.find(t => t.id === form.templateType) || initialTmplMeta || PRIMARY_TEMPLATE_TYPES[0];
   const previewTitle = form.messageTitle || selectedTemplate.messagePresets[0]?.title || selectedTemplate.label.replace(/\s[^\s]*$/, '');
   const previewBody = form.mainBody || selectedTemplate.messagePresets[0]?.body || selectedTemplate.builderHint;
@@ -915,7 +918,7 @@ function CustomizePageContent() {
               boxShadow: '0 8px 30px var(--glow)',
             }}
           >
-            {loading ? 'Generating link...' : `Looks good - send it for ₹${selectedTier?.price || 49}`}
+            {loading ? 'Generating link...' : `Looks good - send it for ₹${selectedTier.price}`}
           </motion.button>
           <p className="text-xs text-center font-medium leading-relaxed" style={{ color: 'var(--text2)' }}>
             Secure payment · UPI deep links / QR codes accepted · instant confirmation

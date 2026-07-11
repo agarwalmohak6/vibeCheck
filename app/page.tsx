@@ -618,7 +618,7 @@ export default function LandingPage() {
                   Midnight Confession #882
                 </h4>
                 <p className="text-xs text-amber-900/80 leading-relaxed font-serif">
-                  {"\"I stayed up till 2 AM drafting this. Added the Midnight Romance scene and a custom track. She guessed the passcode '2024' on the first try and typed: 'YES of course!' live in the chat. Best ₹29 I ever spent.\""}
+                  {"\"I stayed up till 2 AM drafting this. Added the Midnight Romance scene and a custom track. She guessed the passcode '2024' on the first try and typed: 'YES of course!' live in the chat. Best ₹49 I ever spent.\""}
                 </p>
                 <div className="border-t border-amber-900/10 pt-2 flex justify-between text-[10px] font-bold text-amber-800">
                   <span>Recipient: Priya</span>
