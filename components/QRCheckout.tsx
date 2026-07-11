@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { buildUpiIntent } from '@/lib/upi';
+import { buildUpiIntent, isValidUpiVpa } from '@/lib/upi';
 import { supabase } from '@/lib/supabase';
 
 interface QRCheckoutProps {
@@ -12,16 +12,20 @@ interface QRCheckoutProps {
   vpa?: string;
 }
 
-export default function QRCheckout({ cardId, amount, onPaid, vpa = 'vibecheck@upi' }: QRCheckoutProps) {
+export default function QRCheckout({ cardId, amount, onPaid, vpa }: QRCheckoutProps) {
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
   const [isVerifying, setIsVerifying] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const allowMockPayments = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS !== 'false';
+  const configuredVpa = (vpa || process.env.NEXT_PUBLIC_UPI_VPA || '').trim();
+  const hasValidVpa = isValidUpiVpa(configuredVpa);
 
   // 1. Build the UPI Intent URL
   const payeeName = "VibeCheck";
   const txnId = cardId.replace(/-/g, '').substring(0, 32); // clean txn id
-  const upiIntent = buildUpiIntent(vpa, payeeName, txnId, amount, `VibeCheck Premium ID ${cardId.substring(0, 8)}`);
+  const upiIntent = hasValidVpa
+    ? buildUpiIntent(configuredVpa, payeeName, txnId, amount, `VibeCheck Premium ID ${cardId.substring(0, 8)}`)
+    : '';
 
   // 2. Countdown Timer
   useEffect(() => {
@@ -132,7 +136,13 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa = 'vibecheck@up
 
       {/* QR Container */}
       <div className="bg-white p-4 rounded-2xl shadow-xl relative inline-block border-4 border-pink-500/20">
-        {timeLeft > 0 ? (
+        {!hasValidVpa ? (
+          <div className="w-[180px] h-[180px] flex flex-col items-center justify-center text-neutral-800 text-center p-3">
+            <span className="text-2xl mb-2">⚠️</span>
+            <p className="text-xs font-bold">UPI ID missing or invalid</p>
+            <p className="mt-1 text-[10px] leading-snug text-neutral-500">Set NEXT_PUBLIC_UPI_VPA and redeploy.</p>
+          </div>
+        ) : timeLeft > 0 ? (
           <QRCodeSVG 
             value={upiIntent} 
             size={180} 
@@ -153,6 +163,11 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa = 'vibecheck@up
           </div>
         )}
       </div>
+      {hasValidVpa && (
+        <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold text-neutral-300">
+          Paying to <span className="text-pink-300">{configuredVpa}</span>
+        </div>
+      )}
 
       {/* Pricing / Timer */}
       <div className="w-full bg-white/5 border border-white/5 rounded-xl py-3 px-4 flex justify-between items-center">
@@ -175,7 +190,7 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa = 'vibecheck@up
           Open Google Pay, PhonePe, Paytm, or any UPI app to scan.
         </p>
         <p className="text-[9px] text-neutral-500 italic">
-          Verification is instant. Do not close this screen.
+          The card unlocks once this payment is marked verified.
         </p>
       </div>
 

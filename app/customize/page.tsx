@@ -10,7 +10,7 @@ import SuccessHub from '@/components/SuccessHub';
 import MusicSelector from '@/components/MusicSelector';
 import QRCheckout from '@/components/QRCheckout';
 import { compressImage } from '@/lib/imageCompressor';
-import { isMobileDevice, buildUpiIntent } from '@/lib/upi';
+import { isMobileDevice, buildUpiIntent, isValidUpiVpa } from '@/lib/upi';
 import HeartCanvas from '@/components/HeartCanvas';
 import AmbientBackground from '@/components/AmbientBackground';
 import CardStoryline from '@/components/CardStoryline';
@@ -140,6 +140,8 @@ function CustomizePageContent() {
   const [isMobile, setIsMobile] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const allowMockPayments = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS !== 'false';
+  const paymentVpa = (process.env.NEXT_PUBLIC_UPI_VPA || '').trim();
+  const hasValidPaymentVpa = isValidUpiVpa(paymentVpa);
 
   // Check device type on mount
   useEffect(() => {
@@ -408,12 +410,18 @@ function CustomizePageContent() {
 
   const handleMobilePaymentTrigger = async () => {
     if (!createdCardId) return;
+    if (!hasValidPaymentVpa) {
+      setNotice({
+        tone: 'error',
+        message: 'UPI payment is not configured. Set NEXT_PUBLIC_UPI_VPA and redeploy.',
+      });
+      return;
+    }
 
     // Auto pay simulator webhook triggers 2s later
-    const vpa = process.env.NEXT_PUBLIC_UPI_VPA || 'vibecheck@upi';
     const txnId = createdCardId.replace(/-/g, '').substring(0, 32);
     const payeeName = "VibeCheck";
-    const upiLink = buildUpiIntent(vpa, payeeName, txnId, selectedTier.price);
+    const upiLink = buildUpiIntent(paymentVpa, payeeName, txnId, selectedTier.price);
 
     // Open UPI deep link
     window.location.href = upiLink;
@@ -488,12 +496,17 @@ function CustomizePageContent() {
           <span className="text-5xl">📱</span>
           <h2 className="text-2xl font-black text-white font-serif">Complete Payment</h2>
           <p className="text-sm text-neutral-200">Launch any UPI app to pay ₹{selectedTier.price}</p>
+          {hasValidPaymentVpa ? (
+            <p className="text-xs font-bold text-neutral-300">Paying to {paymentVpa}</p>
+          ) : (
+            <p className="text-xs font-bold text-red-200">UPI ID missing. Set NEXT_PUBLIC_UPI_VPA and redeploy.</p>
+          )}
         </div>
 
         <div className="w-full max-w-sm space-y-3">
           <button
             onClick={handleMobilePaymentTrigger}
-            disabled={loading}
+            disabled={loading || !hasValidPaymentVpa}
             className="w-full bg-linear-to-r from-pink-500 to-purple-600 hover:scale-102 active:scale-98 text-white font-bold py-4 px-6 rounded-2xl text-base shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>⚡</span>
@@ -538,6 +551,7 @@ function CustomizePageContent() {
             cardId={createdCardId}
             amount={selectedTier.price}
             onPaid={() => setIsPaid(true)}
+            vpa={paymentVpa}
           />
           {allowMockPayments && (
             <div className="flex flex-col items-center gap-2">

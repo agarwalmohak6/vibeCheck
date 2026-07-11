@@ -9,16 +9,25 @@ export function buildUpiIntent(
   amount: number,
   note: string = "VibeCheck Premium Unlock"
 ): string {
-  // Clean payee name and note for URI encoding
-  const pa = encodeURIComponent(vpa);
-  const pn = encodeURIComponent(payeeName);
-  const tr = encodeURIComponent(transactionId);
-  const tn = encodeURIComponent(note);
-  const am = amount.toFixed(2);
+  const params = new URLSearchParams({
+    pa: vpa.trim(),
+    pn: payeeName.trim(),
+    tn: note.trim(),
+    am: amount.toFixed(2),
+    cu: "INR",
+  });
+
+  if (transactionId.trim()) {
+    params.set("tr", transactionId.trim());
+  }
 
   // UPI deep link specification
   // upi://pay?pa=recipient@vpa&pn=PayeeName&tr=TransactionID&tn=Note&am=Amount&cu=INR
-  return `upi://pay?pa=${pa}&pn=${pn}&tr=${tr}&tn=${tn}&am=${am}&cu=INR`;
+  return `upi://pay?${params.toString()}`;
+}
+
+export function isValidUpiVpa(vpa: string): boolean {
+  return /^[a-zA-Z0-9._-]{2,256}@[a-zA-Z][a-zA-Z0-9._-]{2,64}$/.test(vpa.trim());
 }
 
 export function isMobileDevice(): boolean {
