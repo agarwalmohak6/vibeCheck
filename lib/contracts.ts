@@ -84,6 +84,17 @@ export const paymentReferenceSchema = z.object({
     .regex(/^[A-Za-z0-9\s-]+$/, 'Use only letters, numbers, spaces, or hyphens.'),
 });
 
+export const paymentOrderSchema = z.object({
+  card_id: z.string().uuid(),
+});
+
+export const paymentVerifySchema = z.object({
+  card_id: z.string().uuid(),
+  razorpay_order_id: z.string().trim().min(1).max(120),
+  razorpay_payment_id: z.string().trim().min(1).max(120),
+  razorpay_signature: z.string().trim().min(1).max(240),
+});
+
 export const signedUploadSchema = z.object({
   card_id: z.string().uuid(),
   file_name: z.string().trim().min(1).max(160),
@@ -93,3 +104,5 @@ export const signedUploadSchema = z.object({
 
 export type CreateCardInput = z.infer<typeof createCardSchema>;
 export type PaymentReferenceInput = z.infer<typeof paymentReferenceSchema>;
+export type PaymentOrderInput = z.infer<typeof paymentOrderSchema>;
+export type PaymentVerifyInput = z.infer<typeof paymentVerifySchema>;

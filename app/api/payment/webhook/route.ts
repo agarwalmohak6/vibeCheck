@@ -45,6 +45,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid payment payload', issues: parsed.error.flatten() }, { status: 400 });
     }
 
+    const paidStatuses = new Set(['authorized', 'captured', 'paid', 'success']);
+    const status = (parsed.data.status || 'success').toLowerCase();
+    if (!paidStatuses.has(status)) {
+      return NextResponse.json({ success: true, ignored: true, status });
+    }
+
     const paymentId = parsed.data.payment_id || `verified_${Date.now()}`;
     const ok = await markCardPaymentVerified(parsed.data.card_id, paymentId, parsed.data.extends_at);
     if (!ok) return NextResponse.json({ error: 'Card not found' }, { status: 404 });

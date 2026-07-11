@@ -277,7 +277,7 @@ export async function submitUpiPaymentReference(id: string, reference: string) {
   };
 }
 
-export async function markCardPaymentVerified(id: string, paymentId: string, extendsAt?: string) {
+export async function markCardPaymentVerified(id: string, paymentId: string, extendsAt?: string, providerOrderId?: string) {
   const admin = getSupabaseAdmin();
   if (!admin) {
     const card = MOCK_STORE[id];
@@ -299,10 +299,23 @@ export async function markCardPaymentVerified(id: string, paymentId: string, ext
   const { error } = await admin.from('cards').update(updates).eq('id', id);
   if (error) throw error;
 
+  if (providerOrderId) {
+    const { error: orderUpdateError } = await admin
+      .from('payments')
+      .update({
+        provider_payment_id: paymentId,
+        status: 'paid',
+        verified_at: new Date().toISOString(),
+      })
+      .eq('provider_order_id', providerOrderId);
+    if (orderUpdateError) throw orderUpdateError;
+  }
+
   await admin.from('payments').upsert(
     {
       card_id: id,
       provider: 'razorpay',
+      provider_order_id: providerOrderId || null,
       provider_payment_id: paymentId,
       status: 'paid',
       verified_at: new Date().toISOString(),

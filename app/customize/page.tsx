@@ -9,9 +9,8 @@ import GiphyModal from '@/components/GiphyModal';
 import SuccessHub from '@/components/SuccessHub';
 import MusicSelector from '@/components/MusicSelector';
 import QRCheckout from '@/components/QRCheckout';
-import PaymentReferenceForm from '@/components/PaymentReferenceForm';
+import RazorpayCheckout from '@/components/RazorpayCheckout';
 import { compressImage } from '@/lib/imageCompressor';
-import { isMobileDevice, buildUpiIntent, isValidUpiVpa } from '@/lib/upi';
 import HeartCanvas from '@/components/HeartCanvas';
 import AmbientBackground from '@/components/AmbientBackground';
 import CardStoryline from '@/components/CardStoryline';
@@ -138,16 +137,9 @@ function CustomizePageContent() {
   const [creatorToken, setCreatorToken] = useState<string | null>(null);
   const [paymentStep, setPaymentStep] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const allowMockPayments = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS !== 'false';
   const paymentVpa = (process.env.NEXT_PUBLIC_UPI_VPA || '').trim();
-  const hasValidPaymentVpa = isValidUpiVpa(paymentVpa);
-
-  // Check device type on mount
-  useEffect(() => {
-    setTimeout(() => setIsMobile(isMobileDevice()), 0);
-  }, []);
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) => setForm(p => ({ ...p, [k]: v }));
 
@@ -409,56 +401,12 @@ function CustomizePageContent() {
     }
   };
 
-  const handleMobilePaymentTrigger = async () => {
-    if (!createdCardId) return;
-    if (!hasValidPaymentVpa) {
-      setNotice({
-        tone: 'error',
-        message: 'UPI payment is not configured. Set NEXT_PUBLIC_UPI_VPA and redeploy.',
-      });
-      return;
-    }
-
-    // Auto pay simulator webhook triggers 2s later
-    const txnId = createdCardId.replace(/-/g, '').substring(0, 32);
-    const payeeName = "VibeCheck";
-    const upiLink = buildUpiIntent(paymentVpa, payeeName, txnId, selectedTier.price);
-
-    // Open UPI deep link
-    window.location.href = upiLink;
-
-    // Start checking for payment webhook success
-    setLoading(true);
-  };
-
-  // Poll for mobile payment verification if loading
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (loading && createdCardId && isMobile) {
-      interval = setInterval(async () => {
-        try {
-          const res = await fetch(`/api/cards?id=${createdCardId}&status=payment`);
-          if (res.ok) {
-            const card = await res.json();
-            if (card.is_paid) {
-              setIsPaid(true);
-              setLoading(false);
-            }
-          }
-        } catch (e) {
-          console.warn(e);
-        }
-      }, 2500);
-    }
-    return () => clearInterval(interval);
-  }, [loading, createdCardId, isMobile]);
-
   // Handle mock trigger on mobile viewport
   const handleMobileMockSuccess = async () => {
     if (!createdCardId) return;
     setLoading(true);
     try {
-      await fetch('/api/payment/webhook', {
+      const res = await fetch('/api/payment/webhook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-vibecheck-mock-payment': 'true' },
         body: JSON.stringify({
@@ -467,8 +415,11 @@ function CustomizePageContent() {
           status: 'success'
         }),
       });
+      if (res.ok) setIsPaid(true);
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -487,33 +438,33 @@ function CustomizePageContent() {
     );
   }
 
-  // ── Mobile Payment Screen ────────────────────────────
-  if (paymentStep && createdCardId && isMobile && !isPaid) {
+  // ── Payment Screen ────────────────────────────
+  if (paymentStep && createdCardId && !isPaid) {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center space-y-6" style={{ background: 'var(--bg)' }}>
         <div className="absolute -top-10 -left-10 w-44 h-44 bg-pink-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div className="space-y-2">
-          <span className="text-5xl">📱</span>
-          <h2 className="text-2xl font-black text-white font-serif">Complete Payment</h2>
-          <p className="text-sm text-neutral-200">Launch any UPI app to pay ₹{selectedTier.price}</p>
-          {hasValidPaymentVpa ? (
-            <p className="text-xs font-bold text-neutral-300">Paying to {paymentVpa}</p>
-          ) : (
-            <p className="text-xs font-bold text-red-200">UPI ID missing. Set NEXT_PUBLIC_UPI_VPA and redeploy.</p>
+        <RazorpayCheckout
+          cardId={createdCardId}
+          amount={selectedTier.price}
+          onPaid={() => {
+            setIsPaid(true);
+            setLoading(false);
+          }}
+          fallback={(
+            <QRCheckout
+              cardId={createdCardId}
+              amount={selectedTier.price}
+              onPaid={() => {
+                setIsPaid(true);
+                setLoading(false);
+              }}
+              vpa={paymentVpa}
+            />
           )}
-        </div>
+        />
 
         <div className="w-full max-w-sm space-y-3">
-          <button
-            onClick={handleMobilePaymentTrigger}
-            disabled={loading || !hasValidPaymentVpa}
-            className="w-full bg-linear-to-r from-pink-500 to-purple-600 hover:scale-102 active:scale-98 text-white font-bold py-4 px-6 rounded-2xl text-base shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <span>⚡</span>
-            <span>{loading ? 'Waiting for App...' : 'Pay via UPI App'}</span>
-          </button>
-
           {allowMockPayments && (
             <button
               onClick={handleMobileMockSuccess}
@@ -531,12 +482,6 @@ function CustomizePageContent() {
               Bypass payment locally
             </button>
           )}
-
-          <PaymentReferenceForm
-            cardId={createdCardId}
-            variant="dark"
-            onSubmitted={() => setLoading(true)}
-          />
         </div>
 
         {loading && (
@@ -545,33 +490,6 @@ function CustomizePageContent() {
             <p className="text-xs text-neutral-200">Waiting for payment confirmation from bank...</p>
           </div>
         )}
-      </main>
-    );
-  }
-
-  // ── Desktop Payment Screen ────────────────────────────
-  if (paymentStep && createdCardId && !isMobile && !isPaid) {
-    return (
-      <main className="min-h-screen flex items-center justify-center p-6 relative" style={{ background: 'var(--bg)' }}>
-        <div className="w-full max-w-5xl flex flex-col items-center gap-4">
-          <QRCheckout
-            cardId={createdCardId}
-            amount={selectedTier.price}
-            onPaid={() => setIsPaid(true)}
-            vpa={paymentVpa}
-          />
-          {allowMockPayments && (
-            <div className="flex flex-col items-center gap-2">
-              <button
-                onClick={() => setIsPaid(true)}
-                className="px-5 py-2.5 rounded-full text-xs font-black tracking-wide text-white border border-white/20 bg-white/12 hover:bg-white/18 transition-colors cursor-pointer shadow-lg shadow-black/20"
-              >
-                Bypass payment locally
-              </button>
-              <p className="text-[11px] text-neutral-300">Use this only for local testing.</p>
-            </div>
-          )}
-        </div>
       </main>
     );
   }

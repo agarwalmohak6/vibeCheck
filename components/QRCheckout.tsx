@@ -168,8 +168,16 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa }: QRCheckoutPr
         )}
       </div>
       {hasValidVpa && (
-        <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold text-neutral-300">
-          Paying to <span className="text-pink-300">{configuredVpa}</span>
+        <div className="w-full space-y-2">
+          <a
+            href={upiIntent}
+            className="block w-full rounded-xl bg-linear-to-r from-pink-500 to-amber-500 px-4 py-3 text-xs font-black text-white shadow-lg shadow-pink-500/20 transition hover:scale-[1.02]"
+          >
+            Open UPI app
+          </a>
+          <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold text-neutral-300">
+            Paying to <span className="text-pink-300">{configuredVpa}</span>
+          </div>
         </div>
       )}
 
