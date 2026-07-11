@@ -509,12 +509,14 @@ function CustomizePageContent() {
             </button>
           )}
 
-          <button
-            onClick={() => setIsPaid(true)}
-            className="w-full bg-white/12 border border-white/20 hover:bg-white/18 text-white font-bold py-3 px-6 rounded-2xl text-xs tracking-wide transition-colors cursor-pointer shadow-lg shadow-black/20"
-          >
-            Bypass payment locally
-          </button>
+          {allowMockPayments && (
+            <button
+              onClick={() => setIsPaid(true)}
+              className="w-full bg-white/12 border border-white/20 hover:bg-white/18 text-white font-bold py-3 px-6 rounded-2xl text-xs tracking-wide transition-colors cursor-pointer shadow-lg shadow-black/20"
+            >
+              Bypass payment locally
+            </button>
+          )}
         </div>
 
         {loading && (
@@ -537,15 +539,17 @@ function CustomizePageContent() {
             amount={selectedTier.price}
             onPaid={() => setIsPaid(true)}
           />
-          <div className="flex flex-col items-center gap-2">
-            <button
-              onClick={() => setIsPaid(true)}
-              className="px-5 py-2.5 rounded-full text-xs font-black tracking-wide text-white border border-white/20 bg-white/12 hover:bg-white/18 transition-colors cursor-pointer shadow-lg shadow-black/20"
-            >
-              Bypass payment locally
-            </button>
-            <p className="text-[11px] text-neutral-300">Use this only for local testing.</p>
-          </div>
+          {allowMockPayments && (
+            <div className="flex flex-col items-center gap-2">
+              <button
+                onClick={() => setIsPaid(true)}
+                className="px-5 py-2.5 rounded-full text-xs font-black tracking-wide text-white border border-white/20 bg-white/12 hover:bg-white/18 transition-colors cursor-pointer shadow-lg shadow-black/20"
+              >
+                Bypass payment locally
+              </button>
+              <p className="text-[11px] text-neutral-300">Use this only for local testing.</p>
+            </div>
+          )}
         </div>
       </main>
     );
