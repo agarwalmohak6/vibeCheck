@@ -114,13 +114,6 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
               contact: prefillContact,
             }
           : undefined,
-        method: {
-          upi: true,
-          card: false,
-          netbanking: false,
-          wallet: false,
-          paylater: false,
-        },
         theme: {
           color: '#e91e8c',
         },
