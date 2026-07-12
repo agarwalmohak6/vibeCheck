@@ -121,6 +121,37 @@ export const adminLoginSchema = z.object({
   secret: z.string().trim().min(12).max(240),
 });
 
+export const creatorAuthSchema = z.object({
+  email: z.string().trim().email().max(160).optional().or(z.literal('')),
+  phone: z.string()
+    .trim()
+    .max(24)
+    .regex(/^[0-9+\-\s()]*$/, 'Use a valid phone number.')
+    .optional()
+    .or(z.literal('')),
+  password: z.string().min(6).max(120),
+  name: z.string().trim().max(80).optional().or(z.literal('')),
+}).superRefine((value, ctx) => {
+  const hasEmail = Boolean(value.email?.trim());
+  const hasPhone = Boolean(value.phone?.trim());
+  if (!hasEmail && !hasPhone) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['email'],
+      message: 'Add an email or mobile number.',
+    });
+  }
+});
+
+export const creatorCardClaimSchema = z.object({
+  card_id: z.string().uuid(),
+  creator_token: z.string().trim().min(20).max(600),
+});
+
+export const adminCleanupSchema = z.object({
+  confirm: z.literal('CLEAR_TEST_DATA'),
+});
+
 export const signedUploadSchema = z.object({
   card_id: z.string().uuid(),
   file_name: z.string().trim().min(1).max(160),
@@ -136,3 +167,5 @@ export type RazorpayCreateOrderInput = z.infer<typeof razorpayCreateOrderSchema>
 export type RazorpayVerifyPaymentInput = z.infer<typeof razorpayVerifyPaymentSchema>;
 export type ManualPaymentVerifyInput = z.infer<typeof manualPaymentVerifySchema>;
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
+export type CreatorAuthInput = z.infer<typeof creatorAuthSchema>;
+export type CreatorCardClaimInput = z.infer<typeof creatorCardClaimSchema>;

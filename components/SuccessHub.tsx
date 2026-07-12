@@ -166,7 +166,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
           className="text-sm"
           style={{ color: 'var(--text3)' }}
         >
-          Here&apos;s your private link for {recipientName}. Send it when the moment is right.
+          Send the recipient link to {recipientName}. Keep the creator link or dashboard for tracking.
         </motion.p>
       </div>
 
@@ -177,7 +177,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
         className="w-full rounded-2xl p-4"
         style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}
       >
-        <p className="text-xs mb-2 font-medium" style={{ color: 'var(--text2)' }}>Private link</p>
+        <p className="text-xs mb-2 font-medium" style={{ color: 'var(--text2)' }}>Recipient link to send</p>
         <p className="text-sm font-mono break-all font-bold select-all" style={{ color: 'var(--accent)' }}>{cardUrl}</p>
       </motion.div>
 
@@ -280,6 +280,18 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
           <span className="text-xl">📱</span>
           Share on WhatsApp
         </motion.a>
+
+        <Link
+          href="/dashboard"
+          className="flex-1 py-4 rounded-2xl font-bold text-center flex items-center justify-center gap-2"
+          style={{
+            color: 'var(--text)',
+            background: 'var(--surface2)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          Track in dashboard
+        </Link>
       </motion.div>
 
       <motion.div
@@ -412,7 +424,7 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
           The link works on any device. No app needed.
       </motion.p>
 
-      <Link href="/customize" className="text-xs font-black underline underline-offset-4" style={{ color: 'var(--accent)' }}>
+      <Link href="/customize?new=1" className="text-xs font-black underline underline-offset-4" style={{ color: 'var(--accent)' }}>
         Make another VibeCheck
       </Link>
     </motion.div>

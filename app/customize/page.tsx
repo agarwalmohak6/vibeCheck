@@ -48,6 +48,18 @@ const DEFAULT_TEMPLATE = 'maan_jao';
 const DEFAULT_TIER = '2_day';
 const MIN_STORY_QUESTIONS = 3;
 const MAX_STORY_QUESTIONS = 5;
+const ACTIVE_CHECKOUT_KEY = 'vibecheck_active_checkout';
+
+type CheckoutSession = {
+  cardId: string;
+  creatorToken?: string | null;
+  recipientName?: string;
+  creatorName?: string;
+  tierId?: string;
+  paid?: boolean;
+  updatedAt?: string;
+};
+
 const CARD_DECOR: Record<string, string[]> = {
   maan_jao: ['🥺', '💌', '🧸', '🕊️'],
   birthday_roast: ['🎂', '🎉', '🎩', '🧸'],
@@ -98,6 +110,43 @@ function sanitizeStoryQuestions(questions: StoryQuestion[]): StoryQuestion[] {
       options: question.options.map(option => option.trim()).filter(Boolean).slice(0, 3),
     }))
     .filter(question => question.question && question.options.length >= 2);
+}
+
+function readCheckoutSession(): CheckoutSession | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const raw = window.localStorage.getItem(ACTIVE_CHECKOUT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<CheckoutSession>;
+    if (!parsed.cardId) return null;
+
+    return {
+      cardId: parsed.cardId,
+      creatorToken: parsed.creatorToken || window.localStorage.getItem(`creator_token_${parsed.cardId}`),
+      recipientName: parsed.recipientName || '',
+      creatorName: parsed.creatorName || '',
+      tierId: parsed.tierId || '',
+      paid: Boolean(parsed.paid),
+      updatedAt: parsed.updatedAt || '',
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeCheckoutSession(session: CheckoutSession) {
+  if (typeof window === 'undefined') return;
+
+  window.localStorage.setItem(ACTIVE_CHECKOUT_KEY, JSON.stringify({
+    ...session,
+    updatedAt: new Date().toISOString(),
+  }));
+
+  if (session.creatorToken) {
+    window.localStorage.setItem(`creator_token_${session.cardId}`, session.creatorToken);
+  }
+  window.localStorage.setItem(`creator_of_${session.cardId}`, 'true');
 }
 
 function CustomizePageContent() {
@@ -185,10 +234,101 @@ function CustomizePageContent() {
     form.musicTrackId.trim() || form.selectedMusicUrl.trim() || form.musicLabel.trim(),
   );
 
+  const rememberCheckout = (
+    cardId: string,
+    token: string | null | undefined,
+    paid = false,
+  ) => {
+    const existing = readCheckoutSession();
+    writeCheckoutSession({
+      cardId,
+      creatorToken: token || creatorToken || existing?.creatorToken || null,
+      recipientName: submitRecipientName || displayRecipientName || existing?.recipientName || '',
+      creatorName: submitCreatorName || displayCreatorName || existing?.creatorName || '',
+      tierId: form.tierId || existing?.tierId || selectedTier.id,
+      paid,
+    });
+  };
+
+  const markCheckoutPaid = (cardId = createdCardId, token = creatorToken) => {
+    if (cardId) rememberCheckout(cardId, token, true);
+    setIsPaid(true);
+    setPaymentStep(false);
+    setLoading(false);
+  };
+
   const isStoryQuestionComplete = (question: StoryQuestion) => {
     const options = question.options.map(option => option.trim()).filter(Boolean);
     return Boolean(question.question.trim() && options.length >= 2);
   };
+
+  useEffect(() => {
+    if (params.get('new') === '1') {
+      window.localStorage.removeItem(ACTIVE_CHECKOUT_KEY);
+      return;
+    }
+
+    const stored = readCheckoutSession();
+    if (!stored?.cardId) return;
+
+    // Recover the payment/result screen after a refresh.
+    setCreatedCardId(stored.cardId);
+    setCreatorToken(stored.creatorToken || null);
+    if (stored.recipientName || stored.creatorName || stored.tierId) {
+      setForm(prev => ({
+        ...prev,
+        recipientName: stored.recipientName || prev.recipientName,
+        creatorName: stored.creatorName || prev.creatorName,
+        tierId: stored.tierId || prev.tierId,
+      }));
+    }
+
+    if (stored.paid) {
+      setIsPaid(true);
+      setPaymentStep(false);
+      return;
+    }
+
+    setPaymentStep(true);
+    fetch(`/api/cards?id=${stored.cardId}&status=payment`, { cache: 'no-store' })
+      .then((res) => res.ok ? res.json() : null)
+      .then((status) => {
+        if (status?.is_paid) {
+          writeCheckoutSession({ ...stored, paid: true });
+          setIsPaid(true);
+          setPaymentStep(false);
+        }
+      })
+      .catch(() => {
+        // The payment screen will keep polling; avoid blocking the creator on transient errors.
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!paymentStep || !createdCardId || isPaid) return;
+
+    let cancelled = false;
+    const checkStatus = async () => {
+      try {
+        const res = await fetch(`/api/cards?id=${createdCardId}&status=payment`, { cache: 'no-store' });
+        const status = res.ok ? await res.json() : null;
+        if (!cancelled && status?.is_paid) {
+          markCheckoutPaid(createdCardId, creatorToken);
+        }
+      } catch {
+        // Keep polling. Direct UPI approval can arrive a few seconds later.
+      }
+    };
+
+    void checkStatus();
+    const interval = window.setInterval(checkStatus, 3000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentStep, createdCardId, creatorToken, isPaid]);
 
   const getStepIssues = (stepIndex: number): string[] => {
     const issues: string[] = [];
@@ -387,6 +527,7 @@ function CustomizePageContent() {
         }
         // Identify this browser as the creator of the card
         localStorage.setItem(`creator_of_${data.id}`, 'true');
+        rememberCheckout(data.id, data.creator_token || null, false);
         setPaymentStep(true);
       } else {
         setNotice({
@@ -418,7 +559,7 @@ function CustomizePageContent() {
           status: 'success'
         }),
       });
-      if (res.ok) setIsPaid(true);
+      if (res.ok) markCheckoutPaid(createdCardId, creatorToken);
     } catch (e) {
       console.error(e);
     } finally {
@@ -451,16 +592,14 @@ function CustomizePageContent() {
           cardId={createdCardId}
           amount={selectedTier.price}
           onPaid={() => {
-            setIsPaid(true);
-            setLoading(false);
+            markCheckoutPaid(createdCardId, creatorToken);
           }}
           fallback={(
             <QRCheckout
               cardId={createdCardId}
               amount={selectedTier.price}
               onPaid={() => {
-                setIsPaid(true);
-                setLoading(false);
+                markCheckoutPaid(createdCardId, creatorToken);
               }}
               vpa={paymentVpa}
             />
@@ -479,7 +618,7 @@ function CustomizePageContent() {
 
           {allowMockPayments && (
             <button
-              onClick={() => setIsPaid(true)}
+              onClick={() => markCheckoutPaid(createdCardId, creatorToken)}
               className="w-full bg-white/12 border border-white/20 hover:bg-white/18 text-white font-bold py-3 px-6 rounded-2xl text-xs tracking-wide transition-colors cursor-pointer shadow-lg shadow-black/20"
             >
               Bypass payment locally

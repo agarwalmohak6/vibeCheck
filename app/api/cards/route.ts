@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createCardSchema } from '@/lib/contracts';
 import { createCardDraft, getPaymentStatus, getPublicCard } from '@/services/server/card-store';
+import { getCreatorSessionFromRequest } from '@/services/server/creator-auth';
 import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +18,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid card payload', issues: parsed.error.flatten() }, { status: 400 });
     }
 
-    const { card, creatorToken } = await createCardDraft(parsed.data);
+    const creatorSession = getCreatorSessionFromRequest(req);
+    const { card, creatorToken } = await createCardDraft(parsed.data, creatorSession?.accountId);
     return NextResponse.json({
       id: card.id,
       url: `/card/${card.id}`,

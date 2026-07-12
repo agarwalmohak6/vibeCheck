@@ -41,6 +41,7 @@ export interface Card {
   theme_selected: string;
   card_data: CardData;
   tier_selected: string;
+  account_id?: string | null;
   created_at: string;
   expires_at?: string | null;
   is_paid: boolean;

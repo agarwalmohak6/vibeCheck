@@ -106,7 +106,7 @@ export default function LandingPage() {
       {showDock && (
         <div className="vc-conversion-dock" aria-label="Quick start">
           <span>One link, one person, not another forwarded template</span>
-          <Link href="/customize">Make a VibeCheck</Link>
+          <Link href="/customize?new=1">Make a VibeCheck</Link>
         </div>
       )}
 
@@ -144,6 +144,12 @@ export default function LandingPage() {
             animate={{ opacity: 1, x: 0 }}
             className="vc-nav-actions"
           >
+            <Link
+              href="/dashboard"
+              className="hidden rounded-full border border-pink-200 bg-white/70 px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-[#7b3f6e] shadow-sm shadow-pink-100 transition hover:-translate-y-0.5 hover:bg-white sm:inline-flex"
+            >
+              Dashboard
+            </Link>
             <div className="vc-social-links" aria-label="Social links">
               <a
                 href="https://instagram.com/vibecheck.cards"
@@ -213,7 +219,7 @@ export default function LandingPage() {
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Link href="/customize">
+                <Link href="/customize?new=1">
                   <motion.button
                     whileHover={{
                       scale: 1.05,
@@ -451,7 +457,7 @@ export default function LandingPage() {
                       <li>Private one-person link</li>
                       <li>Tracker and replies</li>
                     </ul>
-                    <Link href={`/customize?tier=${tier.id}`}>
+                    <Link href={`/customize?tier=${tier.id}&new=1`}>
                       <motion.button
                         whileTap={{ scale: 0.96 }}
                         className="w-full py-2.5 rounded-xl font-bold text-sm"
@@ -533,7 +539,7 @@ export default function LandingPage() {
               >
                 {LANDING_STRINGS.CTA_SUBTITLE}
               </p>
-              <Link href="/customize">
+              <Link href="/customize?new=1">
                 <motion.button
                   whileHover={{
                     scale: 1.06,

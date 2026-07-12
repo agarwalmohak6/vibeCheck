@@ -99,7 +99,6 @@ export async function createRazorpayOrderForCard(cardId: string): Promise<Razorp
     amount: amountInPaise,
     currency: 'INR',
     receipt,
-    method: 'upi',
     notes: {
       card_id: card.id,
       tier: card.tier_selected,

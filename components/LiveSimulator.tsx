@@ -390,7 +390,7 @@ export default function LiveSimulator() {
                       Create your card and pay to unlock the full reveal,
                       answer flow, reply room, and private send link.
                     </p>
-                    <Link href={`/customize?type=${activeTemplate}`}>
+                    <Link href={`/customize?type=${activeTemplate}&new=1`}>
                       See full card & pay
                     </Link>
                     <button type="button" onClick={handleReset}>
@@ -500,7 +500,7 @@ export default function LiveSimulator() {
                       opens with the complete story, answer flow, and private
                       link for your person.
                     </p>
-                    <Link href={`/customize?type=${activeTemplate}`}>
+                    <Link href={`/customize?type=${activeTemplate}&new=1`}>
                       See full card & pay
                     </Link>
                     <button type="button" onClick={handleReset}>

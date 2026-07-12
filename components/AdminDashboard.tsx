@@ -33,6 +33,13 @@ type VerifyResponse = {
   error?: string;
 };
 
+type CleanupResponse = {
+  success?: boolean;
+  cards_deleted?: number;
+  payments_deleted?: number;
+  error?: string;
+};
+
 const ADMIN_EMAIL = 'agarwalmohak6@gmail.com';
 
 function formatDate(value: string | null | undefined) {
@@ -60,6 +67,8 @@ export default function AdminDashboard() {
   const [status, setStatus] = useState<'checking' | 'login' | 'ready'>('checking');
   const [loading, setLoading] = useState(false);
   const [verifyingRef, setVerifyingRef] = useState('');
+  const [cleanupConfirm, setCleanupConfirm] = useState('');
+  const [cleanupLoading, setCleanupLoading] = useState(false);
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
 
@@ -158,6 +167,34 @@ export default function AdminDashboard() {
       setError('Network issue while approving UTR.');
     } finally {
       setVerifyingRef('');
+    }
+  };
+
+  const handleCleanup = async () => {
+    setCleanupLoading(true);
+    setError('');
+    setNotice('');
+
+    try {
+      const res = await fetch('/api/admin/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: cleanupConfirm }),
+      });
+      const data = await res.json() as CleanupResponse;
+
+      if (!res.ok) {
+        setError(data.error || 'Cleanup failed.');
+        return;
+      }
+
+      setCleanupConfirm('');
+      setNotice(`Cleared ${data.cards_deleted || 0} cards and ${data.payments_deleted || 0} payments.`);
+      await loadPayments();
+    } catch {
+      setError('Network issue while clearing test data.');
+    } finally {
+      setCleanupLoading(false);
     }
   };
 
@@ -303,6 +340,28 @@ export default function AdminDashboard() {
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#9e6b8a]">Paid</p>
                   <p className="mt-1 text-4xl font-black text-emerald-600">{paidCount}</p>
                 </div>
+              </div>
+
+              <div className="rounded-[2rem] border border-red-200 bg-red-50/80 p-5 shadow-xl shadow-red-100">
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-red-500">Danger zone</p>
+                <h2 className="mt-2 font-[var(--font-display)] text-3xl font-black text-red-950">Clear test data</h2>
+                <p className="mt-2 text-sm font-bold text-red-700">
+                  Deletes cards and payment rows. Use only when you intentionally want a clean testing slate.
+                </p>
+                <input
+                  value={cleanupConfirm}
+                  onChange={(event) => setCleanupConfirm(event.target.value)}
+                  placeholder="Type CLEAR_TEST_DATA"
+                  className="mt-4 w-full rounded-2xl border border-red-200 bg-white px-4 py-3 text-sm font-black outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-200/60"
+                />
+                <button
+                  type="button"
+                  onClick={handleCleanup}
+                  disabled={cleanupLoading || cleanupConfirm !== 'CLEAR_TEST_DATA'}
+                  className="mt-3 w-full rounded-2xl bg-red-600 px-4 py-3 text-sm font-black text-white shadow-lg shadow-red-200 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {cleanupLoading ? 'Clearing...' : 'Clear cards and payments'}
+                </button>
               </div>
             </aside>
 

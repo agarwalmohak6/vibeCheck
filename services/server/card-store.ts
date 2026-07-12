@@ -52,6 +52,21 @@ export type ManualPaymentSubmission = {
   } | null;
 };
 
+export type CreatorCardSummary = {
+  id: string;
+  recipient_name: string;
+  creator_name: string;
+  template_type: string;
+  tier_selected: string;
+  is_paid: boolean;
+  payment_status: string;
+  payment_id: string | null;
+  payment_reference: string | null;
+  expires_at?: string | null;
+  created_at: string;
+  creator_token: string;
+};
+
 function sanitizeCardData(input: CreateCardInput['card_data'], hasSecretCode: boolean) {
   const { unlock_question, cover_image_url, ...rest } = input;
   delete rest.unlock_code;
@@ -83,7 +98,7 @@ function normalizePaymentReference(reference: string) {
   return reference.trim().replace(/\s+/g, '').toUpperCase();
 }
 
-export async function createCardDraft(input: CreateCardInput) {
+export async function createCardDraft(input: CreateCardInput, accountId?: string | null) {
   const admin = getSupabaseAdmin();
   const id = randomUUID();
   const hasSecretCode = Boolean(input.card_data.unlock_code?.trim());
@@ -100,6 +115,7 @@ export async function createCardDraft(input: CreateCardInput) {
       theme_selected: input.theme_selected,
       card_data: cardData,
       tier_selected: input.tier_selected,
+      account_id: accountId || null,
       created_at: new Date().toISOString(),
       expires_at: expiresAt,
       is_paid: false,
@@ -139,6 +155,7 @@ export async function createCardDraft(input: CreateCardInput) {
       is_paid: false,
       payment_status: 'pending',
       music_track_id: input.music_track_id || null,
+      ...(accountId ? { account_id: accountId } : {}),
     })
     .select('*')
     .single();
@@ -461,6 +478,132 @@ export async function listManualPaymentReferences(limit = 75): Promise<ManualPay
     raw_payload: row.raw_payload,
     card: cardsById.get(row.card_id) || null,
   }));
+}
+
+export async function listCreatorCards(accountId: string): Promise<CreatorCardSummary[]> {
+  const admin = getSupabaseAdmin();
+
+  if (!admin) {
+    return Object.values(MOCK_STORE)
+      .filter((card) => card.account_id === accountId)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .map((card) => ({
+        id: card.id,
+        recipient_name: card.recipient_name,
+        creator_name: card.creator_name,
+        template_type: card.template_type,
+        tier_selected: card.tier_selected,
+        is_paid: card.is_paid,
+        payment_status: card.is_paid ? 'paid' : 'pending',
+        payment_id: card.payment_id || null,
+        payment_reference: MOCK_PAYMENT_REFERENCES[card.id]?.payment_reference || null,
+        expires_at: card.expires_at || null,
+        created_at: card.created_at,
+        creator_token: createAccessToken(card.id, 'creator'),
+      }));
+  }
+
+  const { data: cards, error } = await admin
+    .from('cards')
+    .select('id, recipient_name, creator_name, template_type, tier_selected, is_paid, payment_status, payment_id, expires_at, created_at')
+    .eq('account_id', accountId)
+    .order('created_at', { ascending: false })
+    .limit(200);
+
+  if (error) throw error;
+
+  const typedCards = (cards || []) as Array<{
+    id: string;
+    recipient_name: string;
+    creator_name: string;
+    template_type: string;
+    tier_selected: string;
+    is_paid: boolean;
+    payment_status: string;
+    payment_id: string | null;
+    expires_at?: string | null;
+    created_at: string;
+  }>;
+  const cardIds = typedCards.map((card) => card.id);
+  const paymentReferencesByCardId = new Map<string, string>();
+
+  if (cardIds.length > 0) {
+    const { data: payments, error: paymentsError } = await admin
+      .from('payments')
+      .select('card_id, provider_payment_id')
+      .eq('provider', 'upi_manual')
+      .in('card_id', cardIds)
+      .order('created_at', { ascending: false });
+
+    if (paymentsError) throw paymentsError;
+
+    for (const payment of payments || []) {
+      const row = payment as { card_id: string; provider_payment_id: string | null };
+      if (!paymentReferencesByCardId.has(row.card_id) && row.provider_payment_id) {
+        paymentReferencesByCardId.set(row.card_id, row.provider_payment_id);
+      }
+    }
+  }
+
+  return typedCards.map((card) => ({
+    ...card,
+    payment_reference: paymentReferencesByCardId.get(card.id) || null,
+    creator_token: createAccessToken(card.id, 'creator'),
+  }));
+}
+
+export async function claimCreatorCard(cardId: string, creatorToken: string, accountId: string) {
+  if (!verifyAccessToken(creatorToken, cardId, 'creator')) return null;
+
+  const admin = getSupabaseAdmin();
+  if (!admin) {
+    const card = MOCK_STORE[cardId];
+    if (!card) return null;
+    card.account_id = accountId;
+    return card;
+  }
+
+  const { data, error } = await admin
+    .from('cards')
+    .update({ account_id: accountId })
+    .eq('id', cardId)
+    .select('*')
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? toPublicCard(data as Card) : null;
+}
+
+export async function clearAllCardsAndPayments() {
+  const admin = getSupabaseAdmin();
+
+  if (!admin) {
+    const cardCount = Object.keys(MOCK_STORE).length;
+    const paymentCount = Object.keys(MOCK_PAYMENT_REFERENCES).length;
+    for (const key of Object.keys(MOCK_STORE)) delete MOCK_STORE[key];
+    for (const key of Object.keys(MOCK_PAYMENT_REFERENCES)) delete MOCK_PAYMENT_REFERENCES[key];
+    MOCK_CHATS.splice(0, MOCK_CHATS.length);
+    MOCK_EVENTS.splice(0, MOCK_EVENTS.length);
+    return { cards_deleted: cardCount, payments_deleted: paymentCount };
+  }
+
+  const zeroUuid = '00000000-0000-0000-0000-000000000000';
+  const { count: paymentsDeleted, error: paymentsError } = await admin
+    .from('payments')
+    .delete({ count: 'exact' })
+    .neq('id', zeroUuid);
+  if (paymentsError) throw paymentsError;
+
+  const { count: cardsDeleted, error: cardsError } = await admin
+    .from('cards')
+    .delete({ count: 'exact' })
+    .neq('id', zeroUuid);
+  if (cardsError) throw cardsError;
+
+  return {
+    cards_deleted: cardsDeleted || 0,
+    payments_deleted: paymentsDeleted || 0,
+  };
 }
 
 export async function markCardPaymentVerified(id: string, paymentId: string, extendsAt?: string, providerOrderId?: string) {
