@@ -34,6 +34,24 @@ const MOCK_EVENTS = globalStore.__MOCK_EVENTS || (globalStore.__MOCK_EVENTS = []
 const MOCK_PAYMENT_REFERENCES =
   globalStore.__MOCK_PAYMENT_REFERENCES || (globalStore.__MOCK_PAYMENT_REFERENCES = {});
 
+export type ManualPaymentSubmission = {
+  id: string;
+  card_id: string;
+  payment_reference: string;
+  status: string;
+  created_at: string;
+  verified_at: string | null;
+  raw_payload: Record<string, unknown> | null;
+  card: {
+    recipient_name: string;
+    creator_name: string;
+    template_type: string;
+    tier_selected: string;
+    is_paid: boolean;
+    expires_at?: string | null;
+  } | null;
+};
+
 function sanitizeCardData(input: CreateCardInput['card_data'], hasSecretCode: boolean) {
   const { unlock_question, cover_image_url, ...rest } = input;
   delete rest.unlock_code;
@@ -349,6 +367,100 @@ export async function verifyUpiPaymentReference(reference: string) {
     payment_reference: paymentReference,
     status: 'paid',
   };
+}
+
+export async function listManualPaymentReferences(limit = 75): Promise<ManualPaymentSubmission[]> {
+  const cappedLimit = Math.min(Math.max(limit, 1), 150);
+  const admin = getSupabaseAdmin();
+
+  if (!admin) {
+    return Object.entries(MOCK_PAYMENT_REFERENCES)
+      .map(([cardId, proof]) => {
+        const card = MOCK_STORE[cardId];
+        return {
+          id: `mock-${cardId}`,
+          card_id: cardId,
+          payment_reference: proof.payment_reference,
+          status: proof.status,
+          created_at: proof.submitted_at,
+          verified_at: proof.status === 'paid' ? proof.submitted_at : null,
+          raw_payload: { mock: true },
+          card: card
+            ? {
+                recipient_name: card.recipient_name,
+                creator_name: card.creator_name,
+                template_type: card.template_type,
+                tier_selected: card.tier_selected,
+                is_paid: card.is_paid,
+                expires_at: card.expires_at || null,
+              }
+            : null,
+        };
+      })
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, cappedLimit);
+  }
+
+  const { data: payments, error } = await admin
+    .from('payments')
+    .select('id, card_id, provider_payment_id, status, created_at, verified_at, raw_payload')
+    .eq('provider', 'upi_manual')
+    .order('created_at', { ascending: false })
+    .limit(cappedLimit);
+
+  if (error) throw error;
+
+  const rows = (payments || []) as Array<{
+    id: string;
+    card_id: string;
+    provider_payment_id: string | null;
+    status: string;
+    created_at: string;
+    verified_at: string | null;
+    raw_payload: Record<string, unknown> | null;
+  }>;
+  const cardIds = Array.from(new Set(rows.map((row) => row.card_id).filter(Boolean)));
+
+  const cardsById = new Map<string, ManualPaymentSubmission['card']>();
+  if (cardIds.length > 0) {
+    const { data: cards, error: cardsError } = await admin
+      .from('cards')
+      .select('id, recipient_name, creator_name, template_type, tier_selected, is_paid, expires_at')
+      .in('id', cardIds);
+
+    if (cardsError) throw cardsError;
+
+    for (const card of cards || []) {
+      const typedCard = card as {
+        id: string;
+        recipient_name: string;
+        creator_name: string;
+        template_type: string;
+        tier_selected: string;
+        is_paid: boolean;
+        expires_at?: string | null;
+      };
+      cardsById.set(typedCard.id, {
+        recipient_name: typedCard.recipient_name,
+        creator_name: typedCard.creator_name,
+        template_type: typedCard.template_type,
+        tier_selected: typedCard.tier_selected,
+        is_paid: typedCard.is_paid,
+        expires_at: typedCard.expires_at || null,
+      });
+    }
+  }
+
+  return rows.map((row) => ({
+    id: row.id,
+    card_id: row.card_id,
+    payment_reference: row.provider_payment_id || '',
+    status: row.status,
+    created_at: row.created_at,
+    verified_at: row.verified_at,
+    raw_payload: row.raw_payload,
+    card: cardsById.get(row.card_id) || null,
+  }));
 }
 
 export async function markCardPaymentVerified(id: string, paymentId: string, extendsAt?: string, providerOrderId?: string) {

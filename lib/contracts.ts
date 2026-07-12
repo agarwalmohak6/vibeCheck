@@ -116,6 +116,11 @@ export const manualPaymentVerifySchema = z.object({
     .regex(/^[A-Za-z0-9\s-]+$/, 'Use only letters, numbers, spaces, or hyphens.'),
 });
 
+export const adminLoginSchema = z.object({
+  email: z.string().trim().email().max(160),
+  secret: z.string().trim().min(12).max(240),
+});
+
 export const signedUploadSchema = z.object({
   card_id: z.string().uuid(),
   file_name: z.string().trim().min(1).max(160),
@@ -130,3 +135,4 @@ export type PaymentVerifyInput = z.infer<typeof paymentVerifySchema>;
 export type RazorpayCreateOrderInput = z.infer<typeof razorpayCreateOrderSchema>;
 export type RazorpayVerifyPaymentInput = z.infer<typeof razorpayVerifyPaymentSchema>;
 export type ManualPaymentVerifyInput = z.infer<typeof manualPaymentVerifySchema>;
+export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
