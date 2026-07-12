@@ -66,6 +66,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
   const [isStarting, setIsStarting] = useState(false);
   const [isFallbackVisible, setIsFallbackVisible] = useState(false);
   const [error, setError] = useState('');
+  const prefillContact = (process.env.NEXT_PUBLIC_RAZORPAY_PREFILL_CONTACT || '').replace(/\D/g, '');
 
   const openCheckout = async () => {
     setIsStarting(true);
@@ -108,6 +109,11 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
           card_id: cardId,
           product: 'vibecheck_private_card',
         },
+        prefill: prefillContact
+          ? {
+              contact: prefillContact,
+            }
+          : undefined,
         method: {
           upi: true,
           card: false,

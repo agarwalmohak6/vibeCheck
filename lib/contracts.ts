@@ -108,6 +108,14 @@ export const razorpayVerifyPaymentSchema = z.object({
   card_id: z.string().uuid().optional(),
 });
 
+export const manualPaymentVerifySchema = z.object({
+  utr: z.string()
+    .trim()
+    .min(6)
+    .max(40)
+    .regex(/^[A-Za-z0-9\s-]+$/, 'Use only letters, numbers, spaces, or hyphens.'),
+});
+
 export const signedUploadSchema = z.object({
   card_id: z.string().uuid(),
   file_name: z.string().trim().min(1).max(160),
@@ -121,3 +129,4 @@ export type PaymentOrderInput = z.infer<typeof paymentOrderSchema>;
 export type PaymentVerifyInput = z.infer<typeof paymentVerifySchema>;
 export type RazorpayCreateOrderInput = z.infer<typeof razorpayCreateOrderSchema>;
 export type RazorpayVerifyPaymentInput = z.infer<typeof razorpayVerifyPaymentSchema>;
+export type ManualPaymentVerifyInput = z.infer<typeof manualPaymentVerifySchema>;

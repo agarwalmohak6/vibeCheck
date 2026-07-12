@@ -277,6 +277,80 @@ export async function submitUpiPaymentReference(id: string, reference: string) {
   };
 }
 
+export async function verifyUpiPaymentReference(reference: string) {
+  const admin = getSupabaseAdmin();
+  const paymentReference = normalizePaymentReference(reference);
+  const verifiedAt = new Date().toISOString();
+  const paymentId = `upi_manual_${paymentReference}`;
+
+  if (!admin) {
+    const entry = Object.entries(MOCK_PAYMENT_REFERENCES)
+      .find(([, value]) => value.payment_reference === paymentReference);
+    if (!entry) return null;
+
+    const [cardId, proof] = entry;
+    const card = MOCK_STORE[cardId];
+    if (!card) return null;
+
+    proof.status = 'paid';
+    card.is_paid = true;
+    card.payment_id = paymentId;
+    await captureServerEvent('payment_succeeded', cardId, {
+      provider: 'upi_manual',
+      payment_reference: paymentReference,
+      mock: true,
+    });
+    return {
+      card_id: cardId,
+      payment_id: paymentId,
+      payment_reference: paymentReference,
+      status: 'paid',
+    };
+  }
+
+  const { data: proof, error: lookupError } = await admin
+    .from('payments')
+    .select('card_id, status, provider_payment_id')
+    .eq('provider', 'upi_manual')
+    .eq('provider_payment_id', paymentReference)
+    .maybeSingle();
+
+  if (lookupError) throw lookupError;
+  if (!proof?.card_id) return null;
+
+  const { error: cardError } = await admin
+    .from('cards')
+    .update({
+      is_paid: true,
+      payment_id: paymentId,
+      payment_status: 'paid',
+    })
+    .eq('id', proof.card_id);
+  if (cardError) throw cardError;
+
+  const { error: proofError } = await admin
+    .from('payments')
+    .update({
+      status: 'paid',
+      verified_at: verifiedAt,
+    })
+    .eq('provider', 'upi_manual')
+    .eq('provider_payment_id', paymentReference);
+  if (proofError) throw proofError;
+
+  await captureServerEvent('payment_succeeded', proof.card_id, {
+    provider: 'upi_manual',
+    payment_reference: paymentReference,
+  });
+
+  return {
+    card_id: proof.card_id,
+    payment_id: paymentId,
+    payment_reference: paymentReference,
+    status: 'paid',
+  };
+}
+
 export async function markCardPaymentVerified(id: string, paymentId: string, extendsAt?: string, providerOrderId?: string) {
   const admin = getSupabaseAdmin();
   if (!admin) {
