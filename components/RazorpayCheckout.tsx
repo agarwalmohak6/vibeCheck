@@ -72,7 +72,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
     setError('');
 
     try {
-      const orderRes = await fetch('/api/payment/order', {
+      const orderRes = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ card_id: cardId }),
@@ -122,7 +122,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
           ondismiss: () => setIsStarting(false),
         },
         handler: async (response: RazorpaySuccessResponse) => {
-          const verifyRes = await fetch('/api/payment/verify', {
+          const verifyRes = await fetch('/api/verify-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

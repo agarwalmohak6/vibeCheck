@@ -95,6 +95,19 @@ export const paymentVerifySchema = z.object({
   razorpay_signature: z.string().trim().min(1).max(240),
 });
 
+export const razorpayCreateOrderSchema = z.object({
+  amount: z.coerce.number().int().min(100),
+  currency: z.string().trim().min(3).max(3).default('INR'),
+  receipt: z.string().trim().min(1).max(40).optional(),
+});
+
+export const razorpayVerifyPaymentSchema = z.object({
+  razorpay_order_id: z.string().trim().min(1).max(120),
+  razorpay_payment_id: z.string().trim().min(1).max(120),
+  razorpay_signature: z.string().trim().min(1).max(240),
+  card_id: z.string().uuid().optional(),
+});
+
 export const signedUploadSchema = z.object({
   card_id: z.string().uuid(),
   file_name: z.string().trim().min(1).max(160),
@@ -106,3 +119,5 @@ export type CreateCardInput = z.infer<typeof createCardSchema>;
 export type PaymentReferenceInput = z.infer<typeof paymentReferenceSchema>;
 export type PaymentOrderInput = z.infer<typeof paymentOrderSchema>;
 export type PaymentVerifyInput = z.infer<typeof paymentVerifySchema>;
+export type RazorpayCreateOrderInput = z.infer<typeof razorpayCreateOrderSchema>;
+export type RazorpayVerifyPaymentInput = z.infer<typeof razorpayVerifyPaymentSchema>;

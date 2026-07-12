@@ -3,7 +3,7 @@ import 'server-only';
 import { createHmac, timingSafeEqual } from 'crypto';
 import Razorpay from 'razorpay';
 import { TIERS } from '@/lib/themes';
-import type { PaymentVerifyInput } from '@/lib/contracts';
+import type { PaymentVerifyInput, RazorpayCreateOrderInput, RazorpayVerifyPaymentInput } from '@/lib/contracts';
 import { getPublicCard, markCardPaymentVerified } from './card-store';
 import { getSupabaseAdmin } from './supabase-admin';
 
@@ -14,6 +14,14 @@ type RazorpayOrderResult = {
   currency: string;
   card_id: string;
   tier_label: string;
+};
+
+type GenericRazorpayOrderResult = {
+  order_id: string;
+  key_id: string;
+  amount: number;
+  currency: string;
+  receipt?: string;
 };
 
 function getRazorpayKeyId() {
@@ -49,6 +57,23 @@ function verifyCheckoutSignature(orderId: string, paymentId: string, signature: 
   const providedBuffer = Buffer.from(signature);
   const expectedBuffer = Buffer.from(expected);
   return providedBuffer.length === expectedBuffer.length && timingSafeEqual(providedBuffer, expectedBuffer);
+}
+
+export async function createRazorpayOrder(input: RazorpayCreateOrderInput): Promise<GenericRazorpayOrderResult> {
+  const client = getRazorpayClient();
+  const order = await client.orders.create({
+    amount: input.amount,
+    currency: input.currency,
+    receipt: input.receipt,
+  });
+
+  return {
+    order_id: String(order.id),
+    key_id: getRazorpayKeyId(),
+    amount: Number(order.amount || input.amount),
+    currency: String(order.currency || input.currency),
+    receipt: order.receipt ? String(order.receipt) : input.receipt,
+  };
 }
 
 export async function createRazorpayOrderForCard(cardId: string): Promise<RazorpayOrderResult | null> {
@@ -119,6 +144,31 @@ export async function verifyRazorpayCheckoutPayment(input: PaymentVerifyInput) {
 
   if (!isValid) {
     return { ok: false, reason: 'INVALID_SIGNATURE' };
+  }
+
+  const ok = await markCardPaymentVerified(
+    input.card_id,
+    input.razorpay_payment_id,
+    undefined,
+    input.razorpay_order_id,
+  );
+
+  return { ok, reason: ok ? null : 'CARD_NOT_FOUND' };
+}
+
+export async function verifyRazorpayPaymentSignature(input: RazorpayVerifyPaymentInput) {
+  const isValid = verifyCheckoutSignature(
+    input.razorpay_order_id,
+    input.razorpay_payment_id,
+    input.razorpay_signature,
+  );
+
+  if (!isValid) {
+    return { ok: false, reason: 'INVALID_SIGNATURE' };
+  }
+
+  if (!input.card_id) {
+    return { ok: true, reason: null };
   }
 
   const ok = await markCardPaymentVerified(
