@@ -127,119 +127,148 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa }: QRCheckoutPr
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 text-center space-y-6 bg-neutral-900 border border-white/10 rounded-2xl max-w-sm w-full mx-auto shadow-2xl relative overflow-hidden">
-      
-      {/* Background radial highlight */}
-      <div className="absolute -top-16 -left-16 w-36 h-36 bg-pink-500/10 rounded-full blur-2xl pointer-events-none"></div>
-      <div className="absolute -bottom-16 -right-16 w-36 h-36 bg-purple-500/10 rounded-full blur-2xl pointer-events-none"></div>
+    <section className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-[2.5rem] border border-pink-200/80 bg-white/[0.82] p-4 text-left shadow-2xl shadow-pink-200/50 backdrop-blur sm:p-6 lg:p-8">
+      <div className="pointer-events-none absolute -left-16 top-8 h-64 w-64 rounded-full bg-pink-300/45 blur-3xl" />
+      <div className="pointer-events-none absolute right-[-4rem] top-[-4rem] h-72 w-72 rounded-full bg-amber-200/55 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-[-6rem] left-1/3 h-72 w-72 rounded-full bg-rose-300/35 blur-3xl" />
+      <div className="pointer-events-none absolute left-8 top-8 text-5xl opacity-20">💞</div>
+      <div className="pointer-events-none absolute right-14 top-12 text-4xl opacity-20">🍰</div>
+      <div className="pointer-events-none absolute bottom-10 right-1/3 text-5xl opacity-20">💌</div>
 
-      <div>
-        <h3 className="text-lg font-bold text-white tracking-tight">Scan UPI QR to Pay</h3>
-        <p className="text-xs text-neutral-400 mt-1">Unlock your interactive digital card</p>
-      </div>
+      <div className="relative grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
+        <div className="flex flex-col justify-between rounded-[2rem] border border-pink-200 bg-linear-to-br from-white via-pink-50 to-amber-50 p-5 shadow-xl shadow-pink-100/80">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-pink-500">Direct UPI backup</p>
+            <h3 className="mt-3 font-[var(--font-display)] text-4xl font-black leading-[0.95] text-[#3d1a2e] sm:text-5xl">
+              Your surprise is still cooking.
+            </h3>
+            <p className="mt-3 text-sm font-bold leading-relaxed text-[#7b3f6e]">
+              Razorpay was being moody, so here is the cute manual route. Pay, paste the UTR, and the card unlocks after verification.
+            </p>
+          </div>
 
-      {/* QR Container */}
-      <div className="bg-white p-4 rounded-2xl shadow-xl relative inline-block border-4 border-pink-500/20">
-        {!hasValidVpa ? (
-          <div className="w-[180px] h-[180px] flex flex-col items-center justify-center text-neutral-800 text-center p-3">
-            <span className="text-2xl mb-2">⚠️</span>
-            <p className="text-xs font-bold">UPI ID missing or invalid</p>
-            <p className="mt-1 text-[10px] leading-snug text-neutral-500">Set NEXT_PUBLIC_UPI_VPA and redeploy.</p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            {[
+              ['1', 'Scan or open UPI'],
+              ['2', 'Pay the exact amount'],
+              ['3', 'Paste UTR below'],
+            ].map(([step, label]) => (
+              <div key={step} className="flex items-center gap-3 rounded-2xl border border-pink-200 bg-white/75 p-3 shadow-lg shadow-pink-100">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-linear-to-r from-pink-500 to-amber-500 text-sm font-black text-white">
+                  {step}
+                </span>
+                <span className="text-sm font-black text-[#3d1a2e]">{label}</span>
+              </div>
+            ))}
           </div>
-        ) : timeLeft > 0 ? (
-          <QRCodeSVG 
-            value={upiIntent} 
-            size={180} 
-            level="M"
-            fgColor="#000000"
-            bgColor="#FFFFFF"
-          />
-        ) : (
-          <div className="w-[180px] h-[180px] flex flex-col items-center justify-center text-neutral-800 text-center p-2">
-            <span className="text-2xl mb-1">⏰</span>
-            <p className="text-xs font-bold">QR Expired</p>
-            <button 
-              onClick={() => setTimeLeft(300)} 
-              className="mt-2 text-[10px] bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-1 px-3 rounded cursor-pointer"
-            >
-              Refresh QR
-            </button>
-          </div>
-        )}
-      </div>
-      {hasValidVpa && (
-        <div className="w-full space-y-2">
-          <a
-            href={upiIntent}
-            className="block w-full rounded-xl bg-linear-to-r from-pink-500 to-amber-500 px-4 py-3 text-xs font-black text-white shadow-lg shadow-pink-500/20 transition hover:scale-[1.02]"
-          >
-            Open UPI app
-          </a>
-          <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-bold text-neutral-300">
-            Paying to <span className="text-pink-300">{configuredVpa}</span>
+
+          <div className="mt-6 rounded-3xl border border-amber-200 bg-amber-50/80 p-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Tiny promise</p>
+            <p className="mt-2 text-sm font-black leading-relaxed text-[#7b3f6e]">
+              This is the last boring step before the lovely part opens.
+            </p>
           </div>
         </div>
-      )}
 
-      {/* Pricing / Timer */}
-      <div className="w-full bg-white/5 border border-white/5 rounded-xl py-3 px-4 flex justify-between items-center">
-        <div className="text-left">
-          <p className="text-[10px] text-neutral-400 uppercase tracking-widest font-semibold">Amount Due</p>
-          <p className="text-base font-extrabold text-white">₹{amount}</p>
-        </div>
-        
-        {timeLeft > 0 && (
-          <div className="text-right">
-            <p className="text-[10px] text-neutral-400 uppercase tracking-widest font-semibold">Expires In</p>
-            <p className="text-sm font-mono font-bold text-pink-500">{formatTime(timeLeft)}</p>
+        <div className="rounded-[2rem] border border-pink-200 bg-white/85 p-5 text-center shadow-xl shadow-pink-100/80">
+          <div className="grid gap-5 lg:grid-cols-[auto_1fr] lg:items-center lg:text-left">
+            <div className="mx-auto inline-block rounded-[2rem] border border-pink-200 bg-white p-4 shadow-2xl shadow-pink-200/60">
+              {!hasValidVpa ? (
+                <div className="flex h-[220px] w-[220px] flex-col items-center justify-center rounded-2xl bg-pink-50 p-4 text-center text-[#3d1a2e]">
+                  <span className="mb-2 text-3xl">⚠️</span>
+                  <p className="text-sm font-black">UPI ID missing or invalid</p>
+                  <p className="mt-1 text-xs font-bold leading-snug text-[#7b3f6e]">Set NEXT_PUBLIC_UPI_VPA and redeploy.</p>
+                </div>
+              ) : timeLeft > 0 ? (
+                <QRCodeSVG
+                  value={upiIntent}
+                  size={220}
+                  level="M"
+                  fgColor="#3d1a2e"
+                  bgColor="#FFFFFF"
+                />
+              ) : (
+                <div className="flex h-[220px] w-[220px] flex-col items-center justify-center rounded-2xl bg-pink-50 p-4 text-center text-[#3d1a2e]">
+                  <span className="mb-2 text-3xl">⏰</span>
+                  <p className="text-sm font-black">QR expired</p>
+                  <button
+                    onClick={() => setTimeLeft(300)}
+                    className="mt-3 rounded-full bg-[#3d1a2e] px-4 py-2 text-xs font-black text-white"
+                  >
+                    Refresh QR
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-3xl border border-pink-200 bg-pink-50/70 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#9e6b8a]">Amount due</p>
+                    <p className="mt-1 text-4xl font-black text-[#3d1a2e]">₹{amount}</p>
+                  </div>
+                  {timeLeft > 0 && (
+                    <div className="rounded-2xl border border-pink-200 bg-white px-4 py-3 text-right">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#9e6b8a]">QR timer</p>
+                      <p className="font-mono text-lg font-black text-pink-500">{formatTime(timeLeft)}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {hasValidVpa && (
+                <div className="space-y-3">
+                  <a
+                    href={upiIntent}
+                    className="block rounded-2xl bg-linear-to-r from-pink-500 via-rose-500 to-amber-500 px-5 py-4 text-center text-sm font-black text-white shadow-xl shadow-pink-300/45 transition hover:-translate-y-0.5"
+                  >
+                    Open UPI app and pay
+                  </a>
+                  <div className="rounded-2xl border border-pink-200 bg-white/80 px-4 py-3 text-xs font-black text-[#7b3f6e]">
+                    Paying to <span className="text-pink-500">{configuredVpa}</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Instructions */}
-      <div className="space-y-1">
-        <p className="text-[10px] text-neutral-400 leading-normal">
-          Open Google Pay, PhonePe, Paytm, or any UPI app to scan.
-        </p>
-        <p className="text-[9px] text-neutral-500 italic">
-          After paying, submit the UTR/ref number below. The card unlocks once verified.
-        </p>
-      </div>
+          <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_0.8fr]">
+            <PaymentReferenceForm
+              cardId={cardId}
+              variant="soft"
+              onSubmitted={() => setReferenceSubmitted(true)}
+            />
 
-      <PaymentReferenceForm
-        cardId={cardId}
-        variant="dark"
-        onSubmitted={() => setReferenceSubmitted(true)}
-      />
+            <div className="rounded-2xl border border-pink-200 bg-white/70 p-4 text-left shadow-lg shadow-pink-100">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-pink-500">After payment</p>
+              <p className="mt-2 text-sm font-bold leading-relaxed text-[#7b3f6e]">
+                Open your UPI app history, copy the UTR or transaction reference, and submit it here.
+              </p>
+              {referenceSubmitted && (
+                <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700">
+                  UTR received. Keep this page open while it waits for verification.
+                </p>
+              )}
+            </div>
+          </div>
 
-      {referenceSubmitted && (
-        <div className="w-full rounded-xl border border-emerald-400/15 bg-emerald-400/10 px-3 py-2 text-[10px] font-bold leading-relaxed text-emerald-200">
-          UTR received. Keep this page open; we are still waiting for verification.
-        </div>
-      )}
-
-      {/* Dev Mock Sandbox Shortcut */}
-      {allowMockPayments && (
-      <div className="w-full pt-2 border-t border-white/5">
-        <button
-          onClick={handleMockPayment}
-          disabled={isVerifying}
-          className="w-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 hover:from-pink-500/30 hover:to-purple-500/30 border border-pink-500/30 text-pink-300 font-bold py-2.5 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-        >
-          {isVerifying ? (
-            <span>Processing Sim...</span>
-          ) : (
-            <>
-              <span>⚡</span>
-              <span>Test Pay (Instant Success)</span>
-            </>
+          {allowMockPayments && (
+            <div className="mt-4 border-t border-pink-100 pt-4">
+              <button
+                onClick={handleMockPayment}
+                disabled={isVerifying}
+                className="w-full rounded-2xl border border-pink-200 bg-pink-50 px-4 py-3 text-xs font-black text-pink-600 transition hover:bg-pink-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isVerifying ? 'Processing sim...' : 'Test Pay (Instant Success)'}
+              </button>
+              {errorMsg && (
+                <p className="mt-2 text-[10px] font-bold text-red-500">{errorMsg}</p>
+              )}
+            </div>
           )}
-        </button>
-        {errorMsg && (
-          <p className="text-[10px] text-red-400 mt-1.5 font-medium">{errorMsg}</p>
-        )}
+        </div>
       </div>
-      )}
-    </div>
+    </section>
   );
 }
