@@ -19,10 +19,33 @@ type ManualPaymentSubmission = {
   } | null;
 };
 
+type AdminCard = {
+  id: string;
+  recipient_name: string;
+  creator_name: string;
+  template_type: string;
+  tier_selected: string;
+  is_paid: boolean;
+  payment_status: string;
+  payment_id: string | null;
+  payment_reference: string | null;
+  expires_at?: string | null;
+  created_at: string;
+  creator_token: string;
+  account_id: string | null;
+};
+
 type PaymentsResponse = {
   success?: boolean;
   admin_email?: string;
   payments?: ManualPaymentSubmission[];
+  error?: string;
+};
+
+type CardsResponse = {
+  success?: boolean;
+  admin_email?: string;
+  cards?: AdminCard[];
   error?: string;
 };
 
@@ -58,14 +81,21 @@ function normalizeUtr(value: string) {
   return value.trim().replace(/\s+/g, '').toUpperCase();
 }
 
+function getBaseUrl() {
+  if (typeof window === 'undefined') return '';
+  return window.location.origin;
+}
+
 export default function AdminDashboard() {
   const [email, setEmail] = useState(ADMIN_EMAIL);
   const [secret, setSecret] = useState('');
   const [manualUtr, setManualUtr] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [payments, setPayments] = useState<ManualPaymentSubmission[]>([]);
+  const [cards, setCards] = useState<AdminCard[]>([]);
   const [status, setStatus] = useState<'checking' | 'login' | 'ready'>('checking');
   const [loading, setLoading] = useState(false);
+  const [cardsLoading, setCardsLoading] = useState(false);
   const [verifyingRef, setVerifyingRef] = useState('');
   const [cleanupConfirm, setCleanupConfirm] = useState('');
   const [cleanupLoading, setCleanupLoading] = useState(false);
@@ -80,6 +110,7 @@ export default function AdminDashboard() {
       setStatus('login');
       setAdminEmail('');
       setPayments([]);
+      setCards([]);
       return;
     }
 
@@ -92,8 +123,38 @@ export default function AdminDashboard() {
     setStatus('ready');
   };
 
+  const loadCards = async () => {
+    setCardsLoading(true);
+    try {
+      const res = await fetch('/api/admin/cards?limit=200', { cache: 'no-store' });
+      const data = await res.json() as CardsResponse;
+
+      if (res.status === 401) {
+        setStatus('login');
+        setAdminEmail('');
+        setPayments([]);
+        setCards([]);
+        return;
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Could not load admin cards.');
+      }
+
+      setAdminEmail(data.admin_email || ADMIN_EMAIL);
+      setCards(data.cards || []);
+      setStatus('ready');
+    } finally {
+      setCardsLoading(false);
+    }
+  };
+
+  const loadAdminData = async () => {
+    await Promise.all([loadPayments(), loadCards()]);
+  };
+
   useEffect(() => {
-    loadPayments().catch((err: Error) => {
+    loadAdminData().catch((err: Error) => {
       setError(err.message);
       setStatus('login');
     });
@@ -120,7 +181,7 @@ export default function AdminDashboard() {
 
       setSecret('');
       setNotice('Admin session started.');
-      await loadPayments();
+      await loadAdminData();
     } catch {
       setError('Network issue while logging in.');
     } finally {
@@ -133,6 +194,7 @@ export default function AdminDashboard() {
     setStatus('login');
     setAdminEmail('');
     setPayments([]);
+    setCards([]);
     setNotice('Logged out.');
   };
 
@@ -162,7 +224,7 @@ export default function AdminDashboard() {
 
       setNotice(`Approved ${data.payment_reference || normalized}. Card ${data.card_id || ''} is unlocked.`);
       setManualUtr('');
-      await loadPayments();
+      await loadAdminData();
     } catch {
       setError('Network issue while approving UTR.');
     } finally {
@@ -190,7 +252,7 @@ export default function AdminDashboard() {
 
       setCleanupConfirm('');
       setNotice(`Cleared ${data.cards_deleted || 0} cards and ${data.payments_deleted || 0} payments.`);
-      await loadPayments();
+      await loadAdminData();
     } catch {
       setError('Network issue while clearing test data.');
     } finally {
@@ -331,7 +393,7 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-[1.5rem] border border-pink-200 bg-white/75 p-4 shadow-xl shadow-pink-100">
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#9e6b8a]">Pending</p>
                   <p className="mt-1 text-4xl font-black text-pink-500">{pendingCount}</p>
@@ -339,6 +401,10 @@ export default function AdminDashboard() {
                 <div className="rounded-[1.5rem] border border-pink-200 bg-white/75 p-4 shadow-xl shadow-pink-100">
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#9e6b8a]">Paid</p>
                   <p className="mt-1 text-4xl font-black text-emerald-600">{paidCount}</p>
+                </div>
+                <div className="rounded-[1.5rem] border border-pink-200 bg-white/75 p-4 shadow-xl shadow-pink-100">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#9e6b8a]">Cards</p>
+                  <p className="mt-1 text-4xl font-black text-amber-600">{cards.length}</p>
                 </div>
               </div>
 
@@ -373,7 +439,7 @@ export default function AdminDashboard() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => loadPayments().catch((err: Error) => setError(err.message))}
+                  onClick={() => loadAdminData().catch((err: Error) => setError(err.message))}
                   className="rounded-2xl border border-pink-200 bg-white px-4 py-3 text-sm font-black text-[#7b3f6e] shadow-lg shadow-pink-100 transition hover:-translate-y-0.5"
                 >
                   Refresh
@@ -436,6 +502,97 @@ export default function AdminDashboard() {
                             {verifyingRef === payment.payment_reference ? 'Approving...' : 'Approve'}
                           </button>
                         )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] border border-pink-200/80 bg-white/80 p-4 shadow-2xl shadow-pink-200/40 backdrop-blur sm:p-5 lg:col-start-2">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-pink-500">Admin inventory</p>
+                  <h2 className="mt-2 font-[var(--font-display)] text-3xl font-black">All cards</h2>
+                  <p className="mt-1 text-xs font-bold text-[#7b3f6e]">
+                    Admin-only list. Creator dashboards never receive this global inventory.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => loadCards().catch((err: Error) => setError(err.message))}
+                  className="rounded-2xl border border-pink-200 bg-white px-4 py-3 text-sm font-black text-[#7b3f6e] shadow-lg shadow-pink-100 transition hover:-translate-y-0.5"
+                >
+                  {cardsLoading ? 'Loading...' : 'Refresh cards'}
+                </button>
+              </div>
+
+              <div className="max-h-[68vh] space-y-3 overflow-y-auto pr-1">
+                {cards.length === 0 && (
+                  <div className="rounded-[1.5rem] border border-dashed border-pink-200 bg-pink-50/60 p-8 text-center">
+                    <p className="text-lg font-black">No cards found.</p>
+                    <p className="mt-2 text-sm font-bold text-[#7b3f6e]">
+                      Cards created from the builder will show here for admin management.
+                    </p>
+                  </div>
+                )}
+
+                {cards.map((card) => {
+                  const baseUrl = getBaseUrl();
+                  const recipientUrl = `${baseUrl}/card/${card.id}`;
+                  const creatorUrl = `${recipientUrl}?ct=${encodeURIComponent(card.creator_token)}`;
+                  const roomUrl = `${creatorUrl}&room=chat`;
+
+                  return (
+                    <article
+                      key={card.id}
+                      className="rounded-[1.5rem] border border-pink-200 bg-white p-4 shadow-xl shadow-pink-100/70"
+                    >
+                      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] ${
+                              card.is_paid ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              {card.is_paid ? 'Paid' : card.payment_status}
+                            </span>
+                            <span className="rounded-full bg-pink-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-pink-500">
+                              {card.template_type}
+                            </span>
+                            <span className="rounded-full bg-orange-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-amber-700">
+                              {card.tier_selected}
+                            </span>
+                          </div>
+                          <h3 className="mt-3 truncate text-xl font-black text-[#3d1a2e]">
+                            {card.creator_name} to {card.recipient_name}
+                          </h3>
+                          <p className="mt-1 text-xs font-bold text-[#7b3f6e]">
+                            Created {formatDate(card.created_at)} - Expires {formatDate(card.expires_at)}
+                          </p>
+                          <p className="mt-1 break-all text-[11px] font-bold text-[#9e6b8a]">
+                            Card ID: {card.id}
+                          </p>
+                          <p className="mt-1 break-all text-[11px] font-bold text-[#9e6b8a]">
+                            Account: {card.account_id || 'Unclaimed / guest'}
+                          </p>
+                          {card.payment_reference && (
+                            <p className="mt-1 break-all font-mono text-[11px] font-black text-pink-500">
+                              UTR: {card.payment_reference}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="grid gap-2 sm:grid-cols-3 xl:w-[430px]">
+                          <a href={recipientUrl} className="rounded-2xl border border-pink-200 bg-pink-50 px-4 py-3 text-center text-xs font-black text-pink-600">
+                            Recipient
+                          </a>
+                          <a href={creatorUrl} className="rounded-2xl border border-pink-200 bg-white px-4 py-3 text-center text-xs font-black text-[#7b3f6e]">
+                            Creator
+                          </a>
+                          <a href={roomUrl} className="rounded-2xl bg-linear-to-r from-pink-500 to-amber-500 px-4 py-3 text-center text-xs font-black text-white">
+                            Room
+                          </a>
+                        </div>
                       </div>
                     </article>
                   );

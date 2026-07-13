@@ -87,38 +87,8 @@ export default function CreatorDashboard() {
     return true;
   };
 
-  const claimLocalCards = async () => {
-    if (typeof window === 'undefined') return;
-
-    const claims: Array<{ card_id: string; creator_token: string }> = [];
-    for (let index = 0; index < window.localStorage.length; index += 1) {
-      const key = window.localStorage.key(index);
-      if (!key?.startsWith('creator_token_')) continue;
-      const creatorToken = window.localStorage.getItem(key) || '';
-      const cardId = key.replace('creator_token_', '');
-      if (cardId && creatorToken) claims.push({ card_id: cardId, creator_token: creatorToken });
-    }
-
-    if (claims.length === 0) return;
-
-    await Promise.allSettled(
-      claims.map((claim) =>
-        fetch('/api/account/claim-card', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(claim),
-        })
-      )
-    );
-  };
-
   useEffect(() => {
     loadAccount()
-      .then(async (isLoggedIn) => {
-        if (!isLoggedIn) return;
-        await claimLocalCards();
-        await loadAccount();
-      })
       .catch((err: Error) => {
         setError(err.message);
         setStatus('login');
@@ -147,7 +117,6 @@ export default function CreatorDashboard() {
 
       setPassword('');
       setNotice(mode === 'login' ? 'Welcome back.' : 'Account created.');
-      await claimLocalCards();
       await loadAccount();
     } catch {
       setError('Network issue while signing in.');
@@ -331,21 +300,16 @@ export default function CreatorDashboard() {
                 </div>
               </div>
               <div className="rounded-[2rem] border border-pink-200 bg-white/75 p-5 shadow-xl shadow-pink-100">
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-pink-500">Recovery</p>
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-pink-500">Ownership</p>
                 <p className="mt-2 text-sm font-bold leading-relaxed text-[#7b3f6e]">
-                  If this browser had older private creator links, we auto-imported them into this account.
+                  This dashboard now shows only cards created while logged into this account. Admin-only controls live separately.
                 </p>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await claimLocalCards();
-                    await loadAccount();
-                    setNotice('Checked this browser for older cards.');
-                  }}
-                  className="mt-4 w-full rounded-2xl border border-pink-200 bg-white px-4 py-3 text-sm font-black text-pink-500"
+                <Link
+                  href="/customize?new=1"
+                  className="mt-4 inline-flex w-full justify-center rounded-2xl border border-pink-200 bg-white px-4 py-3 text-sm font-black text-pink-500"
                 >
-                  Import local cards
-                </button>
+                  Create another card
+                </Link>
               </div>
             </aside>
 

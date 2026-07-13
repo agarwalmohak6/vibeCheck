@@ -67,6 +67,10 @@ export type CreatorCardSummary = {
   creator_token: string;
 };
 
+export type AdminCardSummary = CreatorCardSummary & {
+  account_id: string | null;
+};
+
 function sanitizeCardData(input: CreateCardInput['card_data'], hasSecretCode: boolean) {
   const { unlock_question, cover_image_url, ...rest } = input;
   delete rest.unlock_code;
@@ -547,6 +551,81 @@ export async function listCreatorCards(accountId: string): Promise<CreatorCardSu
 
   return typedCards.map((card) => ({
     ...card,
+    payment_reference: paymentReferencesByCardId.get(card.id) || null,
+    creator_token: createAccessToken(card.id, 'creator'),
+  }));
+}
+
+export async function listAdminCards(limit = 200): Promise<AdminCardSummary[]> {
+  const cappedLimit = Math.min(Math.max(limit, 1), 500);
+  const admin = getSupabaseAdmin();
+
+  if (!admin) {
+    return Object.values(MOCK_STORE)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, cappedLimit)
+      .map((card) => ({
+        id: card.id,
+        recipient_name: card.recipient_name,
+        creator_name: card.creator_name,
+        template_type: card.template_type,
+        tier_selected: card.tier_selected,
+        is_paid: card.is_paid,
+        payment_status: card.is_paid ? 'paid' : 'pending',
+        payment_id: card.payment_id || null,
+        payment_reference: MOCK_PAYMENT_REFERENCES[card.id]?.payment_reference || null,
+        expires_at: card.expires_at || null,
+        created_at: card.created_at,
+        creator_token: createAccessToken(card.id, 'creator'),
+        account_id: card.account_id || null,
+      }));
+  }
+
+  const { data: cards, error } = await admin
+    .from('cards')
+    .select('id, recipient_name, creator_name, template_type, tier_selected, is_paid, payment_status, payment_id, expires_at, created_at, account_id')
+    .order('created_at', { ascending: false })
+    .limit(cappedLimit);
+
+  if (error) throw error;
+
+  const typedCards = (cards || []) as Array<{
+    id: string;
+    recipient_name: string;
+    creator_name: string;
+    template_type: string;
+    tier_selected: string;
+    is_paid: boolean;
+    payment_status: string;
+    payment_id: string | null;
+    expires_at?: string | null;
+    created_at: string;
+    account_id?: string | null;
+  }>;
+  const cardIds = typedCards.map((card) => card.id);
+  const paymentReferencesByCardId = new Map<string, string>();
+
+  if (cardIds.length > 0) {
+    const { data: payments, error: paymentsError } = await admin
+      .from('payments')
+      .select('card_id, provider_payment_id')
+      .eq('provider', 'upi_manual')
+      .in('card_id', cardIds)
+      .order('created_at', { ascending: false });
+
+    if (paymentsError) throw paymentsError;
+
+    for (const payment of payments || []) {
+      const row = payment as { card_id: string; provider_payment_id: string | null };
+      if (!paymentReferencesByCardId.has(row.card_id) && row.provider_payment_id) {
+        paymentReferencesByCardId.set(row.card_id, row.provider_payment_id);
+      }
+    }
+  }
+
+  return typedCards.map((card) => ({
+    ...card,
+    account_id: card.account_id || null,
     payment_reference: paymentReferencesByCardId.get(card.id) || null,
     creator_token: createAccessToken(card.id, 'creator'),
   }));

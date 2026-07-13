@@ -89,17 +89,16 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const creatorFlag = localStorage.getItem(`creator_of_${card.id}`);
-      const creatorToken =
-        new URLSearchParams(window.location.search).get("ct") ||
-        localStorage.getItem(`creator_token_${card.id}`);
+      const creatorToken = new URLSearchParams(window.location.search).get("ct");
       if (creatorToken) {
         localStorage.setItem(`creator_token_${card.id}`, creatorToken);
-      }
-      if (creatorFlag === "true" || creatorToken) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsCreator(true);
+        return;
       }
+      // A normal recipient link must stay recipient-mode even on the creator's browser.
+      // Saved local tokens are used only for explicit creator chat actions, not page identity.
+      setIsCreator(false);
     }
   }, [card.id]);
 
@@ -190,6 +189,7 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
         fontFamily: "var(--font-body)",
       }}
       data-theme={card.theme_selected}
+      data-template={card.template_type}
       lang={language === "hi" ? "hi" : "en"}
       data-locale={language}
       data-room-mode={roomMode ? "true" : "false"}
@@ -310,11 +310,17 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
               >
                 {card.card_data.cover_image_url && (
                   <div className="vc-recipient-cover">
+                    <div
+                      className="vc-recipient-cover__backdrop"
+                      style={{ backgroundImage: `url("${card.card_data.cover_image_url}")` }}
+                      aria-hidden
+                    />
+                    <div className="vc-recipient-cover__shine" aria-hidden />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={card.card_data.cover_image_url}
                       alt="Cover"
-                      className="w-full h-full object-cover rounded-3xl mx-auto block"
+                      className="vc-recipient-cover__image"
                       draggable={false}
                     />
                   </div>

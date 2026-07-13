@@ -17,7 +17,6 @@ interface SuccessHubProps {
 export default function SuccessHub({ cardId, recipientName, creatorName, creatorToken }: SuccessHubProps) {
   const [copied, setCopied] = useState(false);
   const [creatorCopied, setCreatorCopied] = useState(false);
-  const [roomCopied, setRoomCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
   const [activity, setActivity] = useState<ChatMessageDTO[]>([]);
   const [showCreatorLink, setShowCreatorLink] = useState(false);
@@ -109,17 +108,6 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
       setCopyError(false);
       setCreatorCopied(true);
       setTimeout(() => setCreatorCopied(false), 2500);
-    } catch {
-      setCopyError(true);
-    }
-  };
-
-  const handleRoomCopy = async () => {
-    try {
-      await copyText(creatorRoomUrl);
-      setCopyError(false);
-      setRoomCopied(true);
-      setTimeout(() => setRoomCopied(false), 2500);
     } catch {
       setCopyError(true);
     }
@@ -223,17 +211,11 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
         <div className="vc-success-room-actions mt-4">
           <div>
             <p>Private chat room</p>
-            <span>Use this in-app room to reply until the card expires.</span>
+            <span>Open it from here whenever you want to reply privately.</span>
           </div>
           <Link href={creatorRoomUrl}>
             Open room
           </Link>
-          <button
-            type="button"
-            onClick={() => void handleRoomCopy()}
-          >
-            {roomCopied ? 'Room link copied' : 'Copy room link'}
-          </button>
         </div>
       </motion.div>
 
@@ -242,6 +224,26 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
           Copy did not auto-complete. Long-press the link above and copy it manually.
         </p>
       )}
+
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.86 }}
+        className="vc-success-send-ritual w-full"
+      >
+        <div>
+          <span>1</span>
+          <p>Send only the recipient link.</p>
+        </div>
+        <div>
+          <span>2</span>
+          <p>They open the card, answer your tiny story, then reply.</p>
+        </div>
+        <div>
+          <span>3</span>
+          <p>You keep the private room here for the full card duration.</p>
+        </div>
+      </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -280,18 +282,6 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
           <span className="text-xl">📱</span>
           Share on WhatsApp
         </motion.a>
-
-        <Link
-          href="/dashboard"
-          className="flex-1 py-4 rounded-2xl font-bold text-center flex items-center justify-center gap-2"
-          style={{
-            color: 'var(--text)',
-            background: 'var(--surface2)',
-            border: '1px solid var(--border)',
-          }}
-        >
-          Track in dashboard
-        </Link>
       </motion.div>
 
       <motion.div
