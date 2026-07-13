@@ -1,6 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import SeoStructuredData from "@/components/SeoStructuredData";
+import {
+  absoluteUrl,
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_NAME,
+  SITE_TITLE,
+  SITE_URL,
+} from "@/lib/site";
 import { Inter, Outfit, Caveat_Brush, Dancing_Script, Cormorant_Garamond, Cinzel_Decorative } from 'next/font/google';
 
 const inter = Inter({
@@ -43,14 +52,56 @@ const cinzelDecorative = Cinzel_Decorative({
 });
 
 export const metadata: Metadata = {
-  title: "VibeCheck - Private cards made for one person",
-  description:
-    "Make a private interactive card for Sorry, Happy Birthday, or Bestie moments. Add your words, a photo, a song, and send one private link.",
-  keywords: ["digital greeting card", "interactive card", "apology card", "birthday card", "best friend card", "private card", "vibecheck"],
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "Private digital greeting cards",
+  keywords: SITE_KEYWORDS,
+  alternates: {
+    canonical: "/",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+  },
   openGraph: {
-    title: "VibeCheck - Private cards made for one person",
-    description: "Turn a text into a private interactive card they'll actually keep.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: "/",
+    siteName: SITE_NAME,
+    images: [
+      {
+        url: absoluteUrl("/images/hero_image.png"),
+        width: 1024,
+        height: 1024,
+        alt: "VibeCheck private interactive greeting card preview",
+      },
+    ],
+    locale: "en_IN",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [absoluteUrl("/images/hero_image.png")],
   },
 };
 
@@ -72,6 +123,7 @@ export default function RootLayout({
       className={`${inter.variable} ${outfit.variable} ${caveatBrush.variable} ${dancingScript.variable} ${cormorantGaramond.variable} ${cinzelDecorative.variable}`}
     >
       <body data-scroll-behavior="smooth">
+        <SeoStructuredData />
         <ThemeProvider initial="soft_coquette">
           {children}
         </ThemeProvider>

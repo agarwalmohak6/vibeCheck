@@ -4527,6 +4527,317 @@ body {
   }
 }
 
+/* Public SEO pages and crawlable landing copy */
+.vc-seo-section {
+  position: relative;
+}
+
+.vc-seo-section::before {
+  content: "";
+  position: absolute;
+  inset: 8% 4%;
+  z-index: 0;
+  border-radius: 3rem;
+  background:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--accent), transparent 86%), transparent 32%),
+    radial-gradient(circle at 82% 24%, color-mix(in srgb, var(--accent2), transparent 84%), transparent 30%),
+    linear-gradient(135deg, color-mix(in srgb, var(--surface), transparent 10%), color-mix(in srgb, var(--surface2), transparent 18%));
+  filter: blur(0.2px);
+  opacity: 0.86;
+}
+
+.vc-seo-section > .vc-container {
+  position: relative;
+  z-index: 1;
+}
+
+.vc-seo-link-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  width: min(100%, 820px);
+  margin: 0 auto 1.2rem;
+}
+
+.vc-seo-link-grid a {
+  display: grid;
+  min-height: 4rem;
+  place-items: center;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 8%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface), transparent 10%);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 950;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 18px 44px rgba(40, 15, 32, 0.08), inset 0 1px 0 rgba(255,255,255,0.5);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vc-seo-link-grid a:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent), transparent 35%);
+  box-shadow: 0 24px 58px color-mix(in srgb, var(--glow), transparent 18%);
+}
+
+.vc-seo-faq-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  width: min(100%, 980px);
+  margin-inline: auto;
+}
+
+.vc-seo-faq-card {
+  min-height: 11rem;
+  padding: clamp(1.1rem, 2.5vw, 1.45rem);
+  border: 1px solid color-mix(in srgb, var(--border), transparent 12%);
+  border-radius: 1.8rem;
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--accent), transparent 88%), transparent 32%),
+    color-mix(in srgb, var(--surface), transparent 4%);
+  box-shadow: 0 22px 70px rgba(40, 15, 32, 0.09), inset 0 1px 0 rgba(255,255,255,0.42);
+}
+
+.vc-seo-faq-card h3 {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+  font-weight: 950;
+  line-height: 1;
+  margin-bottom: 0.72rem;
+}
+
+.vc-seo-faq-card p {
+  color: var(--text2);
+  font-size: 0.94rem;
+  font-weight: 760;
+  line-height: 1.65;
+}
+
+.vc-seo-page {
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 2rem);
+  background:
+    radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--accent), transparent 78%), transparent 28%),
+    radial-gradient(circle at 88% 16%, color-mix(in srgb, var(--accent2), transparent 80%), transparent 30%),
+    linear-gradient(135deg, var(--bg), var(--bg2));
+  color: var(--text);
+}
+
+.vc-seo-hero,
+.vc-seo-panel {
+  width: min(100%, 1120px);
+  margin-inline: auto;
+}
+
+.vc-seo-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+  gap: clamp(1.5rem, 5vw, 4rem);
+  align-items: center;
+  padding: clamp(3rem, 8vw, 6rem) 0 clamp(2rem, 5vw, 4rem);
+}
+
+.vc-seo-hero__copy {
+  max-width: 720px;
+}
+
+.vc-seo-hero h1,
+.vc-seo-panel h2 {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-weight: 950;
+  line-height: 0.96;
+  text-wrap: balance;
+}
+
+.vc-seo-hero h1 {
+  font-size: clamp(2.8rem, 7vw, 6rem);
+  margin-bottom: 1rem;
+}
+
+.vc-seo-hero p,
+.vc-seo-panel p,
+.vc-seo-steps li {
+  color: var(--text2);
+  font-size: clamp(1rem, 2vw, 1.12rem);
+  font-weight: 760;
+  line-height: 1.72;
+}
+
+.vc-seo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 1.6rem;
+}
+
+.vc-seo-actions .theme-btn,
+.vc-seo-secondary-link {
+  display: inline-flex;
+  min-height: 3.45rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.95rem 1.35rem;
+  border-radius: 999px;
+  font-weight: 950;
+  text-decoration: none;
+}
+
+.vc-seo-secondary-link {
+  border: 1px solid color-mix(in srgb, var(--border), transparent 12%);
+  background: color-mix(in srgb, var(--surface), transparent 10%);
+  color: var(--text);
+}
+
+.vc-seo-hero__card {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--border), white 18%);
+  border-radius: 2.2rem;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255,255,255,0.7), transparent 30%),
+    color-mix(in srgb, var(--surface), transparent 8%);
+  box-shadow: 0 34px 100px rgba(40, 15, 32, 0.18), inset 0 1px 0 rgba(255,255,255,0.52);
+}
+
+.vc-seo-hero__card span {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  z-index: 2;
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border-radius: 999px;
+  background: white;
+  box-shadow: 0 14px 34px rgba(40, 15, 32, 0.12);
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+}
+
+.vc-seo-hero__card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 1.55rem;
+  object-fit: cover;
+}
+
+.vc-seo-panel {
+  margin-bottom: 1rem;
+  padding: clamp(1.2rem, 3vw, 2rem);
+  border: 1px solid color-mix(in srgb, var(--border), transparent 10%);
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 92% 0%, color-mix(in srgb, var(--accent2), transparent 88%), transparent 30%),
+    color-mix(in srgb, var(--surface), transparent 5%);
+  box-shadow: 0 24px 78px rgba(40, 15, 32, 0.1), inset 0 1px 0 rgba(255,255,255,0.42);
+}
+
+.vc-seo-panel h2 {
+  font-size: clamp(2rem, 4.6vw, 4rem);
+}
+
+.vc-seo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-top: 1.2rem;
+}
+
+.vc-seo-grid article {
+  min-height: 10rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 12%);
+  border-radius: 1.35rem;
+  background: color-mix(in srgb, var(--surface2), transparent 10%);
+}
+
+.vc-seo-grid span {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  font-size: 1.45rem;
+}
+
+.vc-seo-panel--split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(280px, 1fr);
+  gap: clamp(1.2rem, 4vw, 3rem);
+  align-items: start;
+}
+
+.vc-seo-steps {
+  display: grid;
+  gap: 0.75rem;
+  list-style: none;
+  counter-reset: seo-step;
+}
+
+.vc-seo-steps li {
+  position: relative;
+  padding: 1rem 1rem 1rem 3.2rem;
+  border: 1px solid color-mix(in srgb, var(--border), transparent 16%);
+  border-radius: 1.2rem;
+  background: rgba(255,255,255,0.36);
+  counter-increment: seo-step;
+}
+
+.vc-seo-steps li::before {
+  content: counter(seo-step);
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  display: grid;
+  width: 1.8rem;
+  height: 1.8rem;
+  place-items: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 950;
+  transform: translateY(-50%);
+}
+
+.vc-seo-faq-list {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.vc-seo-faq-list article {
+  padding: 1rem;
+  border-radius: 1.2rem;
+  background: rgba(255,255,255,0.34);
+}
+
+.vc-seo-faq-list h2 {
+  margin-bottom: 0.35rem;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+}
+
+@media (max-width: 760px) {
+  .vc-seo-link-grid,
+  .vc-seo-faq-grid,
+  .vc-seo-hero,
+  .vc-seo-grid,
+  .vc-seo-panel--split {
+    grid-template-columns: 1fr;
+  }
+
+  .vc-seo-section::before {
+    inset: 2% 0;
+    border-radius: 2rem;
+  }
+}
+
 /* Wax Seal & Heart Float Keyframes and classes */
 @keyframes heart-float {
   0% {

@@ -1,16 +1,23 @@
 import type { MetadataRoute } from 'next';
+import { absoluteUrl, SITE_URL } from '@/lib/site';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://vibecheck.in';
-
   return {
     rules: [
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/card/', '/view/', '/api/', '/customize'],
+        disallow: [
+          '/admin',
+          '/api/',
+          '/card/',
+          '/customize',
+          '/dashboard',
+          '/view/',
+        ],
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: absoluteUrl('/sitemap.xml'),
+    host: SITE_URL,
   };
 }

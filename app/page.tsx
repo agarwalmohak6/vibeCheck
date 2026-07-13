@@ -62,6 +62,29 @@ const SIGNATURE_THEMES = [
   },
 ];
 
+const SEO_FAQS = [
+  {
+    question: "What is VibeCheck?",
+    answer:
+      "VibeCheck is a private interactive greeting card maker for moments that need more than a normal text. You can create a sorry card, happy birthday card, bestie card, love note, or private digital card with a photo, music, tiny questions, and one private link.",
+  },
+  {
+    question: "Why not just send a WhatsApp message?",
+    answer:
+      "A normal message disappears in the chat. A VibeCheck opens like a small experience: cover first, message next, song and questions after that, then a private reply room for the two people involved.",
+  },
+  {
+    question: "Can I make cards for India and US friends?",
+    answer:
+      "Yes. VibeCheck works in the browser, so your recipient only needs the private link. The writing style is built for Indian and US audiences: warm, direct, playful, and easy to share.",
+  },
+  {
+    question: "Which VibeCheck card should I start with?",
+    answer:
+      "Start with the moment: use Sorry Card when the apology needs effort, Happy Birthday when a story post feels lazy, and Bestie Card when you want inside-joke energy without making it public.",
+  },
+];
+
 function InstagramIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
@@ -514,6 +537,45 @@ export default function LandingPage() {
                   </div>
                 ))}
               </motion.div>
+            </div>
+          </section>
+
+          {/* SEO trust copy */}
+          <section className="vc-seo-section px-6 py-16" aria-labelledby="vibecheck-seo-heading">
+            <div className="vc-container">
+              <div className="vc-section-copy vc-section-copy--center">
+                <span className="vc-eyebrow">Private greeting cards online</span>
+                <h2 id="vibecheck-seo-heading">
+                  VibeCheck turns one message into a private card they can actually feel.
+                </h2>
+                <p>
+                  Make a private interactive greeting card for the exact moment:
+                  a sincere apology, a birthday surprise, a best friend note, or
+                  a small confession that deserves more than a forwarded template.
+                </p>
+              </div>
+
+              <div className="vc-seo-link-grid" aria-label="Popular VibeCheck card types">
+                <Link href="/sorry-card">Sorry card online</Link>
+                <Link href="/birthday-card">Happy birthday card online</Link>
+                <Link href="/bestie-card">Bestie card online</Link>
+              </div>
+
+              <div className="vc-seo-faq-grid">
+                {SEO_FAQS.map((faq, index) => (
+                  <motion.article
+                    key={faq.question}
+                    initial={{ opacity: 0, y: 18 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.06 }}
+                    className="vc-seo-faq-card"
+                  >
+                    <h3>{faq.question}</h3>
+                    <p>{faq.answer}</p>
+                  </motion.article>
+                ))}
+              </div>
             </div>
           </section>
 
