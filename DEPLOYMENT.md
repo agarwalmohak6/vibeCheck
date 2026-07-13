@@ -31,6 +31,7 @@ Use these on both Vercel and Render unless the `Where` column says otherwise.
 | Variable | Required | Where | Example |
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_BASE_URL` | Yes | Vercel + Render | `https://vibecheck.in` |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Recommended for SEO | Vercel + Render | Google Search Console meta verification code |
 | `BACKEND_ORIGIN` | Yes for split deploy | Vercel only | `https://vibecheck-api.onrender.com` |
 | `VIBECHECK_TOKEN_SECRET` | Yes | Vercel + Render | Long random secret |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Vercel + Render | Supabase project URL |
@@ -187,7 +188,106 @@ Razorpay is convenient because webhooks are easy, but it is not the no-fee optio
 15. Open the recipient card link.
 16. Test creator and recipient chat.
 
-## 11. Common Fixes
+## 11. SEO + Google Search Console Go-Live
+
+The app already generates:
+
+- `/sitemap.xml`
+- `/robots.txt`
+- SEO metadata
+- JSON-LD structured data
+- public pages for `/sorry-card`, `/birthday-card`, and `/bestie-card`
+
+Use this flow after the production domain is live.
+
+### A. Pick the Canonical Domain
+
+Use one final public domain everywhere.
+
+Examples:
+
+- `https://vibecheck.in`
+- `https://getvibecheck.in`
+- `https://vibecheckcards.in`
+- Temporary only: `https://vibecheck-gh7u.onrender.com`
+
+Set this value on both Vercel and Render:
+
+```env
+NEXT_PUBLIC_BASE_URL=https://your-final-domain.com
+```
+
+Redeploy both services after changing it.
+
+### B. Add Google Search Console
+
+1. Open [Google Search Console](https://search.google.com/search-console).
+2. Click **Add property**.
+3. Choose **URL prefix** if you only control one app URL.
+4. Enter the exact production URL, for example:
+
+```txt
+https://your-final-domain.com
+```
+
+5. Choose **HTML tag** verification.
+6. Google will show a tag like this:
+
+```html
+<meta name="google-site-verification" content="PASTE_THIS_VALUE_ONLY" />
+```
+
+7. Copy only the `content` value.
+8. Add it on both Vercel and Render:
+
+```env
+NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=PASTE_THIS_VALUE_ONLY
+```
+
+9. Redeploy.
+10. Return to Search Console and click **Verify**.
+
+### C. Submit Sitemap
+
+In Search Console:
+
+1. Open your property.
+2. Go to **Sitemaps**.
+3. Submit:
+
+```txt
+sitemap.xml
+```
+
+Your full sitemap URL should be:
+
+```txt
+https://your-final-domain.com/sitemap.xml
+```
+
+### D. Request Indexing
+
+Use the top URL inspection bar in Search Console and request indexing for:
+
+```txt
+https://your-final-domain.com/
+https://your-final-domain.com/sorry-card
+https://your-final-domain.com/birthday-card
+https://your-final-domain.com/bestie-card
+```
+
+### E. Ranking Reality
+
+Google can index the pages quickly, but ranking for `vibecheck` depends on authority signals too. To improve the chance:
+
+1. Use a custom domain instead of a Render subdomain.
+2. Put `VibeCheck` in your Instagram/Facebook bio with the final URL.
+3. Add the final URL to GitHub repo About section.
+4. Ask early users/friends to mention and link to the site.
+5. Keep the homepage public, fast, and crawlable.
+6. Avoid indexing private card URLs, dashboard, admin, API, and customize pages.
+
+## 12. Common Fixes
 
 | Issue | Fix |
 | --- | --- |
@@ -198,8 +298,11 @@ Razorpay is convenient because webhooks are easy, but it is not the no-fee optio
 | GIFs show fallback only | Add `GIPHY_API_KEY` on Render. |
 | Payment never unlocks | Direct UPI needs manual/admin verification unless a bank/gateway webhook marks the card paid. |
 | Vercel still uses old env vars | Redeploy after every env change. |
+| Google verification fails | Make sure `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` is set on the frontend host and redeployed. |
+| Sitemap shows the wrong domain | Update `NEXT_PUBLIC_BASE_URL` on both hosts and redeploy. |
+| Google indexes private pages | Check `/robots.txt`; private card/admin/dashboard/API routes should be disallowed or noindexed. |
 
-## 12. Suggested Launch Order
+## 13. Suggested Launch Order
 
 1. Deploy Render backend.
 2. Copy Render URL.
@@ -211,3 +314,6 @@ Razorpay is convenient because webhooks are easy, but it is not the no-fee optio
 8. Redeploy Render and Vercel.
 9. Run one real UPI payment test.
 10. Mark the test card paid and verify the full recipient flow.
+11. Add Google Search Console verification.
+12. Submit `/sitemap.xml`.
+13. Request indexing for the public pages.
