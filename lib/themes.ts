@@ -295,8 +295,8 @@ export const PRIMARY_TEMPLATE_TYPES = TEMPLATE_TYPES.filter((template) =>
 export const TIERS = [
   {
     id: '1_day',
-    label: 'One Day',
-    price: 49,
+    label: 'Short & Sweet',
+    price: 29,
     duration: '1 Day',
     durationHours: 24,
     icon: '⚡',

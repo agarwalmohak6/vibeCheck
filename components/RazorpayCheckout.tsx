@@ -76,8 +76,39 @@ function formatPrefillContact(value: string) {
 export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: RazorpayCheckoutProps) {
   const [isStarting, setIsStarting] = useState(false);
   const [isFallbackVisible, setIsFallbackVisible] = useState(false);
+  const [showSimulator, setShowSimulator] = useState(false);
+  const [isVerifyingSim, setIsVerifyingSim] = useState(false);
+  const [currentOrderId, setCurrentOrderId] = useState('');
   const [error, setError] = useState('');
   const prefillContact = formatPrefillContact(process.env.NEXT_PUBLIC_RAZORPAY_PREFILL_CONTACT || '');
+
+  const handleSimulateSuccess = async (orderIdToUse?: string) => {
+    setIsVerifyingSim(true);
+    setError('');
+    try {
+      const verifyRes = await fetch('/api/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          card_id: cardId,
+          razorpay_order_id: orderIdToUse || currentOrderId || `order_mock_${Date.now()}`,
+          razorpay_payment_id: `pay_sim_${Date.now()}`,
+          razorpay_signature: 'mock_signature',
+        }),
+      });
+      if (verifyRes.ok) {
+        onPaid();
+      } else {
+        const data = await verifyRes.json();
+        setError(data.error || 'Mock verification failed');
+      }
+    } catch {
+      setError('Network error while simulating payment verification.');
+    } finally {
+      setIsVerifyingSim(false);
+      setShowSimulator(false);
+    }
+  };
 
   const openCheckout = async () => {
     setIsStarting(true);
@@ -99,6 +130,15 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
       if (!orderRes.ok || !order.key_id || !order.order_id || !order.amount || !order.currency) {
         setError(order.error || 'Automatic payment is unavailable right now.');
         setIsFallbackVisible(true);
+        return;
+      }
+
+      setCurrentOrderId(order.order_id);
+
+      // If keys are not configured or using test mock order, show simulator modal instead of breaking Razorpay SDK
+      if (order.key_id === 'rzp_test_mock' || order.order_id.startsWith('order_mock_')) {
+        setShowSimulator(true);
+        setIsStarting(false);
         return;
       }
 
@@ -227,14 +267,18 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
 
             <div className="relative space-y-5">
               <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-pink-200">Secure Razorpay checkout</p>
-                <h3 className="text-3xl font-black text-white">Pay ₹{amount} and unlock instantly</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-pink-200">
+                  Secure Razorpay checkout
+                </p>
+                <h3 className="text-3xl font-black text-white">
+                  Pay ₹{amount} and unlock instantly
+                </h3>
                 <p className="mx-auto max-w-sm text-xs leading-relaxed text-neutral-300">
-                  Razorpay can show any enabled method for your account. If it still says no method found, use direct UPI below.
+                  Razorpay can show UPI, Cards, NetBanking or Wallets. If unavailable, direct UPI is ready below.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 text-left">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-left">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-400">Amount due</p>
@@ -250,7 +294,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
                 type="button"
                 onClick={openCheckout}
                 disabled={isStarting}
-                className="w-full rounded-2xl bg-linear-to-r from-pink-500 via-rose-500 to-amber-500 px-5 py-4 text-sm font-black text-white shadow-xl shadow-pink-500/25 transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-2xl bg-linear-to-r from-pink-500 via-rose-500 to-amber-500 px-5 py-4 text-sm font-black text-white shadow-xl shadow-pink-500/25 transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
               >
                 {isStarting ? 'Opening secure payment...' : 'Pay securely with Razorpay'}
               </button>
@@ -276,6 +320,72 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
       {isFallbackVisible && (
         <div className="animate-bounce-in">
           {fallback}
+        </div>
+      )}
+
+      {showSimulator && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="w-full max-w-md bg-neutral-900 border border-pink-500/30 rounded-3xl p-6 space-y-6 text-left shadow-2xl relative overflow-hidden">
+            <div className="flex justify-between items-center border-b border-white/10 pb-4">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-pink-400">Razorpay Payment Gateway</span>
+                <h3 className="text-xl font-black text-white">Test Payment Sandbox</h3>
+              </div>
+              <button
+                onClick={() => setShowSimulator(false)}
+                className="w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center font-bold hover:bg-white/20 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex justify-between items-center">
+              <div>
+                <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Total Amount</p>
+                <p className="text-2xl font-black text-white">₹{amount}</p>
+              </div>
+              <span className="text-xs font-bold px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30">
+                Dev Test Mode
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-neutral-300">Select Test Payment Method:</p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-white/10 border border-pink-500/50 rounded-xl p-3 text-center cursor-pointer hover:bg-white/15">
+                  <p className="text-lg">📱</p>
+                  <p className="text-[10px] font-bold text-white mt-1">UPI App</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center cursor-pointer hover:bg-white/10">
+                  <p className="text-lg">💳</p>
+                  <p className="text-[10px] font-bold text-neutral-300 mt-1">Card</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-xl p-3 text-center cursor-pointer hover:bg-white/10">
+                  <p className="text-lg">🏦</p>
+                  <p className="text-[10px] font-bold text-neutral-300 mt-1">NetBanking</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <button
+                type="button"
+                onClick={() => handleSimulateSuccess()}
+                disabled={isVerifyingSim}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white font-black text-sm shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-transform cursor-pointer disabled:opacity-50"
+              >
+                {isVerifyingSim ? 'Verifying payment...' : `Simulate Successful Payment (₹${amount}) ⚡`}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowSimulator(false)}
+                className="w-full py-2.5 rounded-xl bg-white/5 text-neutral-400 hover:text-white font-bold text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

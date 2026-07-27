@@ -434,7 +434,7 @@ export default function LandingPage() {
               >
                 {LANDING_STRINGS.PRICING_SUBTITLE}
               </p>
-              <div className="grid md:grid-cols-2 gap-5 max-w-2xl mx-auto">
+              <div className="grid md:grid-cols-3 gap-5 max-w-4xl mx-auto">
                 {TIERS.map((tier, i) => (
                   <motion.div
                     key={tier.id}
@@ -755,12 +755,21 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Scroll bottom quote */}
-            <div className="text-center py-4 border-t border-amber-900/10">
-              <span className="text-[10px] text-amber-800/60 uppercase tracking-widest font-black">
-                VibeCheck · Handcrafted in 3D Space
-              </span>
-            </div>
+            {/* Compliance Footer for Razorpay Merchant Verification */}
+            <footer className="mt-8 pt-6 border-t border-amber-900/10 text-center space-y-3">
+              <div className="flex flex-wrap justify-center gap-4 text-xs font-bold text-amber-900/80">
+                <Link href="/terms" className="hover:underline">Terms & Conditions</Link>
+                <span>·</span>
+                <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
+                <span>·</span>
+                <Link href="/refund-policy" className="hover:underline">Refund Policy</Link>
+                <span>·</span>
+                <Link href="/contact" className="hover:underline">Contact Us</Link>
+              </div>
+              <p className="text-[10px] text-amber-800/60 uppercase tracking-widest font-black">
+                © 2026 VibeCheck. All rights reserved.
+              </p>
+            </footer>
           </div>
 
           <div className="scroll-roll-bottom"></div>

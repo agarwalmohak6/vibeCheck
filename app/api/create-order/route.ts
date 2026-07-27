@@ -20,7 +20,8 @@ function getRazorpayStatus(error: unknown) {
 
 export async function POST(req: NextRequest) {
   try {
-    if (!isRazorpayConfigured()) {
+    const allowMock = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS !== 'false';
+    if (!isRazorpayConfigured() && !allowMock) {
       return NextResponse.json({ error: 'Razorpay credentials are not configured.' }, { status: 401 });
     }
 

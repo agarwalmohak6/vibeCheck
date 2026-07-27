@@ -157,6 +157,7 @@ export async function createCardDraft(input: CreateCardInput, accountId?: string
       tier_selected: input.tier_selected,
       expires_at: expiresAt,
       is_paid: false,
+      payment_id: null,
       payment_status: 'pending',
       music_track_id: input.music_track_id || null,
       ...(accountId ? { account_id: accountId } : {}),
