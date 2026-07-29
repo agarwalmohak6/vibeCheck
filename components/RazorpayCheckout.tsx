@@ -151,6 +151,25 @@ export default function RazorpayCheckout({ cardId, amount, customerEmail, custom
           card_id: cardId,
           product: 'vibecheck_private_card',
         },
+        timeout: 300,
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: 'UPI, QR & Apps',
+                instruments: [
+                  {
+                    method: 'upi',
+                  },
+                ],
+              },
+            },
+            sequence: ['block.upi'],
+            preferences: {
+              show_default_blocks: true,
+            },
+          },
+        },
         theme: {
           color: '#e91e8c',
           backdrop_color: '#fff0f6',
@@ -256,7 +275,7 @@ export default function RazorpayCheckout({ cardId, amount, customerEmail, custom
                   Pay ₹{amount} and unlock instantly
                 </h3>
                 <p className="mx-auto max-w-sm text-xs leading-relaxed text-neutral-300">
-                  Razorpay can show UPI, Cards, NetBanking or Wallets. Your email is used only for the receipt and recovery link.
+                  UPI is shown first: scan the QR on desktop or open Google Pay, Paytm and other supported UPI apps on mobile. The checkout expires after 5 minutes.
                 </p>
               </div>
 
