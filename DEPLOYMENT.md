@@ -38,6 +38,25 @@ https://vibecheck-gh7u.onrender.com/api/payment/webhook
 
 Subscribe to `payment.captured` and `order.paid`. Copy the webhook signing secret to `RAZORPAY_WEBHOOK_SECRET`.
 
+### Enable UPI, QR and UPI apps
+
+The app highlights UPI first and keeps Cards, NetBanking and Wallets available. Razorpay Checkout is configured with a five-minute timeout.
+
+Razorpay still controls which methods are available to the account:
+
+1. Switch the Razorpay Dashboard to **Live Mode** after account activation.
+2. Open **Account & Settings → Payment Methods** and request/enable **UPI** if it is not active.
+3. Open **Account & Settings → Payment Configuration** under Checkout settings.
+4. Create or edit the checkout configuration and show **UPI QR Code** and **UPI Apps**.
+5. Keep Google Pay, Paytm, PhonePe and BHIM enabled where Razorpay lists them, then **Save as Default**.
+6. Repeat the configuration in Test Mode when testing with `rzp_test_...` keys.
+
+On desktop web, Razorpay normally presents a UPI QR. On supported mobile browsers it presents installed UPI apps. Google Pay and Paytm are provided by Razorpay automatically when UPI is enabled and the device/account is eligible.
+
+Manual UPI ID/number entry (UPI Collect) is deprecated for most web merchants from 28 February 2026. It cannot safely be forced from this app; Razorpay will show it only for eligible exempt accounts. Use UPI QR or UPI Intent instead.
+
+The five-minute setting closes the Standard Checkout session. Razorpay notes that browser timer throttling can occasionally delay a client-side timeout. Payment validity remains protected by server-side order amount, signature and captured-payment verification.
+
 ## Gmail email delivery
 
 1. Turn on 2-Step Verification for `GMAIL_USER`.
