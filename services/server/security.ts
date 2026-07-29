@@ -1,8 +1,8 @@
 import 'server-only';
-import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { getTokenSecret } from './config';
 
-type TokenPurpose = 'creator' | 'unlock';
+type TokenPurpose = 'unlock' | 'receipt' | 'recipient';
 
 function base64url(value: Buffer | string) {
   return Buffer.from(value).toString('base64url');
@@ -44,6 +44,10 @@ export function verifyAccessToken(token: string | null | undefined, cardId: stri
   } catch {
     return false;
   }
+}
+
+export function hashAccessToken(token: string) {
+  return createHash('sha256').update(token).digest('hex');
 }
 
 export function hashPasscode(passcode: string, salt = randomBytes(16).toString('hex')) {

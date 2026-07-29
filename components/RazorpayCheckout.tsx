@@ -1,12 +1,13 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { useState } from 'react';
 
 type RazorpayCheckoutProps = {
   cardId: string;
   amount: number;
-  onPaid: () => void;
-  fallback?: ReactNode;
+  customerEmail: string;
+  customerName: string;
+  onPaid: (receiptUrl?: string) => void;
 };
 
 type RazorpayOrderResponse = {
@@ -62,9 +63,8 @@ function loadRazorpayScript() {
   });
 }
 
-export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: RazorpayCheckoutProps) {
+export default function RazorpayCheckout({ cardId, amount, customerEmail, customerName, onPaid }: RazorpayCheckoutProps) {
   const [isStarting, setIsStarting] = useState(false);
-  const [isFallbackVisible, setIsFallbackVisible] = useState(false);
   const [showSimulator, setShowSimulator] = useState(false);
   const [isVerifyingSim, setIsVerifyingSim] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState('');
@@ -85,7 +85,8 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
         }),
       });
       if (verifyRes.ok) {
-        onPaid();
+        const data = await verifyRes.json();
+        onPaid(data.receipt_url);
       } else {
         const data = await verifyRes.json();
         setError(data.error || 'Mock verification failed');
@@ -117,7 +118,6 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
 
       if (!orderRes.ok || !order.key_id || !order.order_id || !order.amount || !order.currency) {
         setError(order.error || 'Automatic payment is unavailable right now.');
-        setIsFallbackVisible(true);
         return;
       }
 
@@ -132,8 +132,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
 
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded || !window.Razorpay) {
-        setError('Payment sheet could not load. You can use direct UPI below.');
-        setIsFallbackVisible(true);
+        setError('Payment sheet could not load. Please check your connection and try again.');
         return;
       }
 
@@ -144,6 +143,10 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
         name: 'VibeCheck',
         description: `${order.tier_label || 'Private card'} - private card unlock`,
         order_id: order.order_id,
+        prefill: {
+          email: customerEmail,
+          name: customerName,
+        },
         notes: {
           card_id: cardId,
           product: 'vibecheck_private_card',
@@ -155,8 +158,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
         modal: {
           ondismiss: () => {
             setIsStarting(false);
-            setIsFallbackVisible(true);
-            setError('Razorpay did not complete this time. Direct UPI is ready below, and your card will still unlock after UTR verification.');
+            setError('Payment was not completed. Your card draft is saved, so you can try again safely.');
           },
         },
         handler: async (response: RazorpaySuccessResponse) => {
@@ -173,26 +175,23 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
           const verifyData = await verifyRes.json();
 
           if (!verifyRes.ok) {
-            setError(verifyData.error || 'Payment completed, but verification failed. Use direct UPI below and submit the UTR.');
-            setIsFallbackVisible(true);
+            setError(verifyData.error || 'Payment completed, but verification is still pending. Keep this page open or use the receipt email when it arrives.');
             setIsStarting(false);
             return;
           }
 
-          onPaid();
+          onPaid(verifyData.receipt_url);
         },
       });
 
       checkout.on('payment.failed', () => {
-        setError('Payment was not completed. Try Razorpay again or use direct UPI below.');
-        setIsFallbackVisible(true);
+        setError('Payment was not completed. Please try Razorpay again.');
         setIsStarting(false);
       });
 
       checkout.open();
     } catch {
-      setError('Could not start Razorpay right now. Direct UPI is ready below.');
-      setIsFallbackVisible(true);
+      setError('Could not start Razorpay right now. Your card draft is safe; please try again.');
     } finally {
       setIsStarting(false);
     }
@@ -257,7 +256,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
                   Pay ₹{amount} and unlock instantly
                 </h3>
                 <p className="mx-auto max-w-sm text-xs leading-relaxed text-neutral-300">
-                  Razorpay can show UPI, Cards, NetBanking or Wallets. If unavailable, direct UPI is ready below.
+                  Razorpay can show UPI, Cards, NetBanking or Wallets. Your email is used only for the receipt and recovery link.
                 </p>
               </div>
 
@@ -282,14 +281,6 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
                 {isStarting ? 'Opening secure payment...' : 'Pay securely with Razorpay'}
               </button>
 
-              <button
-                type="button"
-                onClick={() => setIsFallbackVisible((value) => !value)}
-                className="text-[12px] font-black text-neutral-300 underline decoration-white/20 underline-offset-4 hover:text-pink-200"
-              >
-                {isFallbackVisible ? 'Hide direct UPI backup' : 'Razorpay stuck? Use direct UPI backup'}
-              </button>
-
               {error && (
                 <p className="rounded-xl border border-red-300/20 bg-red-400/10 px-3 py-2 text-[11px] font-bold text-red-100">
                   {error}
@@ -299,12 +290,6 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
           </section>
         </div>
       </div>
-
-      {isFallbackVisible && (
-        <div className="animate-bounce-in">
-          {fallback}
-        </div>
-      )}
 
       {showSimulator && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">

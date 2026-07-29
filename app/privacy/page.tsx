@@ -32,7 +32,7 @@ export default function PrivacyPage() {
 
         <h2 className="text-lg font-bold text-white">3. Payment Security</h2>
         <p>
-          Payment transactions may be processed by Razorpay or through a direct UPI option. We do not store complete card numbers, CVVs, net-banking passwords, or UPI PINs.
+          Payment transactions are processed by Razorpay. We do not store complete card numbers, CVVs, net-banking passwords, or UPI PINs.
         </p>
 
         <h2 className="text-lg font-bold text-white">4. Data Retention & Expiry</h2>

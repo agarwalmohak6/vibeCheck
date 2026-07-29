@@ -8,11 +8,10 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: '/',
         disallow: [
-          '/admin',
           '/api/',
           '/card/',
           '/customize',
-          '/dashboard',
+          '/receipt/',
           '/view/',
         ],
       },

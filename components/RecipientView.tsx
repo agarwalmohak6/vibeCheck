@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { TEMPLATE_TYPES } from "@/lib/themes";
 import EnvelopeReveal from "@/components/EnvelopeReveal";
@@ -19,19 +19,11 @@ import {
   getTemplateLocaleCopy,
   type RecipientLocale,
 } from "@/lib/recipientI18n";
-import FollowUpReplies from "./FollowUpReplies";
 import type { PublicCard } from "@/types/vibecheck";
 
-interface RecipientViewProps {
-  card: PublicCard;
-  initialRoomMode?: boolean;
-}
-
-export default function RecipientView({ card, initialRoomMode = false }: RecipientViewProps) {
-  const [envelopeOpened, setEnvelopeOpened] = useState(initialRoomMode);
-  const [secretUnlocked, setSecretUnlocked] = useState(
-    initialRoomMode || !card.card_data.has_secret_code,
-  );
+export default function RecipientView({ card }: { card: PublicCard }) {
+  const [envelopeOpened, setEnvelopeOpened] = useState(false);
+  const [secretUnlocked, setSecretUnlocked] = useState(!card.card_data.has_secret_code);
   const [language, setLanguage] = useState<RecipientLocale>("en");
   const templateMeta = TEMPLATE_TYPES.find((t) => t.id === card.template_type);
   const hasRunaway = templateMeta?.hasRunaway || false;
@@ -83,24 +75,7 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
       : card.card_data.no_btn_text;
 
   const [yesClicked, setYesClicked] = useState(false);
-  const [isCreator, setIsCreator] = useState(false);
   const [storyComplete, setStoryComplete] = useState(false);
-  const [roomMode, setRoomMode] = useState(initialRoomMode);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const creatorToken = new URLSearchParams(window.location.search).get("ct");
-      if (creatorToken) {
-        localStorage.setItem(`creator_token_${card.id}`, creatorToken);
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsCreator(true);
-        return;
-      }
-      // A normal recipient link must stay recipient-mode even on the creator's browser.
-      // Saved local tokens are used only for explicit creator chat actions, not page identity.
-      setIsCreator(false);
-    }
-  }, [card.id]);
 
   const handleEnvelopeOpen = () => {
     setEnvelopeOpened(true);
@@ -140,7 +115,6 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
 
   const handleYes = () => {
     setYesClicked(true);
-    setRoomMode(true);
     const colors = ["#FACC15", "#FF2E93", "#a855f7", "#00FF66", "#ffffff"];
     // Massive blast from bottom
     [0, 200, 400, 600, 800].forEach((d) =>
@@ -192,7 +166,6 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
       data-template={card.template_type}
       lang={language === "hi" ? "hi" : "en"}
       data-locale={language}
-      data-room-mode={roomMode ? "true" : "false"}
     >
       {/* Floating hearts canvas background for Soft Coquette theme */}
       {card.theme_selected === "soft_coquette" && <HeartCanvas />}
@@ -254,7 +227,6 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             className="vc-recipient-stage"
-            data-room-mode={roomMode ? "true" : "false"}
           >
             {/* Recipient identity header */}
             <motion.div
@@ -359,26 +331,7 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
                 </motion.div>
 
                 <AnimatePresence mode="wait">
-                  {roomMode && !yesClicked && (
-                    <motion.div
-                      key="room-mode"
-                      initial={{ opacity: 0, y: 18 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -14 }}
-                      className="vc-recipient-chat-direct"
-                    >
-                      <div className="vc-recipient-chat-direct__intro">
-                        <span>💬</span>
-                        <div>
-                          <p>Private room</p>
-                          <h2>{creatorName} + {recipientName}</h2>
-                        </div>
-                      </div>
-                      <FollowUpReplies card={card} isCreator={isCreator} locale={language} />
-                    </motion.div>
-                  )}
-
-                  {!roomMode && !yesClicked && !isCreator && !storyComplete && (
+                  {!yesClicked && !storyComplete && (
                     <motion.div
                       key="story"
                       initial={{ opacity: 0, y: 18 }}
@@ -397,7 +350,7 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
                     </motion.div>
                   )}
 
-                  {!roomMode && hasRunaway && !yesClicked && !isCreator && storyComplete && (
+                  {hasRunaway && !yesClicked && storyComplete && (
                     <motion.div
                       key="cta"
                       initial={{ opacity: 0, y: 20, scale: 0.98 }}
@@ -430,18 +383,6 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
                         noText={displayNoText}
                         onDodge={handleDodge}
                       />
-                    </motion.div>
-                  )}
-
-                  {!roomMode && isCreator && !yesClicked && (
-                    <motion.div
-                      key="creator-replies"
-                      initial={{ opacity: 0, y: 18 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -14 }}
-                      className="vc-recipient-reply-direct"
-                    >
-                      <FollowUpReplies card={card} isCreator={true} />
                     </motion.div>
                   )}
 
@@ -482,7 +423,9 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
                         {recipientCopy.successSubtext}
                       </p>
 
-                      <FollowUpReplies card={card} isCreator={false} locale={language} />
+                      <p className="text-sm font-semibold" style={{ color: "var(--text3)" }}>
+                        This private moment is complete. You can safely close the card.
+                      </p>
                     </motion.div>
                   )}
                 </AnimatePresence>

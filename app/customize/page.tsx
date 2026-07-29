@@ -6,9 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
 import { PRIMARY_TEMPLATE_TYPES, TEMPLATE_TYPES, TIERS, ThemeId, type StoryQuestion } from '@/lib/themes';
 import GiphyModal from '@/components/GiphyModal';
-import SuccessHub from '@/components/SuccessHub';
 import MusicSelector from '@/components/MusicSelector';
-import QRCheckout from '@/components/QRCheckout';
 import RazorpayCheckout from '@/components/RazorpayCheckout';
 import { compressImage } from '@/lib/imageCompressor';
 import HeartCanvas from '@/components/HeartCanvas';
@@ -18,6 +16,7 @@ import CardStoryline from '@/components/CardStoryline';
 interface FormData {
   recipientName: string;
   creatorName: string;
+  customerEmail: string;
   templateType: string;
   theme: ThemeId;
   messageTitle: string;
@@ -52,9 +51,10 @@ const ACTIVE_CHECKOUT_KEY = 'vibecheck_active_checkout';
 
 type CheckoutSession = {
   cardId: string;
-  creatorToken?: string | null;
+  receiptUrl?: string | null;
   recipientName?: string;
   creatorName?: string;
+  customerEmail?: string;
   tierId?: string;
   paid?: boolean;
   updatedAt?: string;
@@ -123,9 +123,10 @@ function readCheckoutSession(): CheckoutSession | null {
 
     return {
       cardId: parsed.cardId,
-      creatorToken: parsed.creatorToken || window.localStorage.getItem(`creator_token_${parsed.cardId}`),
+      receiptUrl: parsed.receiptUrl || null,
       recipientName: parsed.recipientName || '',
       creatorName: parsed.creatorName || '',
+      customerEmail: parsed.customerEmail || '',
       tierId: parsed.tierId || '',
       paid: Boolean(parsed.paid),
       updatedAt: parsed.updatedAt || '',
@@ -143,10 +144,6 @@ function writeCheckoutSession(session: CheckoutSession) {
     updatedAt: new Date().toISOString(),
   }));
 
-  if (session.creatorToken) {
-    window.localStorage.setItem(`creator_token_${session.cardId}`, session.creatorToken);
-  }
-  window.localStorage.setItem(`creator_of_${session.cardId}`, 'true');
 }
 
 function CustomizePageContent() {
@@ -163,6 +160,7 @@ function CustomizePageContent() {
   const [form, setForm] = useState<FormData>({
     recipientName: '',
     creatorName: '',
+    customerEmail: '',
     templateType: initialTemplate,
     theme: initialTmplMeta?.recommendedTheme || 'soft_coquette',
     messageTitle: '',
@@ -186,12 +184,11 @@ function CustomizePageContent() {
   const [loading, setLoading] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [createdCardId, setCreatedCardId] = useState<string | null>(null);
-  const [creatorToken, setCreatorToken] = useState<string | null>(null);
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [paymentStep, setPaymentStep] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const allowMockPayments = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS !== 'false';
-  const paymentVpa = (process.env.NEXT_PUBLIC_UPI_VPA || '').trim();
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) => setForm(p => ({ ...p, [k]: v }));
 
@@ -236,22 +233,28 @@ function CustomizePageContent() {
 
   const rememberCheckout = (
     cardId: string,
-    token: string | null | undefined,
+    nextReceiptUrl: string | null | undefined,
     paid = false,
   ) => {
     const existing = readCheckoutSession();
     writeCheckoutSession({
       cardId,
-      creatorToken: token || creatorToken || existing?.creatorToken || null,
+      receiptUrl: nextReceiptUrl || receiptUrl || existing?.receiptUrl || null,
       recipientName: submitRecipientName || displayRecipientName || existing?.recipientName || '',
       creatorName: submitCreatorName || displayCreatorName || existing?.creatorName || '',
+      customerEmail: form.customerEmail.trim().toLowerCase() || existing?.customerEmail || '',
       tierId: form.tierId || existing?.tierId || selectedTier.id,
       paid,
     });
   };
 
-  const markCheckoutPaid = (cardId = createdCardId, token = creatorToken) => {
-    if (cardId) rememberCheckout(cardId, token, true);
+  const markCheckoutPaid = (cardId = createdCardId, nextReceiptUrl = receiptUrl) => {
+    if (cardId) rememberCheckout(cardId, nextReceiptUrl, true);
+    if (nextReceiptUrl) {
+      setReceiptUrl(nextReceiptUrl);
+      router.replace(nextReceiptUrl);
+      return;
+    }
     setIsPaid(true);
     setPaymentStep(false);
     setLoading(false);
@@ -277,19 +280,23 @@ function CustomizePageContent() {
 
       // Recover the payment/result screen after a refresh.
       setCreatedCardId(stored.cardId);
-      setCreatorToken(stored.creatorToken || null);
-      if (stored.recipientName || stored.creatorName || stored.tierId) {
+      setReceiptUrl(stored.receiptUrl || null);
+      if (stored.recipientName || stored.creatorName || stored.customerEmail || stored.tierId) {
         setForm(prev => ({
           ...prev,
           recipientName: stored.recipientName || prev.recipientName,
           creatorName: stored.creatorName || prev.creatorName,
+          customerEmail: stored.customerEmail || prev.customerEmail,
           tierId: stored.tierId || prev.tierId,
         }));
       }
 
       if (stored.paid) {
-        setIsPaid(true);
-        setPaymentStep(false);
+        if (stored.receiptUrl) router.replace(stored.receiptUrl);
+        else {
+          setIsPaid(true);
+          setPaymentStep(false);
+        }
         return;
       }
 
@@ -324,7 +331,7 @@ function CustomizePageContent() {
         const res = await fetch(`/api/cards?id=${createdCardId}&status=payment`, { cache: 'no-store' });
         const status = res.ok ? await res.json() : null;
         if (!cancelled && status?.is_paid) {
-          markCheckoutPaid(createdCardId, creatorToken);
+          markCheckoutPaid(createdCardId, receiptUrl);
         }
       } catch {
         // Keep polling. Direct UPI approval can arrive a few seconds later.
@@ -338,7 +345,7 @@ function CustomizePageContent() {
       window.clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paymentStep, createdCardId, creatorToken, isPaid]);
+  }, [paymentStep, createdCardId, receiptUrl, isPaid]);
 
   const getStepIssues = (stepIndex: number): string[] => {
     const issues: string[] = [];
@@ -346,6 +353,10 @@ function CustomizePageContent() {
     if (stepIndex === 0) {
       if (!submitRecipientName) issues.push('Add the recipient name before moving ahead.');
       if (!submitCreatorName) issues.push('Add your sender name before moving ahead.');
+    }
+
+    if (stepIndex === 3 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail.trim())) {
+      issues.push('Add a valid email for your payment receipt and recovery link.');
     }
 
     if (stepIndex === 1) {
@@ -419,7 +430,7 @@ function CustomizePageContent() {
   };
 
   const validateBeforeCreate = () => {
-    for (let index = 0; index < STEPS.length - 1; index += 1) {
+    for (let index = 0; index < STEPS.length; index += 1) {
       const issues = getStepIssues(index);
       if (issues.length) {
         setStep(index);
@@ -509,6 +520,7 @@ function CustomizePageContent() {
         body: JSON.stringify({
           recipient_name: submitRecipientName,
           creator_name: submitCreatorName,
+          customer_email: form.customerEmail.trim().toLowerCase(),
           template_type: form.templateType,
           theme_selected: form.theme,
           tier_selected: form.tierId,
@@ -531,13 +543,8 @@ function CustomizePageContent() {
       const data = await res.json();
       if (res.ok && data.id) {
         setCreatedCardId(data.id);
-        if (data.creator_token) {
-          setCreatorToken(data.creator_token);
-          localStorage.setItem(`creator_token_${data.id}`, data.creator_token);
-        }
-        // Identify this browser as the creator of the card
-        localStorage.setItem(`creator_of_${data.id}`, 'true');
-        rememberCheckout(data.id, data.creator_token || null, false);
+        setReceiptUrl(data.receipt_url || null);
+        rememberCheckout(data.id, data.receipt_url || null, false);
         setPaymentStep(true);
       } else {
         setNotice({
@@ -569,7 +576,10 @@ function CustomizePageContent() {
           status: 'success'
         }),
       });
-      if (res.ok) markCheckoutPaid(createdCardId, creatorToken);
+      if (res.ok) {
+        const result = await res.json();
+        markCheckoutPaid(createdCardId, result.receipt_url || receiptUrl);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -578,16 +588,11 @@ function CustomizePageContent() {
   };
 
   // ── Success phase ───────────────────────────────────
-  if (isPaid && createdCardId) {
+  if (isPaid && createdCardId && receiptUrl) {
     return (
       <main className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--bg)' }}>
         <AmbientBackground />
-        <SuccessHub
-          cardId={createdCardId}
-          recipientName={displayRecipientName}
-          creatorName={displayCreatorName}
-          creatorToken={creatorToken || localStorage.getItem(`creator_token_${createdCardId}`) || undefined}
-        />
+        <p className="relative z-10 font-bold">Opening your private receipt…</p>
       </main>
     );
   }
@@ -601,19 +606,11 @@ function CustomizePageContent() {
         <RazorpayCheckout
           cardId={createdCardId}
           amount={selectedTier.price}
-          onPaid={() => {
-            markCheckoutPaid(createdCardId, creatorToken);
+          customerEmail={form.customerEmail.trim()}
+          customerName={submitCreatorName}
+          onPaid={(nextReceiptUrl) => {
+            markCheckoutPaid(createdCardId, nextReceiptUrl || receiptUrl);
           }}
-          fallback={(
-            <QRCheckout
-              cardId={createdCardId}
-              amount={selectedTier.price}
-              onPaid={() => {
-                markCheckoutPaid(createdCardId, creatorToken);
-              }}
-              vpa={paymentVpa}
-            />
-          )}
         />
 
         <div className="w-full max-w-sm space-y-3">
@@ -628,7 +625,7 @@ function CustomizePageContent() {
 
           {allowMockPayments && (
             <button
-              onClick={() => markCheckoutPaid(createdCardId, creatorToken)}
+              onClick={() => markCheckoutPaid(createdCardId, receiptUrl)}
               className="w-full bg-white/12 border border-white/20 hover:bg-white/18 text-white font-bold py-3 px-6 rounded-2xl text-xs tracking-wide transition-colors cursor-pointer shadow-lg shadow-black/20"
             >
               Bypass payment locally
@@ -1055,6 +1052,23 @@ function CustomizePageContent() {
               <p className="text-xs relative z-10 mt-1" style={{ color: 'var(--text2)' }}>{t.duration} · {t.description}</p>
             </motion.button>
           ))}
+          <div className="rounded-2xl border border-pink-200/60 bg-white/70 p-4">
+            <label htmlFor="customer-email" className="block text-xs font-black uppercase tracking-[0.14em]" style={{ color: 'var(--text2)' }}>
+              Receipt &amp; recovery email *
+            </label>
+            <input
+              id="customer-email"
+              type="email"
+              autoComplete="email"
+              value={form.customerEmail}
+              onChange={event => set('customerEmail', event.target.value)}
+              placeholder="you@example.com"
+              className="vc-builder-input mt-2 w-full px-4 py-3 text-sm outline-none"
+            />
+            <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text2)' }}>
+              We send the payment details and your private, refresh-safe sharing page here.
+            </p>
+          </div>
           <motion.button
             type="button"
             onClick={handleSubmit}
@@ -1070,7 +1084,7 @@ function CustomizePageContent() {
             {loading ? 'Generating link...' : `Looks good - send it for ₹${selectedTier.price}`}
           </motion.button>
           <p className="text-xs text-center font-medium leading-relaxed" style={{ color: 'var(--text2)' }}>
-            Secure payment · UPI deep links / QR codes accepted · instant confirmation
+            Secure Razorpay payment · email receipt · refresh-safe recovery
           </p>
         </div>
       );

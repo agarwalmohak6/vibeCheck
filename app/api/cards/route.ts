@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createCardSchema } from '@/lib/contracts';
-import { createCardDraft, getPaymentStatus, getPublicCard } from '@/services/server/card-store';
-import { getCreatorSessionFromRequest } from '@/services/server/creator-auth';
+import { createCardDraft, getPaymentStatus } from '@/services/server/card-store';
 import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -18,13 +17,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid card payload', issues: parsed.error.flatten() }, { status: 400 });
     }
 
-    const creatorSession = getCreatorSessionFromRequest(req);
-    const { card, creatorToken } = await createCardDraft(parsed.data, creatorSession?.accountId);
+    const { card, receipt } = await createCardDraft(parsed.data);
     return NextResponse.json({
       id: card.id,
       url: `/card/${card.id}`,
-      creator_token: creatorToken,
-      creator_url: `/card/${card.id}?ct=${encodeURIComponent(creatorToken)}`,
+      receipt_token: receipt.token,
+      receipt_url: receipt.url,
       card,
     });
   } catch (err) {
@@ -35,17 +33,13 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get('id');
-  const statusOnly = req.nextUrl.searchParams.get('status') === 'payment';
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
-  if (statusOnly) {
-    const status = await getPaymentStatus(id);
-    if (!status) return NextResponse.json({ error: 'Card not found' }, { status: 404 });
-    return NextResponse.json(status);
+  if (req.nextUrl.searchParams.get('status') !== 'payment') {
+    return NextResponse.json({ error: 'Only payment status is available.' }, { status: 403 });
   }
 
-  const card = await getPublicCard(id);
-  if (!card) return NextResponse.json({ error: 'Card not found' }, { status: 404 });
-
-  return NextResponse.json(card);
+  const status = await getPaymentStatus(id);
+  if (!status) return NextResponse.json({ error: 'Card not found' }, { status: 404 });
+  return NextResponse.json(status);
 }

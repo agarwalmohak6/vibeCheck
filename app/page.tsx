@@ -26,9 +26,9 @@ const EXPERIENCE_STACK = [
     value: "One good song does more than a paragraph",
   },
   {
-    id: "feature-live-tracker",
-    label: "Live tracker",
-    value: "See opens, unlocks, taps, and replies",
+    id: "feature-one-device",
+    label: "One-device unseal",
+    value: "The intended person claims the private card once",
   },
 ];
 
@@ -72,7 +72,7 @@ const SEO_FAQS = [
   {
     question: "Why not just send a WhatsApp message?",
     answer:
-      "A normal message disappears in the chat. A VibeCheck opens like a small experience: cover first, message next, song and questions after that, then a private reply room for the two people involved.",
+      "A normal message disappears in the chat. A VibeCheck opens like a small experience: cover first, message next, then music, questions, and a memorable reveal.",
   },
   {
     question: "Can I make cards for India and US friends?",
@@ -150,12 +150,6 @@ export default function LandingPage() {
             animate={{ opacity: 1, x: 0 }}
             className="vc-nav-actions"
           >
-            <Link
-              href="/dashboard"
-              className="hidden rounded-full border border-pink-200 bg-white/70 px-4 py-3 text-xs font-black uppercase tracking-[0.14em] text-[#7b3f6e] shadow-sm shadow-pink-100 transition hover:-translate-y-0.5 hover:bg-white sm:inline-flex"
-            >
-              Dashboard
-            </Link>
             <Link href="/about" className="hidden text-xs font-black uppercase text-[#7b3f6e] lg:inline-flex">
               About
             </Link>

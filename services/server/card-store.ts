@@ -1,80 +1,41 @@
 import 'server-only';
+
 import { randomUUID } from 'crypto';
 import type { CreateCardInput } from '@/lib/contracts';
-import { computeExpiresAt } from '@/lib/utils';
 import type { Card } from '@/lib/supabase';
-import type { CardEventType, ChatMessageDTO, PublicCard, TrackerEvent } from '@/types/vibecheck';
+import { computeExpiresAt, isExpired } from '@/lib/utils';
+import type { CardEventType, PublicCard, TrackerEvent } from '@/types/vibecheck';
 import { captureServerEvent } from './analytics';
-import { createAccessToken, hashPasscode, verifyAccessToken, verifyPasscodeHash } from './security';
+import {
+  createAccessToken,
+  hashAccessToken,
+  hashPasscode,
+  verifyAccessToken,
+  verifyPasscodeHash,
+} from './security';
 import { getSupabaseAdmin } from './supabase-admin';
 
-type StoredSecret = {
-  salt: string;
-  hash: string;
-  question?: string;
+type StoredSecret = { salt: string; hash: string; question?: string };
+type PrivateCard = Card & {
+  customer_email?: string;
+  confirmation_email_sent_at?: string | null;
+  recipient_claim_hash?: string | null;
+  recipient_claimed_at?: string | null;
 };
-
 type MockState = {
-  __MOCK_STORE?: Record<string, Card>;
-  __MOCK_CHATS?: ChatMessageDTO[];
+  __MOCK_STORE?: Record<string, PrivateCard>;
   __MOCK_SECRETS?: Record<string, StoredSecret>;
   __MOCK_EVENTS?: TrackerEvent[];
-  __MOCK_PAYMENT_REFERENCES?: Record<string, {
-    payment_reference: string;
-    status: 'created' | 'paid';
-    submitted_at: string;
-  }>;
 };
 
 const globalStore = globalThis as unknown as MockState;
 const MOCK_STORE = globalStore.__MOCK_STORE || (globalStore.__MOCK_STORE = {});
-const MOCK_CHATS = globalStore.__MOCK_CHATS || (globalStore.__MOCK_CHATS = []);
 const MOCK_SECRETS = globalStore.__MOCK_SECRETS || (globalStore.__MOCK_SECRETS = {});
 const MOCK_EVENTS = globalStore.__MOCK_EVENTS || (globalStore.__MOCK_EVENTS = []);
-const MOCK_PAYMENT_REFERENCES =
-  globalStore.__MOCK_PAYMENT_REFERENCES || (globalStore.__MOCK_PAYMENT_REFERENCES = {});
-
-export type ManualPaymentSubmission = {
-  id: string;
-  card_id: string;
-  payment_reference: string;
-  status: string;
-  created_at: string;
-  verified_at: string | null;
-  raw_payload: Record<string, unknown> | null;
-  card: {
-    recipient_name: string;
-    creator_name: string;
-    template_type: string;
-    tier_selected: string;
-    is_paid: boolean;
-    expires_at?: string | null;
-  } | null;
-};
-
-export type CreatorCardSummary = {
-  id: string;
-  recipient_name: string;
-  creator_name: string;
-  template_type: string;
-  tier_selected: string;
-  is_paid: boolean;
-  payment_status: string;
-  payment_id: string | null;
-  payment_reference: string | null;
-  expires_at?: string | null;
-  created_at: string;
-  creator_token: string;
-};
-
-export type AdminCardSummary = CreatorCardSummary & {
-  account_id: string | null;
-};
 
 function sanitizeCardData(input: CreateCardInput['card_data'], hasSecretCode: boolean) {
   const { unlock_question, cover_image_url, ...rest } = input;
   delete rest.unlock_code;
-
   return {
     ...rest,
     cover_image_url,
@@ -83,13 +44,23 @@ function sanitizeCardData(input: CreateCardInput['card_data'], hasSecretCode: bo
   };
 }
 
-function toPublicCard(row: Card): PublicCard {
+function toPublicCard(row: PrivateCard): PublicCard {
+  const {
+    customer_email: _customerEmail,
+    confirmation_email_sent_at: _emailSentAt,
+    recipient_claim_hash: _claimHash,
+    recipient_claimed_at: _claimedAt,
+    ...safeRow
+  } = row;
+  void _customerEmail;
+  void _emailSentAt;
+  void _claimHash;
+  void _claimedAt;
   const hasSecretCode = Boolean(row.card_data.has_secret_code || MOCK_SECRETS[row.id]);
   const safeData = { ...row.card_data };
   delete safeData.unlock_code;
-
   return {
-    ...row,
+    ...safeRow,
     card_data: {
       ...safeData,
       has_secret_code: hasSecretCode,
@@ -98,42 +69,48 @@ function toPublicCard(row: Card): PublicCard {
   };
 }
 
-function normalizePaymentReference(reference: string) {
-  return reference.trim().replace(/\s+/g, '').toUpperCase();
+export function accessMaxAgeSeconds(expiresAt?: string | null) {
+  if (!expiresAt) return 60 * 60 * 24 * 365 * 10;
+  return Math.max(60, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
 }
 
-export async function createCardDraft(input: CreateCardInput, accountId?: string | null) {
+export function createReceiptAccess(card: Pick<PrivateCard, 'id' | 'expires_at'>) {
+  const token = createAccessToken(card.id, 'receipt', accessMaxAgeSeconds(card.expires_at));
+  return { token, url: `/receipt/${card.id}?token=${encodeURIComponent(token)}` };
+}
+
+export async function createCardDraft(input: CreateCardInput) {
   const admin = getSupabaseAdmin();
   const id = randomUUID();
   const hasSecretCode = Boolean(input.card_data.unlock_code?.trim());
   const cardData = sanitizeCardData(input.card_data, hasSecretCode);
   const expiresAt = computeExpiresAt(input.tier_selected);
-  const creatorToken = createAccessToken(id, 'creator');
 
   if (!admin) {
-    const card: Card = {
+    const card: PrivateCard = {
       id,
+      customer_email: input.customer_email.toLowerCase(),
       recipient_name: input.recipient_name,
       creator_name: input.creator_name,
       template_type: input.template_type,
       theme_selected: input.theme_selected,
       card_data: cardData,
       tier_selected: input.tier_selected,
-      account_id: accountId || null,
       created_at: new Date().toISOString(),
       expires_at: expiresAt,
       is_paid: false,
       payment_id: null,
       music_track_id: input.music_track_id || null,
+      confirmation_email_sent_at: null,
+      recipient_claim_hash: null,
+      recipient_claimed_at: null,
     };
-
     if (hasSecretCode && input.card_data.unlock_code) {
       MOCK_SECRETS[id] = {
         ...hashPasscode(input.card_data.unlock_code),
         question: input.card_data.unlock_question || '',
       };
     }
-
     MOCK_STORE[id] = card;
     await captureServerEvent('card_draft_created', id, {
       template_type: input.template_type,
@@ -141,30 +118,24 @@ export async function createCardDraft(input: CreateCardInput, accountId?: string
       has_secret_code: hasSecretCode,
       mock: true,
     });
-
-    return { card: toPublicCard(card), creatorToken };
+    return { card: toPublicCard(card), receipt: createReceiptAccess(card) };
   }
 
-  const { data: card, error } = await admin
-    .from('cards')
-    .insert({
-      id,
-      recipient_name: input.recipient_name,
-      creator_name: input.creator_name,
-      template_type: input.template_type,
-      theme_selected: input.theme_selected,
-      card_data: cardData,
-      tier_selected: input.tier_selected,
-      expires_at: expiresAt,
-      is_paid: false,
-      payment_id: null,
-      payment_status: 'pending',
-      music_track_id: input.music_track_id || null,
-      ...(accountId ? { account_id: accountId } : {}),
-    })
-    .select('*')
-    .single();
-
+  const { data, error } = await admin.from('cards').insert({
+    id,
+    customer_email: input.customer_email.toLowerCase(),
+    recipient_name: input.recipient_name,
+    creator_name: input.creator_name,
+    template_type: input.template_type,
+    theme_selected: input.theme_selected,
+    card_data: cardData,
+    tier_selected: input.tier_selected,
+    expires_at: expiresAt,
+    is_paid: false,
+    payment_id: null,
+    payment_status: 'pending',
+    music_track_id: input.music_track_id || null,
+  }).select('*').single();
   if (error) throw error;
 
   if (hasSecretCode && input.card_data.unlock_code) {
@@ -177,516 +148,45 @@ export async function createCardDraft(input: CreateCardInput, accountId?: string
     });
     if (secretError) throw secretError;
   }
-
   await captureServerEvent('card_draft_created', id, {
     template_type: input.template_type,
     tier_selected: input.tier_selected,
     has_secret_code: hasSecretCode,
   });
+  const card = data as PrivateCard;
+  return { card: toPublicCard(card), receipt: createReceiptAccess(card) };
+}
 
-  return { card: toPublicCard(card as Card), creatorToken };
+export async function getPrivateCard(id: string): Promise<PrivateCard | null> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return MOCK_STORE[id] || null;
+  const { data, error } = await admin.from('cards').select('*').eq('id', id).maybeSingle();
+  if (error || !data) return null;
+  return data as PrivateCard;
 }
 
 export async function getPublicCard(id: string) {
-  const admin = getSupabaseAdmin();
-  if (!admin) {
-    const card = MOCK_STORE[id];
-    return card ? toPublicCard(card) : null;
-  }
-
-  const { data, error } = await admin.from('cards').select('*').eq('id', id).single();
-  if (error || !data) return null;
-  return toPublicCard(data as Card);
+  const card = await getPrivateCard(id);
+  return card ? toPublicCard(card) : null;
 }
 
 export async function getPaymentStatus(id: string) {
-  const card = await getPublicCard(id);
+  const card = await getPrivateCard(id);
   if (!card) return null;
-
-  const admin = getSupabaseAdmin();
-  let paymentReference: {
-    payment_reference: string;
-    status: string;
-    submitted_at?: string | null;
-  } | null = null;
-
-  if (!admin) {
-    paymentReference = MOCK_PAYMENT_REFERENCES[id] || null;
-  } else {
-    const { data, error } = await admin
-      .from('payments')
-      .select('provider_payment_id, status, created_at')
-      .eq('card_id', id)
-      .eq('provider', 'upi_manual')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (data?.provider_payment_id) {
-      paymentReference = {
-        payment_reference: data.provider_payment_id,
-        status: data.status,
-        submitted_at: data.created_at,
-      };
-    }
-  }
-
   return {
     id: card.id,
     is_paid: card.is_paid,
-    payment_id: card.payment_id || null,
     payment_status: card.is_paid ? 'paid' : 'pending',
-    payment_reference: paymentReference?.payment_reference || null,
-    payment_reference_submitted: Boolean(paymentReference),
-    payment_reference_status: paymentReference?.status || null,
     expires_at: card.expires_at || null,
   };
 }
 
-export async function submitUpiPaymentReference(id: string, reference: string) {
-  const card = await getPublicCard(id);
-  if (!card) return null;
-
-  const admin = getSupabaseAdmin();
-  const paymentReference = normalizePaymentReference(reference);
-  const submittedAt = new Date().toISOString();
-
-  if (!admin) {
-    MOCK_PAYMENT_REFERENCES[id] = {
-      payment_reference: paymentReference,
-      status: 'created',
-      submitted_at: submittedAt,
-    };
-    await captureServerEvent('payment_reference_submitted', id, {
-      provider: 'upi_manual',
-      payment_reference: paymentReference,
-      mock: true,
-    });
-    return {
-      id: card.id,
-      is_paid: card.is_paid,
-      payment_id: card.payment_id || null,
-      payment_reference: paymentReference,
-      payment_reference_submitted: true,
-      payment_reference_status: 'created',
-      expires_at: card.expires_at || null,
-    };
-  }
-
-  const { data: existing, error: lookupError } = await admin
-    .from('payments')
-    .select('card_id, status, provider_payment_id, created_at')
-    .eq('provider_payment_id', paymentReference)
-    .maybeSingle();
-
-  if (lookupError) throw lookupError;
-  if (existing && existing.card_id !== id) {
-    throw new Error('PAYMENT_REFERENCE_ALREADY_USED');
-  }
-
-  if (!existing) {
-    const { error } = await admin.from('payments').insert({
-      card_id: id,
-      provider: 'upi_manual',
-      provider_payment_id: paymentReference,
-      status: 'created',
-      raw_payload: {
-        source: 'upi_reference_form',
-        card_id: id,
-        payment_reference: paymentReference,
-        submitted_at: submittedAt,
-      },
-    });
-    if (error) throw error;
-  }
-
-  await captureServerEvent('payment_reference_submitted', id, {
-    provider: 'upi_manual',
-    payment_reference: paymentReference,
-  });
-
-  return {
-    id: card.id,
-    is_paid: card.is_paid,
-    payment_id: card.payment_id || null,
-    payment_reference: paymentReference,
-    payment_reference_submitted: true,
-    payment_reference_status: existing?.status || 'created',
-    expires_at: card.expires_at || null,
-  };
-}
-
-export async function verifyUpiPaymentReference(reference: string) {
-  const admin = getSupabaseAdmin();
-  const paymentReference = normalizePaymentReference(reference);
-  const verifiedAt = new Date().toISOString();
-  const paymentId = `upi_manual_${paymentReference}`;
-
-  if (!admin) {
-    const entry = Object.entries(MOCK_PAYMENT_REFERENCES)
-      .find(([, value]) => value.payment_reference === paymentReference);
-    if (!entry) return null;
-
-    const [cardId, proof] = entry;
-    const card = MOCK_STORE[cardId];
-    if (!card) return null;
-
-    proof.status = 'paid';
-    card.is_paid = true;
-    card.payment_id = paymentId;
-    await captureServerEvent('payment_succeeded', cardId, {
-      provider: 'upi_manual',
-      payment_reference: paymentReference,
-      mock: true,
-    });
-    return {
-      card_id: cardId,
-      payment_id: paymentId,
-      payment_reference: paymentReference,
-      status: 'paid',
-    };
-  }
-
-  const { data: proof, error: lookupError } = await admin
-    .from('payments')
-    .select('card_id, status, provider_payment_id')
-    .eq('provider', 'upi_manual')
-    .eq('provider_payment_id', paymentReference)
-    .maybeSingle();
-
-  if (lookupError) throw lookupError;
-  if (!proof?.card_id) return null;
-
-  const { error: cardError } = await admin
-    .from('cards')
-    .update({
-      is_paid: true,
-      payment_id: paymentId,
-      payment_status: 'paid',
-    })
-    .eq('id', proof.card_id);
-  if (cardError) throw cardError;
-
-  const { error: proofError } = await admin
-    .from('payments')
-    .update({
-      status: 'paid',
-      verified_at: verifiedAt,
-    })
-    .eq('provider', 'upi_manual')
-    .eq('provider_payment_id', paymentReference);
-  if (proofError) throw proofError;
-
-  await captureServerEvent('payment_succeeded', proof.card_id, {
-    provider: 'upi_manual',
-    payment_reference: paymentReference,
-  });
-
-  return {
-    card_id: proof.card_id,
-    payment_id: paymentId,
-    payment_reference: paymentReference,
-    status: 'paid',
-  };
-}
-
-export async function listManualPaymentReferences(limit = 75): Promise<ManualPaymentSubmission[]> {
-  const cappedLimit = Math.min(Math.max(limit, 1), 150);
-  const admin = getSupabaseAdmin();
-
-  if (!admin) {
-    return Object.entries(MOCK_PAYMENT_REFERENCES)
-      .map(([cardId, proof]) => {
-        const card = MOCK_STORE[cardId];
-        return {
-          id: `mock-${cardId}`,
-          card_id: cardId,
-          payment_reference: proof.payment_reference,
-          status: proof.status,
-          created_at: proof.submitted_at,
-          verified_at: proof.status === 'paid' ? proof.submitted_at : null,
-          raw_payload: { mock: true },
-          card: card
-            ? {
-                recipient_name: card.recipient_name,
-                creator_name: card.creator_name,
-                template_type: card.template_type,
-                tier_selected: card.tier_selected,
-                is_paid: card.is_paid,
-                expires_at: card.expires_at || null,
-              }
-            : null,
-        };
-      })
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, cappedLimit);
-  }
-
-  const { data: payments, error } = await admin
-    .from('payments')
-    .select('id, card_id, provider_payment_id, status, created_at, verified_at, raw_payload')
-    .eq('provider', 'upi_manual')
-    .order('created_at', { ascending: false })
-    .limit(cappedLimit);
-
-  if (error) throw error;
-
-  const rows = (payments || []) as Array<{
-    id: string;
-    card_id: string;
-    provider_payment_id: string | null;
-    status: string;
-    created_at: string;
-    verified_at: string | null;
-    raw_payload: Record<string, unknown> | null;
-  }>;
-  const cardIds = Array.from(new Set(rows.map((row) => row.card_id).filter(Boolean)));
-
-  const cardsById = new Map<string, ManualPaymentSubmission['card']>();
-  if (cardIds.length > 0) {
-    const { data: cards, error: cardsError } = await admin
-      .from('cards')
-      .select('id, recipient_name, creator_name, template_type, tier_selected, is_paid, expires_at')
-      .in('id', cardIds);
-
-    if (cardsError) throw cardsError;
-
-    for (const card of cards || []) {
-      const typedCard = card as {
-        id: string;
-        recipient_name: string;
-        creator_name: string;
-        template_type: string;
-        tier_selected: string;
-        is_paid: boolean;
-        expires_at?: string | null;
-      };
-      cardsById.set(typedCard.id, {
-        recipient_name: typedCard.recipient_name,
-        creator_name: typedCard.creator_name,
-        template_type: typedCard.template_type,
-        tier_selected: typedCard.tier_selected,
-        is_paid: typedCard.is_paid,
-        expires_at: typedCard.expires_at || null,
-      });
-    }
-  }
-
-  return rows.map((row) => ({
-    id: row.id,
-    card_id: row.card_id,
-    payment_reference: row.provider_payment_id || '',
-    status: row.status,
-    created_at: row.created_at,
-    verified_at: row.verified_at,
-    raw_payload: row.raw_payload,
-    card: cardsById.get(row.card_id) || null,
-  }));
-}
-
-export async function listCreatorCards(accountId: string): Promise<CreatorCardSummary[]> {
-  const admin = getSupabaseAdmin();
-
-  if (!admin) {
-    return Object.values(MOCK_STORE)
-      .filter((card) => card.account_id === accountId)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .map((card) => ({
-        id: card.id,
-        recipient_name: card.recipient_name,
-        creator_name: card.creator_name,
-        template_type: card.template_type,
-        tier_selected: card.tier_selected,
-        is_paid: card.is_paid,
-        payment_status: card.is_paid ? 'paid' : 'pending',
-        payment_id: card.payment_id || null,
-        payment_reference: MOCK_PAYMENT_REFERENCES[card.id]?.payment_reference || null,
-        expires_at: card.expires_at || null,
-        created_at: card.created_at,
-        creator_token: createAccessToken(card.id, 'creator'),
-      }));
-  }
-
-  const { data: cards, error } = await admin
-    .from('cards')
-    .select('id, recipient_name, creator_name, template_type, tier_selected, is_paid, payment_status, payment_id, expires_at, created_at')
-    .eq('account_id', accountId)
-    .order('created_at', { ascending: false })
-    .limit(200);
-
-  if (error) throw error;
-
-  const typedCards = (cards || []) as Array<{
-    id: string;
-    recipient_name: string;
-    creator_name: string;
-    template_type: string;
-    tier_selected: string;
-    is_paid: boolean;
-    payment_status: string;
-    payment_id: string | null;
-    expires_at?: string | null;
-    created_at: string;
-  }>;
-  const cardIds = typedCards.map((card) => card.id);
-  const paymentReferencesByCardId = new Map<string, string>();
-
-  if (cardIds.length > 0) {
-    const { data: payments, error: paymentsError } = await admin
-      .from('payments')
-      .select('card_id, provider_payment_id')
-      .eq('provider', 'upi_manual')
-      .in('card_id', cardIds)
-      .order('created_at', { ascending: false });
-
-    if (paymentsError) throw paymentsError;
-
-    for (const payment of payments || []) {
-      const row = payment as { card_id: string; provider_payment_id: string | null };
-      if (!paymentReferencesByCardId.has(row.card_id) && row.provider_payment_id) {
-        paymentReferencesByCardId.set(row.card_id, row.provider_payment_id);
-      }
-    }
-  }
-
-  return typedCards.map((card) => ({
-    ...card,
-    payment_reference: paymentReferencesByCardId.get(card.id) || null,
-    creator_token: createAccessToken(card.id, 'creator'),
-  }));
-}
-
-export async function listAdminCards(limit = 200): Promise<AdminCardSummary[]> {
-  const cappedLimit = Math.min(Math.max(limit, 1), 500);
-  const admin = getSupabaseAdmin();
-
-  if (!admin) {
-    return Object.values(MOCK_STORE)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, cappedLimit)
-      .map((card) => ({
-        id: card.id,
-        recipient_name: card.recipient_name,
-        creator_name: card.creator_name,
-        template_type: card.template_type,
-        tier_selected: card.tier_selected,
-        is_paid: card.is_paid,
-        payment_status: card.is_paid ? 'paid' : 'pending',
-        payment_id: card.payment_id || null,
-        payment_reference: MOCK_PAYMENT_REFERENCES[card.id]?.payment_reference || null,
-        expires_at: card.expires_at || null,
-        created_at: card.created_at,
-        creator_token: createAccessToken(card.id, 'creator'),
-        account_id: card.account_id || null,
-      }));
-  }
-
-  const { data: cards, error } = await admin
-    .from('cards')
-    .select('id, recipient_name, creator_name, template_type, tier_selected, is_paid, payment_status, payment_id, expires_at, created_at, account_id')
-    .order('created_at', { ascending: false })
-    .limit(cappedLimit);
-
-  if (error) throw error;
-
-  const typedCards = (cards || []) as Array<{
-    id: string;
-    recipient_name: string;
-    creator_name: string;
-    template_type: string;
-    tier_selected: string;
-    is_paid: boolean;
-    payment_status: string;
-    payment_id: string | null;
-    expires_at?: string | null;
-    created_at: string;
-    account_id?: string | null;
-  }>;
-  const cardIds = typedCards.map((card) => card.id);
-  const paymentReferencesByCardId = new Map<string, string>();
-
-  if (cardIds.length > 0) {
-    const { data: payments, error: paymentsError } = await admin
-      .from('payments')
-      .select('card_id, provider_payment_id')
-      .eq('provider', 'upi_manual')
-      .in('card_id', cardIds)
-      .order('created_at', { ascending: false });
-
-    if (paymentsError) throw paymentsError;
-
-    for (const payment of payments || []) {
-      const row = payment as { card_id: string; provider_payment_id: string | null };
-      if (!paymentReferencesByCardId.has(row.card_id) && row.provider_payment_id) {
-        paymentReferencesByCardId.set(row.card_id, row.provider_payment_id);
-      }
-    }
-  }
-
-  return typedCards.map((card) => ({
-    ...card,
-    account_id: card.account_id || null,
-    payment_reference: paymentReferencesByCardId.get(card.id) || null,
-    creator_token: createAccessToken(card.id, 'creator'),
-  }));
-}
-
-export async function claimCreatorCard(cardId: string, creatorToken: string, accountId: string) {
-  if (!verifyAccessToken(creatorToken, cardId, 'creator')) return null;
-
-  const admin = getSupabaseAdmin();
-  if (!admin) {
-    const card = MOCK_STORE[cardId];
-    if (!card) return null;
-    card.account_id = accountId;
-    return card;
-  }
-
-  const { data, error } = await admin
-    .from('cards')
-    .update({ account_id: accountId })
-    .eq('id', cardId)
-    .select('*')
-    .maybeSingle();
-
-  if (error) throw error;
-  return data ? toPublicCard(data as Card) : null;
-}
-
-export async function clearAllCardsAndPayments() {
-  const admin = getSupabaseAdmin();
-
-  if (!admin) {
-    const cardCount = Object.keys(MOCK_STORE).length;
-    const paymentCount = Object.keys(MOCK_PAYMENT_REFERENCES).length;
-    for (const key of Object.keys(MOCK_STORE)) delete MOCK_STORE[key];
-    for (const key of Object.keys(MOCK_PAYMENT_REFERENCES)) delete MOCK_PAYMENT_REFERENCES[key];
-    MOCK_CHATS.splice(0, MOCK_CHATS.length);
-    MOCK_EVENTS.splice(0, MOCK_EVENTS.length);
-    return { cards_deleted: cardCount, payments_deleted: paymentCount };
-  }
-
-  const zeroUuid = '00000000-0000-0000-0000-000000000000';
-  const { count: paymentsDeleted, error: paymentsError } = await admin
-    .from('payments')
-    .delete({ count: 'exact' })
-    .neq('id', zeroUuid);
-  if (paymentsError) throw paymentsError;
-
-  const { count: cardsDeleted, error: cardsError } = await admin
-    .from('cards')
-    .delete({ count: 'exact' })
-    .neq('id', zeroUuid);
-  if (cardsError) throw cardsError;
-
-  return {
-    cards_deleted: cardsDeleted || 0,
-    payments_deleted: paymentsDeleted || 0,
-  };
-}
-
-export async function markCardPaymentVerified(id: string, paymentId: string, extendsAt?: string, providerOrderId?: string) {
+export async function markCardPaymentVerified(
+  id: string,
+  paymentId: string,
+  extendsAt?: string,
+  providerOrderId?: string,
+) {
   const admin = getSupabaseAdmin();
   if (!admin) {
     const card = MOCK_STORE[id];
@@ -697,65 +197,94 @@ export async function markCardPaymentVerified(id: string, paymentId: string, ext
     await captureServerEvent('payment_succeeded', id, { payment_id: paymentId, mock: true });
     return true;
   }
-
-  const updates: Record<string, string | boolean | null> = {
+  const updates: Record<string, string | boolean> = {
     is_paid: true,
     payment_id: paymentId,
     payment_status: 'paid',
   };
   if (extendsAt) updates.expires_at = extendsAt;
-
-  const { data: updatedCard, error } = await admin
-    .from('cards')
-    .update(updates)
-    .eq('id', id)
-    .select('id')
-    .maybeSingle();
+  const { data, error } = await admin.from('cards').update(updates).eq('id', id).select('id').maybeSingle();
   if (error) throw error;
-  if (!updatedCard) return false;
+  if (!data) return false;
 
   if (providerOrderId) {
-    const { error: orderUpdateError } = await admin
-      .from('payments')
-      .update({
-        provider_payment_id: paymentId,
-        status: 'paid',
-        verified_at: new Date().toISOString(),
-      })
-      .eq('provider_order_id', providerOrderId)
-      .eq('card_id', id);
-    if (orderUpdateError) throw orderUpdateError;
-  }
-
-  await admin.from('payments').upsert(
-    {
-      card_id: id,
-      provider: 'razorpay',
-      provider_order_id: providerOrderId || null,
+    const { error: orderError } = await admin.from('payments').update({
       provider_payment_id: paymentId,
       status: 'paid',
       verified_at: new Date().toISOString(),
-    },
-    { onConflict: 'provider_payment_id' }
-  );
-
+    }).eq('provider_order_id', providerOrderId).eq('card_id', id);
+    if (orderError) throw orderError;
+  }
+  await admin.from('payments').upsert({
+    card_id: id,
+    provider: 'razorpay',
+    provider_order_id: providerOrderId || null,
+    provider_payment_id: paymentId,
+    status: 'paid',
+    verified_at: new Date().toISOString(),
+  }, { onConflict: 'provider_payment_id' });
   await captureServerEvent('payment_succeeded', id, { payment_id: paymentId });
   return true;
+}
+
+export async function markConfirmationEmailSent(id: string) {
+  const sentAt = new Date().toISOString();
+  const admin = getSupabaseAdmin();
+  if (!admin) {
+    if (MOCK_STORE[id]) MOCK_STORE[id].confirmation_email_sent_at = sentAt;
+    return;
+  }
+  await admin.from('cards').update({ confirmation_email_sent_at: sentAt }).eq('id', id);
+}
+
+export type RecipientAccessState = 'available' | 'granted' | 'claimed' | 'expired' | 'unpaid' | 'missing';
+
+export async function getRecipientAccessState(id: string, token?: string | null): Promise<RecipientAccessState> {
+  const card = await getPrivateCard(id);
+  if (!card) return 'missing';
+  if (!card.is_paid) return 'unpaid';
+  if (isExpired(card.expires_at)) return 'expired';
+  if (!card.recipient_claim_hash) return 'available';
+  if (
+    token &&
+    verifyAccessToken(token, id, 'recipient') &&
+    hashAccessToken(token) === card.recipient_claim_hash
+  ) return 'granted';
+  return 'claimed';
+}
+
+export async function claimRecipientAccess(id: string) {
+  const card = await getPrivateCard(id);
+  if (!card || !card.is_paid || isExpired(card.expires_at)) return null;
+  const token = createAccessToken(id, 'recipient', accessMaxAgeSeconds(card.expires_at));
+  const claimHash = hashAccessToken(token);
+  const claimedAt = new Date().toISOString();
+  const admin = getSupabaseAdmin();
+
+  if (!admin) {
+    if (card.recipient_claim_hash) return null;
+    card.recipient_claim_hash = claimHash;
+    card.recipient_claimed_at = claimedAt;
+  } else {
+    const { data, error } = await admin.from('cards').update({
+      recipient_claim_hash: claimHash,
+      recipient_claimed_at: claimedAt,
+    }).eq('id', id).is('recipient_claim_hash', null).select('id').maybeSingle();
+    if (error || !data) return null;
+  }
+  await recordTrackerEvent(id, 'card_viewed', { access: 'first_device_claim' });
+  return { token, maxAge: accessMaxAgeSeconds(card.expires_at) };
 }
 
 export async function verifyCardPasscode(id: string, code: string) {
   const admin = getSupabaseAdmin();
   let secret: StoredSecret | null = null;
-
   if (!admin) {
     secret = MOCK_SECRETS[id] || null;
   } else {
-    const { data, error } = await admin
-      .from('card_secrets')
-      .select('passcode_salt, passcode_hash, unlock_question')
-      .eq('card_id', id)
-      .single();
-    if (!error && data) {
+    const { data } = await admin.from('card_secrets')
+      .select('passcode_salt, passcode_hash, unlock_question').eq('card_id', id).maybeSingle();
+    if (data) {
       secret = {
         salt: data.passcode_salt,
         hash: data.passcode_hash,
@@ -763,9 +292,7 @@ export async function verifyCardPasscode(id: string, code: string) {
       };
     }
   }
-
   if (!secret) return { ok: true, unlockToken: createAccessToken(id, 'unlock', 60 * 60 * 6) };
-
   const ok = verifyPasscodeHash(code, secret.salt, secret.hash);
   await recordTrackerEvent(id, ok ? 'passcode_unlocked' : 'passcode_failed', {});
   return { ok, unlockToken: ok ? createAccessToken(id, 'unlock', 60 * 60 * 6) : null };
@@ -774,9 +301,8 @@ export async function verifyCardPasscode(id: string, code: string) {
 export async function recordTrackerEvent(
   cardId: string,
   eventType: CardEventType,
-  metadata: Record<string, unknown>
+  metadata: Record<string, unknown>,
 ) {
-  const admin = getSupabaseAdmin();
   const event: TrackerEvent = {
     id: randomUUID(),
     card_id: cardId,
@@ -784,10 +310,9 @@ export async function recordTrackerEvent(
     metadata,
     created_at: new Date().toISOString(),
   };
-
-  if (!admin) {
-    MOCK_EVENTS.push(event);
-  } else {
+  const admin = getSupabaseAdmin();
+  if (!admin) MOCK_EVENTS.push(event);
+  else {
     const { error } = await admin.from('tracker_events').insert({
       card_id: cardId,
       event_type: eventType,
@@ -795,79 +320,6 @@ export async function recordTrackerEvent(
     });
     if (error) throw error;
   }
-
   await captureServerEvent(eventType, cardId, metadata);
   return event;
-}
-
-export async function getTrackerEvents(cardId: string, creatorToken: string | null) {
-  if (!verifyAccessToken(creatorToken, cardId, 'creator')) return null;
-  const admin = getSupabaseAdmin();
-
-  if (!admin) {
-    return MOCK_EVENTS
-      .filter((event) => event.card_id === cardId)
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-  }
-
-  const { data, error } = await admin
-    .from('tracker_events')
-    .select('*')
-    .eq('card_id', cardId)
-    .order('created_at', { ascending: true })
-    .limit(200);
-
-  if (error) throw error;
-  return (data || []) as TrackerEvent[];
-}
-
-export async function getMessagesForCard(cardId: string) {
-  const admin = getSupabaseAdmin();
-  if (!admin) {
-    return MOCK_CHATS
-      .filter((message) => message.card_id === cardId)
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-  }
-
-  const { data, error } = await admin
-    .from('messages')
-    .select('*')
-    .eq('card_id', cardId)
-    .order('created_at', { ascending: true })
-    .limit(200);
-
-  if (error) throw error;
-  return (data || []) as ChatMessageDTO[];
-}
-
-export async function sendCardMessage(
-  cardId: string,
-  sender: 'creator' | 'recipient',
-  text: string,
-  creatorToken: string | null
-) {
-  if (sender === 'creator' && !verifyAccessToken(creatorToken, cardId, 'creator')) return null;
-  const admin = getSupabaseAdmin();
-  const message: ChatMessageDTO = {
-    id: randomUUID(),
-    card_id: cardId,
-    sender,
-    text: text.trim(),
-    created_at: new Date().toISOString(),
-  };
-
-  if (!admin) {
-    MOCK_CHATS.push(message);
-  } else {
-    const { data, error } = await admin.from('messages').insert({
-      card_id: cardId,
-      sender,
-      text: text.trim(),
-    }).select('*').single();
-    if (error) throw error;
-    return data as ChatMessageDTO;
-  }
-
-  await captureServerEvent('message_sent', cardId, { sender });
-  return message;
 }
