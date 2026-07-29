@@ -11,6 +11,7 @@ import SecretCodeGate from "@/components/SecretCodeGate";
 import HeartCanvas from "@/components/HeartCanvas";
 import AmbientBackground from "@/components/AmbientBackground";
 import CardStoryline from "@/components/CardStoryline";
+import ThemeFinale from "@/components/ThemeFinale";
 import confetti from "canvas-confetti";
 import {
   RECIPIENT_COPY,
@@ -273,7 +274,23 @@ export default function RecipientView({ card }: { card: PublicCard }) {
               </header>
             </motion.div>
 
-            <div className="vc-recipient-scene">
+            <motion.section
+              initial={{ opacity: 0, y: 34 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.18, duration: 0.7 }}
+              className="vc-recipient-intro"
+            >
+              <p>{templateMeta?.emoji || "💌"} A little something made only for you</p>
+              {card.card_data.cover_image_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={card.card_data.cover_image_url} alt="" aria-hidden />
+              )}
+              <h1>Hello, <em>{recipientName}</em>.</h1>
+              <span>{creatorName} turned a feeling into a private little experience.</span>
+              <a href="#your-vibecheck">Scroll to feel the moment <b>↓</b></a>
+            </motion.section>
+
+            <div className="vc-recipient-scene" id="your-vibecheck">
               <motion.section
                 initial={{ opacity: 0, x: -18 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -431,6 +448,12 @@ export default function RecipientView({ card }: { card: PublicCard }) {
                 </AnimatePresence>
               </motion.section>
             </div>
+
+            <ThemeFinale
+              templateType={card.template_type}
+              creatorName={creatorName}
+              recipientName={recipientName}
+            />
 
             {/* Footer */}
             <motion.div

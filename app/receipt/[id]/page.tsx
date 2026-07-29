@@ -4,6 +4,7 @@ import SuccessHub from '@/components/SuccessHub';
 import { isExpired } from '@/lib/utils';
 import { getPrivateCard } from '@/services/server/card-store';
 import { verifyAccessToken } from '@/services/server/security';
+import { absoluteUrl } from '@/lib/site';
 
 export const metadata = {
   title: 'Your private VibeCheck receipt',
@@ -39,6 +40,8 @@ export default async function ReceiptPage({
       <AmbientBackground />
       <SuccessHub
         cardId={id}
+        receiptToken={token || ''}
+        recipientUrl={absoluteUrl(`/card/${id}`)}
         recipientName={card.recipient_name}
         creatorName={card.creator_name}
         customerEmail={card.customer_email || ''}

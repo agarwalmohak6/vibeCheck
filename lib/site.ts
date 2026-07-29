@@ -8,8 +8,15 @@ export const SITE_DESCRIPTION =
 
 export const DEFAULT_SITE_URL = "https://vibecheck-gh7u.onrender.com";
 
+const configuredSiteUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim();
+const configuredAsLocalhost = configuredSiteUrl
+  ? /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?(?:\/|$)/i.test(configuredSiteUrl)
+  : false;
+
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_BASE_URL || DEFAULT_SITE_URL
+  process.env.NODE_ENV === "production" && configuredAsLocalhost
+    ? DEFAULT_SITE_URL
+    : configuredSiteUrl || DEFAULT_SITE_URL
 ).replace(/\/+$/, "");
 
 export const SITE_KEYWORDS = [

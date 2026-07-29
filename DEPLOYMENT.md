@@ -22,6 +22,8 @@ EMAIL_REPLY_TO=your-address@gmail.com
 GIPHY_API_KEY=...
 ```
 
+`NEXT_PUBLIC_BASE_URL` must be the exact public HTTPS origin above. Do not set it to localhost. Production now rejects a localhost value as a safety fallback, but the Render value should still be corrected.
+
 Do not add a merchant contact as checkout prefill. The app sends only the purchaser name and purchaser email to Razorpay Checkout.
 
 ## Database
@@ -64,6 +66,9 @@ The five-minute setting closes the Standard Checkout session. Razorpay notes tha
 3. Create an App Password named `VibeCheck Render`.
 4. Add the generated 16-character value to Render as `GMAIL_APP_PASSWORD`.
 5. Never use or paste your normal Google password.
+6. Set `GMAIL_USER` to the same Google account that created that App Password.
+7. Set `EMAIL_FROM_NAME=VibeCheck` and `EMAIL_REPLY_TO` to an inbox you monitor.
+8. Redeploy after changing environment variables. Open the private receipt and use **Retry confirmation email** if the first delivery failed.
 
 A successful verified payment triggers a branded confirmation email containing payment details and the private receipt/recovery URL. Gmail is suitable for an early, low-volume launch; move to a transactional provider with a verified domain when volume grows.
 
