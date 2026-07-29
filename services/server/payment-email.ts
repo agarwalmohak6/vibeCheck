@@ -1,5 +1,6 @@
 import 'server-only';
 
+import nodemailer from 'nodemailer';
 import { TIERS } from '@/lib/themes';
 import { absoluteUrl } from '@/lib/site';
 import { createReceiptAccess, getPrivateCard, markConfirmationEmailSent } from './card-store';
@@ -35,9 +36,10 @@ export async function deliverPaymentConfirmation(cardId: string, paymentId: stri
     return { sent: true, receiptUrl, reason: 'ALREADY_SENT' };
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
-  if (!apiKey || !from) {
+  const gmailUser = process.env.GMAIL_USER?.trim();
+  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD?.replace(/\s+/g, '');
+  const fromName = process.env.EMAIL_FROM_NAME?.trim() || 'VibeCheck';
+  if (!gmailUser || !gmailAppPassword) {
     return { sent: false, receiptUrl, reason: 'EMAIL_NOT_CONFIGURED' };
   }
 
@@ -75,35 +77,30 @@ export async function deliverPaymentConfirmation(cardId: string, paymentId: stri
 </table></td></tr></table></body></html>`;
 
   try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'Idempotency-Key': `vibecheck-payment-${paymentId}`,
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: gmailUser,
+        pass: gmailAppPassword,
       },
-      body: JSON.stringify({
-        from,
-        to: [card.customer_email],
-        reply_to: process.env.EMAIL_REPLY_TO || undefined,
-        subject: `Your VibeCheck for ${card.recipient_name} is ready 💌`,
-        html,
-        text: [
-          'Your VibeCheck payment is confirmed.',
-          `For: ${card.recipient_name}`,
-          `Plan: ${tier?.label || card.tier_selected} · ₹${amount}`,
-          `Payment ID: ${paymentId}`,
-          `Access until: ${expiry}`,
-          `Open your private receipt and sharing link: ${receiptUrl}`,
-          `Recipient link: ${recipientUrl}`,
-          'Send the recipient link only to its intended recipient. The first deliberate Unseal click binds it to that browser.',
-        ].join('\n\n'),
-      }),
     });
-    if (!response.ok) {
-      console.error('Payment email delivery failed:', response.status, await response.text());
-      return { sent: false, receiptUrl, reason: 'EMAIL_PROVIDER_ERROR' };
-    }
+    await transporter.sendMail({
+      from: { name: fromName, address: gmailUser },
+      to: card.customer_email,
+      replyTo: process.env.EMAIL_REPLY_TO?.trim() || gmailUser,
+      subject: `Your VibeCheck for ${card.recipient_name} is ready 💌`,
+      html,
+      text: [
+        'Your VibeCheck payment is confirmed.',
+        `For: ${card.recipient_name}`,
+        `Plan: ${tier?.label || card.tier_selected} · ₹${amount}`,
+        `Payment ID: ${paymentId}`,
+        `Access until: ${expiry}`,
+        `Open your private receipt and sharing link: ${receiptUrl}`,
+        `Recipient link: ${recipientUrl}`,
+        'Send the recipient link only to its intended recipient. The first deliberate Unseal click binds it to that browser.',
+      ].join('\n\n'),
+    });
     await markConfirmationEmailSent(cardId);
     return { sent: true, receiptUrl, reason: null };
   } catch (error) {
