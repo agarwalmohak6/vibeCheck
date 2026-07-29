@@ -271,37 +271,47 @@ function CustomizePageContent() {
     const stored = readCheckoutSession();
     if (!stored?.cardId) return;
 
-    // Recover the payment/result screen after a refresh.
-    setCreatedCardId(stored.cardId);
-    setCreatorToken(stored.creatorToken || null);
-    if (stored.recipientName || stored.creatorName || stored.tierId) {
-      setForm(prev => ({
-        ...prev,
-        recipientName: stored.recipientName || prev.recipientName,
-        creatorName: stored.creatorName || prev.creatorName,
-        tierId: stored.tierId || prev.tierId,
-      }));
-    }
+    let cancelled = false;
+    const restoreTimer = window.setTimeout(() => {
+      if (cancelled) return;
 
-    if (stored.paid) {
-      setIsPaid(true);
-      setPaymentStep(false);
-      return;
-    }
+      // Recover the payment/result screen after a refresh.
+      setCreatedCardId(stored.cardId);
+      setCreatorToken(stored.creatorToken || null);
+      if (stored.recipientName || stored.creatorName || stored.tierId) {
+        setForm(prev => ({
+          ...prev,
+          recipientName: stored.recipientName || prev.recipientName,
+          creatorName: stored.creatorName || prev.creatorName,
+          tierId: stored.tierId || prev.tierId,
+        }));
+      }
 
-    setPaymentStep(true);
-    fetch(`/api/cards?id=${stored.cardId}&status=payment`, { cache: 'no-store' })
-      .then((res) => res.ok ? res.json() : null)
-      .then((status) => {
-        if (status?.is_paid) {
-          writeCheckoutSession({ ...stored, paid: true });
-          setIsPaid(true);
-          setPaymentStep(false);
-        }
-      })
-      .catch(() => {
-        // The payment screen will keep polling; avoid blocking the creator on transient errors.
-      });
+      if (stored.paid) {
+        setIsPaid(true);
+        setPaymentStep(false);
+        return;
+      }
+
+      setPaymentStep(true);
+      fetch(`/api/cards?id=${stored.cardId}&status=payment`, { cache: 'no-store' })
+        .then((res) => res.ok ? res.json() : null)
+        .then((status) => {
+          if (!cancelled && status?.is_paid) {
+            writeCheckoutSession({ ...stored, paid: true });
+            setIsPaid(true);
+            setPaymentStep(false);
+          }
+        })
+        .catch(() => {
+          // The payment screen will keep polling; avoid blocking the creator on transient errors.
+        });
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(restoreTimer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

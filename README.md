@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# VibeCheck
 
-## Getting Started
+VibeCheck is a Next.js application for creating private interactive digital
+greeting cards. A creator can personalise a theme, message, music, questions
+and passcode, pay for the selected access period, and share one private link
+with the intended recipient.
 
-First, run the development server:
+Live website: [vibecheck-gh7u.onrender.com](https://vibecheck-gh7u.onrender.com)
+
+## Product
+
+- Private sorry, birthday and bestie card templates
+- Interactive envelope, music, questions and replies
+- One-person shareable links with creator tracking
+- Transparent one-time pricing: ₹49, ₹79 and ₹119
+- Razorpay checkout with a manually verified UPI fallback
+- Digital-only delivery; no physical goods or shipping
+
+## Customer Information
+
+- [About Us](https://vibecheck-gh7u.onrender.com/about)
+- [Pricing](https://vibecheck-gh7u.onrender.com/pricing)
+- [Contact Us](https://vibecheck-gh7u.onrender.com/contact)
+- [Terms & Conditions](https://vibecheck-gh7u.onrender.com/terms)
+- [Privacy Policy](https://vibecheck-gh7u.onrender.com/privacy)
+- [Cancellation & Refund Policy](https://vibecheck-gh7u.onrender.com/refund-policy)
+- [Digital Delivery Policy](https://vibecheck-gh7u.onrender.com/shipping-policy)
+
+## Local Development
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy `.env.example` to `.env.local` and replace every placeholder with the
+appropriate development value. Never commit `.env.local`, Razorpay secrets,
+Supabase service-role keys, or application token secrets.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Validation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm run build
+```
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Production payment verification is fail-closed: mock signatures are accepted
+only outside production, and a Razorpay payment must match the card, order,
+captured status, INR currency and selected tier amount before the card unlocks.

@@ -19,9 +19,16 @@ export async function POST(req: NextRequest) {
 
     const result = await verifyRazorpayCheckoutPayment(parsed.data);
     if (!result.ok) {
+      const isMissingCard = result.reason === 'CARD_NOT_FOUND';
       return NextResponse.json(
-        { error: result.reason === 'CARD_NOT_FOUND' ? 'Card not found' : 'Payment verification failed' },
-        { status: result.reason === 'CARD_NOT_FOUND' ? 404 : 401 },
+        {
+          error: isMissingCard
+            ? 'Card not found'
+            : result.reason === 'PAYMENT_MISMATCH'
+              ? 'Payment does not match this card, amount, or captured status'
+              : 'Payment verification failed',
+        },
+        { status: isMissingCard ? 404 : 400 },
       );
     }
 

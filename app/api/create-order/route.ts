@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { paymentOrderSchema, razorpayCreateOrderSchema } from '@/lib/contracts';
-import { createRazorpayOrder, createRazorpayOrderForCard, isRazorpayConfigured } from '@/services/server/payment-gateway';
+import { paymentOrderSchema } from '@/lib/contracts';
+import { createRazorpayOrderForCard, isRazorpayConfigured } from '@/services/server/payment-gateway';
 import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -30,33 +30,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Too many payment attempts. Please try again later.' }, { status: 429 });
     }
 
-    const body = await req.json();
-    const cardOrder = paymentOrderSchema.safeParse(body);
-    if (cardOrder.success) {
-      const order = await createRazorpayOrderForCard(cardOrder.data.card_id);
-      if (!order) {
-        return NextResponse.json({ error: 'Card not found' }, { status: 404 });
-      }
-
-      if (!order.order_id) {
-        return NextResponse.json({ success: true, already_paid: true });
-      }
-
-      return NextResponse.json({ success: true, ...order });
-    }
-
-    const parsed = razorpayCreateOrderSchema.safeParse(body);
+    const parsed = paymentOrderSchema.safeParse(await req.json());
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid order payload. Send either card_id or amount/currency/receipt.', issues: parsed.error.flatten() }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid payment order payload.', issues: parsed.error.flatten() },
+        { status: 400 },
+      );
     }
 
-    const order = await createRazorpayOrder(parsed.data);
-    return NextResponse.json({
-      order_id: order.order_id,
-      amount: order.amount,
-      currency: order.currency,
-      key_id: order.key_id,
-    });
+    const order = await createRazorpayOrderForCard(parsed.data.card_id);
+    if (!order) {
+      return NextResponse.json({ error: 'Card not found' }, { status: 404 });
+    }
+
+    if (!order.order_id) {
+      return NextResponse.json({ success: true, already_paid: true });
+    }
+
+    return NextResponse.json({ success: true, ...order });
   } catch (error) {
     console.error('Create Razorpay order error:', error);
     const status = getRazorpayStatus(error);

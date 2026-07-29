@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import LiveSimulator from "@/components/LiveSimulator";
 import AmbientBackground from "@/components/AmbientBackground";
+import ComplianceFooter from "@/components/ComplianceFooter";
 import { useTheme } from "@/components/ThemeProvider";
 import { TIERS } from "@/lib/themes";
 import { LANDING_STRINGS } from "@/lib/strings";
@@ -85,24 +86,6 @@ const SEO_FAQS = [
   },
 ];
 
-function InstagramIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
-      <circle cx="12" cy="12" r="4.1" />
-      <circle cx="17.2" cy="6.8" r="1" />
-    </svg>
-  );
-}
-
-function FacebookIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M14.2 8.5V7.1c0-.8.4-1.2 1.3-1.2h1.9V3.2c-.8-.1-1.7-.2-2.6-.2-2.7 0-4.5 1.6-4.5 4.5v1H7.5v3.1h2.8V21h3.4v-9.4h2.8l.5-3.1h-3Z" />
-    </svg>
-  );
-}
-
 export default function LandingPage() {
   const { setTheme } = useTheme();
   const [scrolled, setScrolled] = useState(false);
@@ -173,24 +156,12 @@ export default function LandingPage() {
             >
               Dashboard
             </Link>
-            <div className="vc-social-links" aria-label="Social links">
-              <a
-                href="https://instagram.com/vibecheck.cards"
-                aria-label="VibeCheck on Instagram"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <InstagramIcon />
-              </a>
-              <a
-                href="https://facebook.com/vibecheckcards"
-                aria-label="VibeCheck on Facebook"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <FacebookIcon />
-              </a>
-            </div>
+            <Link href="/about" className="hidden text-xs font-black uppercase text-[#7b3f6e] lg:inline-flex">
+              About
+            </Link>
+            <Link href="/contact" className="hidden text-xs font-black uppercase text-[#7b3f6e] lg:inline-flex">
+              Contact
+            </Link>
             <Link href="#demo">
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: "0 0 15px var(--glow)" }}
@@ -503,40 +474,49 @@ export default function LandingPage() {
             </motion.div>
           </section>
 
-          {/* Social proof ticker */}
-          <section className="py-8 overflow-hidden">
-            <div className="relative">
-              <motion.div
-                className="flex gap-4 whitespace-nowrap"
-                animate={{ x: [0, "-50%"] }}
-                transition={{ repeat: Infinity, duration: 28, ease: "linear" }}
-              >
-                {[
-                  ...LANDING_STRINGS.TESTIMONIALS,
-                  ...LANDING_STRINGS.TESTIMONIALS,
-                ].map((t, i) => (
-                  <div
-                    key={i}
-                    className="inline-flex flex-col gap-1 px-5 py-4 rounded-2xl shrink-0"
-                    style={{
-                      background: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      minWidth: 220,
-                      maxWidth: 260,
-                    }}
+          {/* Purchase assurances */}
+          <section className="px-6 py-10">
+            <div className="vc-container grid gap-4 md:grid-cols-3">
+              {[
+                {
+                  icon: "₹",
+                  title: "Transparent pricing",
+                  text: "The exact card price and access duration are shown before payment.",
+                },
+                {
+                  icon: "⚡",
+                  title: "Digital delivery",
+                  text: "Your private card link unlocks online after payment is successfully captured.",
+                },
+                {
+                  icon: "↩",
+                  title: "Real support",
+                  text: "Duplicate charges and verified non-delivery are covered by our refund policy.",
+                },
+              ].map((item) => (
+                <article
+                  key={item.title}
+                  className="rounded-2xl border p-6"
+                  style={{
+                    background: "var(--surface)",
+                    borderColor: "var(--border)",
+                  }}
+                >
+                  <span
+                    className="text-2xl font-black"
+                    style={{ color: "var(--accent)" }}
+                    aria-hidden
                   >
-                    <p
-                      className="text-sm whitespace-normal"
-                      style={{ color: "var(--text)" }}
-                    >
-                      {t.text}
-                    </p>
-                    <p className="text-xs" style={{ color: "var(--accent)" }}>
-                      {t.handle}
-                    </p>
-                  </div>
-                ))}
-              </motion.div>
+                    {item.icon}
+                  </span>
+                  <h3 className="mt-3 font-black" style={{ color: "var(--text)" }}>
+                    {item.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--text2)" }}>
+                    {item.text}
+                  </p>
+                </article>
+              ))}
             </div>
           </section>
 
@@ -616,162 +596,7 @@ export default function LandingPage() {
             </motion.div>
           </section>
 
-          {/* Footer */}
-          <footer
-            className="vc-footer px-6 py-8 text-center border-t"
-            style={{ borderColor: "var(--border)" }}
-          >
-            <p className="text-sm" style={{ color: "var(--text2)" }}>
-              {LANDING_STRINGS.FOOTER_TEXT}
-              <a
-                href={`mailto:${LANDING_STRINGS.FOOTER_EMAIL}`}
-                style={{ color: "var(--accent)" }}
-              >
-                {LANDING_STRINGS.FOOTER_EMAIL}
-              </a>
-            </p>
-            <div className="vc-footer-social" aria-label="Social links">
-              <a
-                href="https://instagram.com/vibecheck.cards"
-                aria-label="VibeCheck on Instagram"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <InstagramIcon />
-              </a>
-              <a
-                href="https://facebook.com/vibecheckcards"
-                aria-label="VibeCheck on Facebook"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <FacebookIcon />
-              </a>
-            </div>
-          </footer>
-          <div className="scroll-roll-bottom"></div>
-        </div>
-
-        {/* Back Side of the 3D Scroll */}
-        <div className="vc-page-body-back">
-          <div className="scroll-roll-top"></div>
-
-          <div className="scroll-back-content max-w-4xl mx-auto py-12 px-6 flex flex-col gap-10">
-            {/* Header */}
-            <div className="text-center space-y-3">
-              <span className="text-xs font-black tracking-widest uppercase text-amber-700">
-                📜 VibeCheck Archives
-              </span>
-              <h2 className="text-4xl md:text-5xl font-black font-serif text-amber-900 leading-tight">
-                Best Simulators & Recipient Reviews
-              </h2>
-              <p className="text-sm text-amber-800/80 max-w-lg mx-auto">
-                See how VibeCheck interactive cards perform in the wild and what
-                creators & recipients say.
-              </p>
-            </div>
-
-            {/* Simulators Grid */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-amber-900/5 border border-amber-900/15 rounded-2xl p-6 space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 border border-pink-200">
-                    💓 ACTIVE SIMULATOR
-                  </span>
-                  <span className="text-[10px] text-amber-700 font-bold">
-                    14 mins ago
-                  </span>
-                </div>
-                <h4 className="font-bold text-lg text-amber-900">
-                  Midnight Confession #882
-                </h4>
-                <p className="text-xs text-amber-900/80 leading-relaxed font-serif">
-                  {"\"I stayed up till 2 AM drafting this. Added the Midnight Romance scene and a custom track. She guessed the passcode '2024' on the first try and typed: 'YES of course!' live in the chat. Best ₹49 I ever spent.\""}
-                </p>
-                <div className="border-t border-amber-900/10 pt-2 flex justify-between text-[10px] font-bold text-amber-800">
-                  <span>Recipient: Priya</span>
-                  <span>Conversion: 100% ✅</span>
-                </div>
-              </div>
-
-              <div className="bg-amber-900/5 border border-amber-900/15 rounded-2xl p-6 space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200">
-                    🎂 COMPLETED SIMULATOR
-                  </span>
-                  <span className="text-[10px] text-amber-700 font-bold">
-                    2 hrs ago
-                  </span>
-                </div>
-                <h4 className="font-bold text-lg text-amber-900">
-                  Retro Birthday surprise #104
-                </h4>
-                <p className="text-xs text-amber-900/80 leading-relaxed font-serif">
-                  {"\"Sent to my brother Kabir. The passcode was our childhood dog's name. The tracker showed he tried 3 wrong passcodes before getting it, then played the background music 4 times. He called me immediately!\""}
-                </p>
-                <div className="border-t border-amber-900/10 pt-2 flex justify-between text-[10px] font-bold text-amber-800">
-                  <span>Recipient: Kabir</span>
-                  <span>Clicks: 6 tracker hits 📊</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonials Columns */}
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-amber-900 font-serif border-b border-amber-900/10 pb-2">
-                What Our Community Says 💬
-              </h3>
-              <div className="grid md:grid-cols-3 gap-5">
-                {[
-                  {
-                    user: "@tanya.s",
-                    role: "Creator",
-                    text: "The passcode gate is absolute genius. My best friend had to guess our inside joke to unlock the card. Highly recommend!",
-                  },
-                  {
-                    user: "@rohan_99",
-                    role: "Developer",
-                    text: "Testing mock payments locally is seamless. The live activity dashboard is super addicting to watch!",
-                  },
-                  {
-                    user: "@sneha.desai",
-                    role: "Recipient",
-                    text: "I received a custom Coquette card. Opening the envelope, hearing the music, and replying in real time felt so premium.",
-                  },
-                ].map((r, i) => (
-                  <div
-                    key={i}
-                    className="bg-white/40 border border-amber-900/10 rounded-xl p-4 space-y-2"
-                  >
-                    <p className="text-xs text-amber-950 font-serif leading-relaxed">
-                      {"\""}{r.text}{"\""}
-                    </p>
-                    <div className="flex justify-between items-center text-[10px] font-bold text-amber-800">
-                      <span>{r.user}</span>
-                      <span className="opacity-75">{r.role}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Compliance Footer for Razorpay Merchant Verification */}
-            <footer className="mt-8 pt-6 border-t border-amber-900/10 text-center space-y-3">
-              <div className="flex flex-wrap justify-center gap-4 text-xs font-bold text-amber-900/80">
-                <Link href="/terms" className="hover:underline">Terms & Conditions</Link>
-                <span>·</span>
-                <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
-                <span>·</span>
-                <Link href="/refund-policy" className="hover:underline">Refund Policy</Link>
-                <span>·</span>
-                <Link href="/contact" className="hover:underline">Contact Us</Link>
-              </div>
-              <p className="text-[10px] text-amber-800/60 uppercase tracking-widest font-black">
-                © 2026 VibeCheck. All rights reserved.
-              </p>
-            </footer>
-          </div>
-
+          <ComplianceFooter />
           <div className="scroll-roll-bottom"></div>
         </div>
       </div>

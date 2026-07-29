@@ -705,8 +705,14 @@ export async function markCardPaymentVerified(id: string, paymentId: string, ext
   };
   if (extendsAt) updates.expires_at = extendsAt;
 
-  const { error } = await admin.from('cards').update(updates).eq('id', id);
+  const { data: updatedCard, error } = await admin
+    .from('cards')
+    .update(updates)
+    .eq('id', id)
+    .select('id')
+    .maybeSingle();
   if (error) throw error;
+  if (!updatedCard) return false;
 
   if (providerOrderId) {
     const { error: orderUpdateError } = await admin
@@ -716,7 +722,8 @@ export async function markCardPaymentVerified(id: string, paymentId: string, ext
         status: 'paid',
         verified_at: new Date().toISOString(),
       })
-      .eq('provider_order_id', providerOrderId);
+      .eq('provider_order_id', providerOrderId)
+      .eq('card_id', id);
     if (orderUpdateError) throw orderUpdateError;
   }
 

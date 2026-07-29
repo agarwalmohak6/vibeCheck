@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import ComplianceFooter from "@/components/ComplianceFooter";
 
 type SeoUseCasePageProps = {
   eyebrow: string;
@@ -28,6 +30,7 @@ export default function SeoUseCasePage({
   faqs,
 }: SeoUseCasePageProps) {
   return (
+    <>
     <main className="vc-seo-page">
       <section className="vc-seo-hero">
         <div className="vc-seo-hero__copy">
@@ -45,7 +48,14 @@ export default function SeoUseCasePage({
         </div>
         <div className="vc-seo-hero__card" aria-hidden="true">
           <span>{accentEmoji}</span>
-          <img src={image} alt={imageAlt} />
+          <Image
+            src={image}
+            alt={imageAlt}
+            width={720}
+            height={540}
+            sizes="(max-width: 768px) 92vw, 45vw"
+            priority
+          />
         </div>
       </section>
 
@@ -88,5 +98,7 @@ export default function SeoUseCasePage({
         </div>
       </section>
     </main>
+    <ComplianceFooter />
+    </>
   );
 }

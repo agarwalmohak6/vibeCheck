@@ -63,8 +63,6 @@ type CleanupResponse = {
   error?: string;
 };
 
-const ADMIN_EMAIL = 'agarwalmohak6@gmail.com';
-
 function formatDate(value: string | null | undefined) {
   if (!value) return 'Not set';
   try {
@@ -87,7 +85,7 @@ function getBaseUrl() {
 }
 
 export default function AdminDashboard() {
-  const [email, setEmail] = useState(ADMIN_EMAIL);
+  const [email, setEmail] = useState('');
   const [secret, setSecret] = useState('');
   const [manualUtr, setManualUtr] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
@@ -118,7 +116,7 @@ export default function AdminDashboard() {
       throw new Error(data.error || 'Could not load admin payments.');
     }
 
-    setAdminEmail(data.admin_email || ADMIN_EMAIL);
+    setAdminEmail(data.admin_email || '');
     setPayments(data.payments || []);
     setStatus('ready');
   };
@@ -141,7 +139,7 @@ export default function AdminDashboard() {
         throw new Error(data.error || 'Could not load admin cards.');
       }
 
-      setAdminEmail(data.admin_email || ADMIN_EMAIL);
+      setAdminEmail(data.admin_email || '');
       setCards(data.cards || []);
       setStatus('ready');
     } finally {
@@ -154,10 +152,14 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    loadAdminData().catch((err: Error) => {
-      setError(err.message);
-      setStatus('login');
-    });
+    const loadTimer = window.setTimeout(() => {
+      loadAdminData().catch((err: Error) => {
+        setError(err.message);
+        setStatus('login');
+      });
+    }, 0);
+    return () => window.clearTimeout(loadTimer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -319,7 +321,7 @@ export default function AdminDashboard() {
               <p className="text-xs font-black uppercase tracking-[0.24em] text-pink-500">Owner only</p>
               <h2 className="mt-3 font-[var(--font-display)] text-4xl font-black text-[#3d1a2e]">Admin login</h2>
               <p className="mt-2 text-sm font-bold text-[#7b3f6e]">
-                Only {ADMIN_EMAIL} can open this dashboard.
+                Sign in with the administrator email configured on the server.
               </p>
 
               <label className="mt-6 block text-xs font-black uppercase tracking-[0.18em] text-[#9e6b8a]">

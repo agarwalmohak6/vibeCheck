@@ -6,7 +6,7 @@ export const LANDING_STRINGS = {
   HERO_TITLE_2: 'it was made just for them.',
   HERO_SUBTITLE: "Pick a moment, add your words, send one private link. VibeCheck turns a text into something they'll actually keep.",
   HERO_BUTTON: 'Make a VibeCheck',
-  HERO_PRICE_NOTE: 'Starts at ₹49 · no subscription · one private link',
+  HERO_PRICE_NOTE: 'Starts at ₹49 · no subscription · instant digital delivery',
   SIMULATOR_TITLE: 'See how it works',
   SIMULATOR_SUBTITLE: 'Watch a Sorry card come together. This is what your person will see.',
   HOW_IT_WORKS_TITLE: 'How it works ⚡',
@@ -17,21 +17,9 @@ export const LANDING_STRINGS = {
   ],
   PRICING_TITLE: 'One-time payment. No subscription.',
   PRICING_SUBTITLE: 'No ads, no monthly trap, just a private card that is yours to send.',
-  TESTIMONIALS: [
-    { text: 'It felt like it was made only for me.', handle: '@priyaaa.xyz' },
-    { text: 'Better than another forwarded template.', handle: '@aarav_codes' },
-    { text: 'People asked where I bought the card.', handle: '@dev_rohan' },
-    { text: 'The private link made it feel special.', handle: '@meghna.vibes' },
-    { text: 'It took minutes but looked like real effort.', handle: '@karan.dev' },
-    { text: 'The passcode reveal made the moment land.', handle: '@aisha_creates' },
-    { text: 'My best friend replied instantly.', handle: '@siddhant_g' },
-    { text: 'Our group immediately wanted to make one.', handle: '@ritika.laughs' },
-  ],
   CTA_TITLE: 'Make something they will actually keep.',
   CTA_SUBTITLE: 'Pick a moment, write it your way, and send one private link that feels made for them.',
   CTA_BUTTON: 'Make a VibeCheck',
-  FOOTER_TEXT: 'VibeCheck - made for one person, not everyone. · ',
-  FOOTER_EMAIL: 'hello@vibecheck.in'
 };
 
 export const SIMULATOR_STRINGS = {

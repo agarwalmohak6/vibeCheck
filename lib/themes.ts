@@ -296,7 +296,7 @@ export const TIERS = [
   {
     id: '1_day',
     label: 'Short & Sweet',
-    price: 29,
+    price: 49,
     duration: '1 Day',
     durationHours: 24,
     icon: '⚡',
@@ -306,7 +306,7 @@ export const TIERS = [
   {
     id: '2_day',
     label: 'Most Popular',
-    price: 69,
+    price: 79,
     duration: '2 Days',
     durationHours: 48,
     icon: '🔥',
@@ -316,7 +316,7 @@ export const TIERS = [
   {
     id: 'lifetime',
     label: 'Lifetime',
-    price: 99,
+    price: 119,
     duration: 'Lifetime',
     durationHours: null,
     icon: '💎',
