@@ -1,422 +1,99 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 import confetti from 'canvas-confetti';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { useState } from 'react';
 import { whatsappLink } from '@/lib/utils';
-import type { ChatMessageDTO, TrackerEvent } from '@/types/vibecheck';
 
-interface SuccessHubProps {
+export default function SuccessHub({
+  cardId,
+  recipientName,
+  creatorName,
+  customerEmail,
+  paymentId,
+  expiresAt,
+  emailSent,
+}: {
   cardId: string;
   recipientName: string;
   creatorName: string;
-  creatorToken?: string;
-}
-
-export default function SuccessHub({ cardId, recipientName, creatorName, creatorToken }: SuccessHubProps) {
+  customerEmail: string;
+  paymentId: string;
+  expiresAt?: string | null;
+  emailSent: boolean;
+}) {
   const [copied, setCopied] = useState(false);
-  const [creatorCopied, setCreatorCopied] = useState(false);
-  const [copyError, setCopyError] = useState(false);
-  const [activity, setActivity] = useState<ChatMessageDTO[]>([]);
-  const [showCreatorLink, setShowCreatorLink] = useState(false);
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
   const cardUrl = `${baseUrl}/card/${cardId}`;
-  const creatorUrl = creatorToken ? `${cardUrl}?ct=${encodeURIComponent(creatorToken)}` : cardUrl;
-  const creatorRoomUrl = creatorToken
-    ? `${cardUrl}?ct=${encodeURIComponent(creatorToken)}&room=chat`
-    : `${cardUrl}?room=chat`;
-  const waLink = whatsappLink(cardUrl, creatorName, recipientName);
+  const maskedEmail = customerEmail.replace(/^(.{2}).*(@.*)$/, '$1•••$2');
+  const expiry = expiresAt
+    ? new Date(expiresAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+    : 'Lifetime plan';
 
-  const copyText = async (text: string) => {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return;
-    }
-
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.setAttribute('readonly', '');
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-  };
-
-  const eventToLog = useCallback((event: TrackerEvent): ChatMessageDTO => {
-    const textByType: Record<string, string> = {
-      envelope_opened: event.metadata?.gated
-        ? 'Opened Envelope (facing Secret Gate)'
-        : 'Opened Envelope & Card!',
-      passcode_unlocked: 'Unlocked Secret Gate',
-      passcode_failed: 'Tried the wrong passcode',
-      story_answered: `Answered "${String(event.metadata?.question || 'a story question')}" with "${String(event.metadata?.answer || '')}"`,
-      runaway_dodged: `Tried to click "${String(event.metadata?.label || 'No')}" (Dodge #${String(event.metadata?.dodge_count || 1)})`,
-      cta_accepted: `Clicked "${String(event.metadata?.label || 'YES')}"`,
-      card_viewed: 'Viewed the card',
-    };
-
-    return {
-      id: event.id,
-      card_id: event.card_id,
-      sender: 'recipient',
-      text: textByType[event.event_type] || event.event_type,
-      created_at: event.created_at,
-    };
-  }, []);
-
-  const fetchActivity = useCallback(async () => {
-    try {
-      const [messagesRes, eventsRes] = await Promise.all([
-        fetch(`/api/messages?card_id=${cardId}`),
-        creatorToken
-          ? fetch(`/api/cards/${cardId}/events`, { headers: { 'x-vibecheck-creator-token': creatorToken } })
-          : Promise.resolve(null),
-      ]);
-      const messages: ChatMessageDTO[] = messagesRes.ok ? await messagesRes.json() : [];
-      const events: TrackerEvent[] = eventsRes && eventsRes.ok ? await eventsRes.json() : [];
-      setActivity([...messages, ...events.map(eventToLog)].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
-    } catch (err) {
-      console.error('Failed to load activity:', err);
-    }
-  }, [cardId, creatorToken, eventToLog]);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void fetchActivity();
-    const interval = setInterval(fetchActivity, 3000);
-    return () => clearInterval(interval);
-  }, [fetchActivity]);
-
-  const handleCopy = async () => {
-    try {
-      await copyText(cardUrl);
-      setCopyError(false);
-      setCopied(true);
-      confetti({ particleCount: 60, spread: 80, origin: { y: 0.7 } });
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      setCopyError(true);
-    }
-  };
-
-  const handleCreatorCopy = async () => {
-    try {
-      await copyText(creatorUrl);
-      setCopyError(false);
-      setCreatorCopied(true);
-      setTimeout(() => setCreatorCopied(false), 2500);
-    } catch {
-      setCopyError(true);
-    }
+  const copyLink = async () => {
+    await navigator.clipboard.writeText(cardUrl);
+    setCopied(true);
+    confetti({ particleCount: 60, spread: 80, origin: { y: 0.75 } });
+    window.setTimeout(() => setCopied(false), 2200);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9, y: 40 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-      className="vc-success-hub flex flex-col items-center gap-8 py-12 px-8 max-w-5xl mx-auto text-center glass glow-border rounded-[2.5rem] relative z-10"
+    <motion.section
+      initial={{ opacity: 0, y: 30, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      className="relative z-10 mx-auto w-full max-w-3xl rounded-[2.5rem] border border-pink-200/80 bg-white/90 p-6 text-center shadow-2xl shadow-pink-200/50 backdrop-blur sm:p-10"
     >
-      <motion.div
-        animate={{ rotate: [0, 15, -15, 10, -10, 0], scale: [1, 1.2, 1] }}
-        transition={{ duration: 0.8, delay: 0.3 }}
-        className="text-7xl"
-      >
-        🎉
-      </motion.div>
+      <div className="text-6xl">🎉</div>
+      <h1 className="mt-4 font-serif text-4xl font-black text-[#3d1a2e] sm:text-5xl">Your VibeCheck is ready.</h1>
+      <p className="mx-auto mt-3 max-w-xl text-sm font-semibold leading-7 text-[#7b3f6e]">
+        Send this one-person link to {recipientName}. This receipt page survives refreshes and remains available for the card&apos;s duration.
+      </p>
 
-      <div>
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="text-4xl md:text-5xl font-black mb-4 capitalize tracking-tighter"
-          style={{
-            fontFamily: 'var(--font-display)',
-            backgroundImage: 'linear-gradient(135deg, var(--accent), var(--accent2))',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            color: 'transparent',
-            WebkitBackgroundClip: 'text',
-            backgroundClip: 'text',
-            filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.4))',
-          }}
-        >
-          Your VibeCheck is ready.
-        </motion.h2>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="text-sm"
-          style={{ color: 'var(--text3)' }}
-        >
-          Send the recipient link to {recipientName}. Keep the creator link or dashboard for tracking.
-        </motion.p>
+      <div className="mt-7 rounded-2xl border border-pink-200 bg-[#fff7fb] p-5 text-left">
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-pink-500">Recipient link</p>
+        <p className="mt-2 break-all font-mono text-sm font-bold text-[#bd176f]">{cardUrl}</p>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7 }}
-        className="w-full rounded-2xl p-4"
-        style={{ background: 'var(--surface2)', border: '1px solid var(--border)' }}
-      >
-        <p className="text-xs mb-2 font-medium" style={{ color: 'var(--text2)' }}>Recipient link to send</p>
-        <p className="text-sm font-mono break-all font-bold select-all" style={{ color: 'var(--accent)' }}>{cardUrl}</p>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-        className="vc-success-creator-card w-full rounded-2xl p-4 text-left"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs mb-1 font-black uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
-              Creator dashboard
-            </p>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--text2)' }}>
-              Keep this private. It lets you see opens, passcode attempts, story answers, and replies.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowCreatorLink((value) => !value)}
-            className="shrink-0 rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-widest"
-          >
-            {showCreatorLink ? 'Hide' : 'Show'}
-          </button>
+      <div className="mt-5 grid gap-3 text-left sm:grid-cols-3">
+        <div className="rounded-2xl border border-pink-100 bg-white p-4">
+          <p className="text-xs text-[#987084]">Confirmation</p>
+          <p className="mt-1 text-sm font-black text-[#3d1a2e]">{emailSent ? `Sent to ${maskedEmail}` : `Delivery pending to ${maskedEmail}`}</p>
         </div>
-        {showCreatorLink && (
-          <div className="vc-success-private-link mt-3 rounded-xl p-3">
-            <p className="text-[10px] font-bold mb-1" style={{ color: 'var(--text3)' }}>
-              Private creator link
-            </p>
-            <p className="text-xs font-mono break-all select-all" style={{ color: 'var(--text)' }}>{creatorUrl}</p>
-          </div>
-        )}
+        <div className="rounded-2xl border border-pink-100 bg-white p-4">
+          <p className="text-xs text-[#987084]">Payment</p>
+          <p className="mt-1 truncate font-mono text-xs font-black text-[#3d1a2e]" title={paymentId}>{paymentId || 'Confirmed'}</p>
+        </div>
+        <div className="rounded-2xl border border-pink-100 bg-white p-4">
+          <p className="text-xs text-[#987084]">Access until</p>
+          <p className="mt-1 text-sm font-black text-[#3d1a2e]">{expiry}</p>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-left text-sm leading-6 text-amber-950">
+        <strong>How one-person access works:</strong> ask {recipientName} to open the link in their preferred browser and press “Unseal on this device.” That deliberate action binds the card to that browser. Link-preview bots cannot consume it, and forwarding it afterward will not open it elsewhere.
+      </div>
+
+      <div className="mt-7 grid gap-3 sm:grid-cols-2">
         <button
-          onClick={() => void handleCreatorCopy()}
-          className="mt-3 text-[10px] font-black uppercase tracking-widest underline underline-offset-4 cursor-pointer"
-          style={{ color: 'var(--accent)' }}
+          type="button"
+          onClick={() => void copyLink()}
+          className="rounded-2xl bg-linear-to-r from-pink-500 to-amber-500 px-5 py-4 font-black text-white shadow-lg shadow-pink-200"
         >
-          {creatorCopied ? 'Creator link copied' : 'Copy creator link'}
+          {copied ? 'Copied ✓' : 'Copy recipient link'}
         </button>
-
-        <div className="vc-success-room-actions mt-4">
-          <div>
-            <p>Private chat room</p>
-            <span>Open it from here whenever you want to reply privately.</span>
-          </div>
-          <Link href={creatorRoomUrl}>
-            Open room
-          </Link>
-        </div>
-      </motion.div>
-
-      {copyError && (
-        <p role="status" className="text-[11px] font-bold text-amber-300 -mt-5">
-          Copy did not auto-complete. Long-press the link above and copy it manually.
-        </p>
-      )}
-
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.86 }}
-        className="vc-success-send-ritual w-full"
-      >
-        <div>
-          <span>1</span>
-          <p>Send only the recipient link.</p>
-        </div>
-        <div>
-          <span>2</span>
-          <p>They open the card, answer your tiny story, then reply.</p>
-        </div>
-        <div>
-          <span>3</span>
-          <p>You keep the private room here for the full card duration.</p>
-        </div>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.9 }}
-        className="vc-success-actions flex flex-col sm:flex-row gap-3 w-full"
-      >
-        <motion.button
-          onClick={handleCopy}
-          whileTap={{ scale: 0.96 }}
-          whileHover={{ scale: 1.02 }}
-          className="flex-1 py-4 rounded-2xl font-bold text-white relative overflow-hidden"
-          style={{
-            background: copied
-              ? 'linear-gradient(135deg, #10b981, #059669)'
-              : 'linear-gradient(135deg, var(--accent), var(--accent2))',
-            boxShadow: '0 8px 30px var(--glow)',
-            transition: 'all 0.3s ease',
-          }}
-        >
-          {copied ? 'Copied' : 'Copy link'}
-        </motion.button>
-
-        <motion.a
-          href={waLink}
+        <a
+          href={whatsappLink(cardUrl, creatorName, recipientName)}
           target="_blank"
           rel="noopener noreferrer"
-          whileTap={{ scale: 0.96 }}
-          whileHover={{ scale: 1.02 }}
-          className="flex-1 py-4 rounded-2xl font-bold text-white text-center flex items-center justify-center gap-2"
-          style={{
-            background: 'linear-gradient(135deg, #25D366, #128C7E)',
-            boxShadow: '0 8px 30px rgba(37, 211, 102, 0.4)',
-          }}
+          className="rounded-2xl bg-linear-to-r from-emerald-500 to-teal-600 px-5 py-4 font-black text-white shadow-lg shadow-emerald-100"
         >
-          <span className="text-xl">📱</span>
           Share on WhatsApp
-        </motion.a>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.0 }}
-        className="vc-success-activity w-full rounded-3xl p-6 text-left glow-border"
-        style={{ background: 'var(--surface)' }}
-      >
-        <div className="flex justify-between items-center mb-4 pb-2 border-b border-white/5">
-          <h3 className="text-sm font-black flex items-center gap-1.5 uppercase tracking-wider" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span>
-            See how they reacted
-          </h3>
-          <span className="text-[10px] text-neutral-300 font-bold uppercase">Live</span>
-        </div>
-
-        {activity.length === 0 ? (
-          <div className="text-center py-6">
-            <p className="text-xs text-neutral-200">No activity yet. Once they open it, the timeline starts here.</p>
-            <p className="text-[10px] text-neutral-400 mt-1">Updates live automatically</p>
-          </div>
-        ) : (
-          <div className="space-y-4 max-h-[220px] overflow-y-auto pr-1 select-text">
-            {activity.map((log) => {
-              const dateStr = new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              let isSpecialEvent = false;
-              let storyText = log.text;
-              let icon = '💬';
-              let textColor = 'text-white';
-              let bubbleBg = 'bg-white/5';
-              let borderStyle = 'border-white/5';
-
-              if (log.sender === 'recipient') {
-                if (log.text.includes('Opened Envelope (facing Secret Gate)')) {
-                  storyText = `${recipientName} arrived, opened the envelope, and is facing the secret code lock screen 🔐`;
-                  isSpecialEvent = true;
-                  icon = '📬';
-                  textColor = 'text-pink-300';
-                  bubbleBg = 'bg-pink-500/10';
-                  borderStyle = 'border-pink-500/20';
-                } else if (log.text.includes('Opened Envelope & Card!')) {
-                  storyText = `${recipientName} broke the wax seal and opened your card! 🔓✨`;
-                  isSpecialEvent = true;
-                  icon = '📬';
-                  textColor = 'text-pink-300';
-                  bubbleBg = 'bg-pink-500/10';
-                  borderStyle = 'border-pink-500/20';
-                } else if (log.text.includes('Unlocked Secret Gate')) {
-                  storyText = `${recipientName} entered the correct passcode and unlocked the secret gate! 🔑🌟`;
-                  isSpecialEvent = true;
-                  icon = '🔑';
-                  textColor = 'text-yellow-300';
-                  bubbleBg = 'bg-yellow-500/10';
-                  borderStyle = 'border-yellow-500/20';
-                } else if (log.text.includes('Answered "')) {
-                  const match = log.text.match(/Answered "([^"]+)" with "([^"]*)"/);
-                  storyText = match
-                    ? `${recipientName} answered: "${match[2]}" to "${match[1]}" ✨`
-                    : `${recipientName} answered a story question ✨`;
-                  isSpecialEvent = true;
-                  icon = '✨';
-                  textColor = 'text-fuchsia-300';
-                  bubbleBg = 'bg-fuchsia-500/10';
-                  borderStyle = 'border-fuchsia-500/20';
-                } else if (log.text.includes('Tried to click "')) {
-                  const match = log.text.match(/Tried to click "([^"]+)" \(Dodge #(\d+)\)/);
-                  storyText = match
-                    ? `${recipientName} tried to click "${match[1]}" but the button dodged them! (Attempt #${match[2]}) 🎯`
-                    : `${recipientName} tried to click the negative button! 💀`;
-                  isSpecialEvent = true;
-                  icon = '🎯';
-                  textColor = 'text-cyan-300';
-                  bubbleBg = 'bg-cyan-500/10';
-                  borderStyle = 'border-cyan-500/20';
-                } else if (log.text.includes('Clicked "')) {
-                  const match = log.text.match(/Clicked "([^"]+)"/);
-                  storyText = match
-                    ? `${recipientName} clicked "${match[1]}"! The card is accepted! 🎉💖`
-                    : `${recipientName} clicked YES! 🎉💖`;
-                  isSpecialEvent = true;
-                  icon = '💖';
-                  textColor = 'text-emerald-300';
-                  bubbleBg = 'bg-emerald-500/15';
-                  borderStyle = 'border-emerald-500/30';
-                }
-              }
-
-              if (!isSpecialEvent) {
-                const isFromCreator = log.sender === 'creator';
-                icon = isFromCreator ? '💌' : '💬';
-                textColor = isFromCreator ? 'text-purple-300' : 'text-neutral-200';
-                bubbleBg = isFromCreator ? 'bg-purple-950/20 ml-8' : 'bg-white/5 mr-8';
-                borderStyle = isFromCreator ? 'border-purple-500/20' : 'border-white/5';
-              }
-
-              return (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  key={log.id}
-                  className={`border rounded-2xl p-3.5 flex gap-2.5 items-start transition-all duration-300 ${bubbleBg} ${borderStyle}`}
-                >
-                  <span className="text-base shrink-0">{icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-baseline gap-2">
-                      <span className="text-[9px] text-neutral-400 font-extrabold uppercase tracking-wider">
-                        {log.sender === 'creator' ? 'You' : recipientName}
-                      </span>
-                      <span className="text-[8px] text-neutral-500 font-semibold">{dateStr}</span>
-                    </div>
-                    <p className={`text-xs font-semibold leading-relaxed mt-1 ${textColor} break-words`}>
-                      {storyText}
-                    </p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
-      </motion.div>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
-        className="text-xs"
-        style={{ color: 'var(--text3)' }}
-      >
-          The link works on any device. No app needed.
-      </motion.p>
-
-      <Link href="/customize?new=1" className="text-xs font-black underline underline-offset-4" style={{ color: 'var(--accent)' }}>
+        </a>
+      </div>
+      <Link href="/customize?new=1" className="mt-7 inline-block text-xs font-black text-pink-600 underline underline-offset-4">
         Make another VibeCheck
       </Link>
-    </motion.div>
+    </motion.section>
   );
 }

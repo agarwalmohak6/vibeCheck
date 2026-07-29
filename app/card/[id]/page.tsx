@@ -1,16 +1,18 @@
-import { getPublicCard } from '@/services/server/card-store';
+import { getPublicCard, getRecipientAccessState } from '@/services/server/card-store';
 import { isExpired } from '@/lib/utils';
 import RecipientView from '@/components/RecipientView';
 import ExpiredView from '@/components/ExpiredView';
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
+import RecipientClaimGate from '@/components/RecipientClaimGate';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const card = await getPublicCard(id);
   if (!card) return { title: 'Card not found — VibeCheck', robots: { index: false, follow: false } };
   return {
-    title: `${card.creator_name} sent you a VibeCheck 💌`,
-    description: `Open to see a special message from ${card.creator_name} to ${card.recipient_name} ✨`,
+    title: 'A private VibeCheck is waiting 💌',
+    description: 'Open this private, one-person card on the browser you want to use.',
     robots: {
       index: false,
       follow: false,
@@ -24,15 +26,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-export default async function CardPage({
-  params,
-  searchParams,
-}: {
+export default async function CardPage({ params }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { id } = await params;
-  const query = await searchParams;
   const card = await getPublicCard(id);
 
   if (!card) return notFound();
@@ -41,10 +38,20 @@ export default async function CardPage({
     return <ExpiredView card={card} />;
   }
 
-  const roomParam = query.room;
-  const initialRoomMode = Array.isArray(roomParam)
-    ? roomParam.includes('chat')
-    : roomParam === 'chat';
+  const cookieStore = await cookies();
+  const token = cookieStore.get(`vc_recipient_${id}`)?.value;
+  const accessState = await getRecipientAccessState(id, token);
+  if (accessState !== 'granted') {
+    return (
+      <RecipientClaimGate
+        cardId={id}
+        recipientName={card.recipient_name}
+        creatorName={card.creator_name}
+        expiresAt={card.expires_at}
+        state={accessState}
+      />
+    );
+  }
 
-  return <RecipientView card={card} initialRoomMode={initialRoomMode} />;
+  return <RecipientView card={card} />;
 }

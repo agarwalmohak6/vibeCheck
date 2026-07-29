@@ -7,8 +7,6 @@ export type CardEventType =
   | 'runaway_dodged'
   | 'cta_accepted';
 
-export type CardSender = 'creator' | 'recipient';
-
 export interface PublicCardData {
   message_title: string;
   main_body: string;
@@ -38,7 +36,6 @@ export interface PublicCard {
   theme_selected: string;
   card_data: PublicCardData;
   tier_selected: string;
-  account_id?: string | null;
   created_at: string;
   expires_at?: string | null;
   is_paid: boolean;
@@ -51,13 +48,5 @@ export interface TrackerEvent {
   card_id: string;
   event_type: CardEventType;
   metadata: Record<string, unknown>;
-  created_at: string;
-}
-
-export interface ChatMessageDTO {
-  id: string;
-  card_id: string;
-  sender: CardSender;
-  text: string;
   created_at: string;
 }

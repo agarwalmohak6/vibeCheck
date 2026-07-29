@@ -5,7 +5,7 @@ import { absoluteUrl, SITE_NAME } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Sorry Card Online - Make a Private Apology Card",
   description:
-    "Create a private sorry card online with a soft reveal, personal apology message, music, tiny questions, and a private reply room.",
+    "Create a private sorry card online with a soft reveal, personal apology message, music, tiny questions, and one-device access.",
   alternates: {
     canonical: "/sorry-card",
   },
@@ -45,7 +45,7 @@ export default function SorryCardPage() {
         "Choose the Sorry Card mood.",
         "Write the apology in your own words.",
         "Add a song and at least three tiny questions.",
-        "Pay, send the private link, and track replies in your dashboard.",
+        "Pay, receive your recovery email, and send the one-person link.",
       ]}
       faqs={[
         {
@@ -54,9 +54,9 @@ export default function SorryCardPage() {
             "Yes. VibeCheck creates one private apology card link for one recipient, so it feels more personal than a copied message.",
         },
         {
-          question: "Does the sorry card include a reply room?",
+          question: "Can the sorry card link be forwarded?",
           answer:
-            "Yes. The recipient can reply inside a private room that stays available while the card is active.",
+            "The link can be shared, but the first deliberate unseal binds the card to that recipient browser. Other browsers cannot reuse it afterward.",
         },
       ]}
     />

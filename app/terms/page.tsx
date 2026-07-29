@@ -37,7 +37,7 @@ export default function TermsPage() {
 
         <h2 className="text-lg font-bold text-white">4. Pricing & Payments</h2>
         <p>
-          Current prices and access durations are listed on our <Link href="/pricing" className="text-pink-400 hover:underline">Pricing page</Link> and shown again before payment. Payments may be processed through Razorpay or direct UPI. The final amount is displayed before the customer authorises payment.
+          Current prices and access durations are listed on our <Link href="/pricing" className="text-pink-400 hover:underline">Pricing page</Link> and shown again before payment. Payments are processed through Razorpay. The final amount is displayed before the customer authorises payment.
         </p>
 
         <h2 className="text-lg font-bold text-white">5. Delivery, Cancellation & Refunds</h2>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { paymentVerifySchema } from '@/lib/contracts';
 import { verifyRazorpayCheckoutPayment } from '@/services/server/payment-gateway';
 import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
+import { deliverPaymentConfirmation } from '@/services/server/payment-email';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +33,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, card_id: parsed.data.card_id });
+    const delivery = await deliverPaymentConfirmation(parsed.data.card_id, parsed.data.razorpay_payment_id);
+    return NextResponse.json({
+      success: true,
+      card_id: parsed.data.card_id,
+      receipt_url: delivery.receiptUrl,
+      email_sent: delivery.sent,
+    });
   } catch (err) {
     console.error('Payment verify error:', err);
     return NextResponse.json({ error: 'Could not verify payment' }, { status: 500 });

@@ -5,7 +5,7 @@ import { absoluteUrl, SITE_NAME } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Happy Birthday Card Online - Private Digital Birthday Card",
   description:
-    "Create a private happy birthday card online with a gift-like reveal, birthday cover, music, personal message, and reply room.",
+    "Create a private happy birthday card online with a gift-like reveal, birthday cover, music, personal message, and one-device access.",
   alternates: {
     canonical: "/birthday-card",
   },
@@ -39,7 +39,7 @@ export default function BirthdayCardPage() {
       benefits={[
         "Send birthday wishes that feel made for them, not everyone.",
         "Use music, cake energy, and a playful reveal to make the link feel giftable.",
-        "Track opens and replies from your creator dashboard.",
+        "Keep the emailed receipt page for refresh-safe access to the sharing link.",
       ]}
       steps={[
         "Choose the Happy Birthday card.",

@@ -41,7 +41,10 @@ export interface Card {
   theme_selected: string;
   card_data: CardData;
   tier_selected: string;
-  account_id?: string | null;
+  customer_email?: string;
+  confirmation_email_sent_at?: string | null;
+  recipient_claim_hash?: string | null;
+  recipient_claimed_at?: string | null;
   created_at: string;
   expires_at?: string | null;
   is_paid: boolean;
@@ -49,21 +52,11 @@ export interface Card {
   music_track_id?: string | null;
 }
 
-export interface ChatMessage {
-  id: string;
-  card_id: string;
-  sender: 'creator' | 'recipient';
-  text: string;
-  created_at: string;
-}
-
 // ── In-memory mock store (used when Supabase is not configured) ──
 const globalStore = globalThis as unknown as { 
   __MOCK_STORE: Record<string, Card>;
-  __MOCK_CHATS: ChatMessage[];
 };
 const MOCK_STORE: Record<string, Card> = globalStore.__MOCK_STORE || (globalStore.__MOCK_STORE = {});
-const MOCK_CHATS: ChatMessage[] = globalStore.__MOCK_CHATS || (globalStore.__MOCK_CHATS = []);
 
 const isMock = supabaseUrl === 'https://mock.supabase.co';
 
@@ -116,36 +109,4 @@ export async function extendCard(id: string, newExpiresAt: string): Promise<void
     return;
   }
   await supabase.from('cards').update({ expires_at: newExpiresAt, is_paid: true }).eq('id', id);
-}
-
-export async function getMessages(cardId: string): Promise<ChatMessage[]> {
-  if (isMock) {
-    return MOCK_CHATS.filter(m => m.card_id === cardId).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-  }
-
-  const { data, error } = await supabase
-    .from('messages')
-    .select('*')
-    .eq('card_id', cardId)
-    .order('created_at', { ascending: true });
-    
-  if (error) return [];
-  return data || [];
-}
-
-export async function sendMessage(payload: Omit<ChatMessage, 'id' | 'created_at'>): Promise<ChatMessage> {
-  if (isMock) {
-    const { v4: uuidv4 } = await import('uuid');
-    const msg: ChatMessage = {
-      ...payload,
-      id: uuidv4(),
-      created_at: new Date().toISOString(),
-    };
-    MOCK_CHATS.push(msg);
-    return msg;
-  }
-
-  const { data, error } = await supabase.from('messages').insert(payload).select().single();
-  if (error) throw error;
-  return data;
 }

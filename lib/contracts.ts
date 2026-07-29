@@ -27,6 +27,7 @@ export const cardDataSchema = z.object({
 });
 
 export const createCardSchema = z.object({
+  customer_email: z.string().trim().email().max(160),
   recipient_name: trimString(1, 80),
   creator_name: trimString(1, 80),
   template_type: trimString(1, 60),
@@ -62,27 +63,12 @@ export const trackerEventSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).default({}),
 });
 
-export const sendMessageSchema = z.object({
-  card_id: z.string().uuid(),
-  sender: z.enum(['creator', 'recipient']),
-  text: z.string().trim().min(1).max(500),
-});
-
 export const paymentWebhookSchema = z.object({
   card_id: z.string().uuid(),
   payment_id: z.string().trim().min(1).max(160).optional(),
   order_id: z.string().trim().min(1).max(160).optional(),
   status: z.string().trim().max(40).optional(),
   extends_at: z.string().datetime().optional(),
-});
-
-export const paymentReferenceSchema = z.object({
-  card_id: z.string().uuid(),
-  utr: z.string()
-    .trim()
-    .min(6)
-    .max(40)
-    .regex(/^[A-Za-z0-9\s-]+$/, 'Use only letters, numbers, spaces, or hyphens.'),
 });
 
 export const paymentOrderSchema = z.object({
@@ -103,50 +89,6 @@ export const razorpayVerifyPaymentSchema = z.object({
   card_id: z.string().uuid(),
 });
 
-export const manualPaymentVerifySchema = z.object({
-  utr: z.string()
-    .trim()
-    .min(6)
-    .max(40)
-    .regex(/^[A-Za-z0-9\s-]+$/, 'Use only letters, numbers, spaces, or hyphens.'),
-});
-
-export const adminLoginSchema = z.object({
-  email: z.string().trim().email().max(160),
-  secret: z.string().trim().min(12).max(240),
-});
-
-export const creatorAuthSchema = z.object({
-  email: z.string().trim().email().max(160).optional().or(z.literal('')),
-  phone: z.string()
-    .trim()
-    .max(24)
-    .regex(/^[0-9+\-\s()]*$/, 'Use a valid phone number.')
-    .optional()
-    .or(z.literal('')),
-  password: z.string().min(6).max(120),
-  name: z.string().trim().max(80).optional().or(z.literal('')),
-}).superRefine((value, ctx) => {
-  const hasEmail = Boolean(value.email?.trim());
-  const hasPhone = Boolean(value.phone?.trim());
-  if (!hasEmail && !hasPhone) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['email'],
-      message: 'Add an email or mobile number.',
-    });
-  }
-});
-
-export const creatorCardClaimSchema = z.object({
-  card_id: z.string().uuid(),
-  creator_token: z.string().trim().min(20).max(600),
-});
-
-export const adminCleanupSchema = z.object({
-  confirm: z.literal('CLEAR_TEST_DATA'),
-});
-
 export const signedUploadSchema = z.object({
   card_id: z.string().uuid(),
   file_name: z.string().trim().min(1).max(160),
@@ -155,11 +97,6 @@ export const signedUploadSchema = z.object({
 });
 
 export type CreateCardInput = z.infer<typeof createCardSchema>;
-export type PaymentReferenceInput = z.infer<typeof paymentReferenceSchema>;
 export type PaymentOrderInput = z.infer<typeof paymentOrderSchema>;
 export type PaymentVerifyInput = z.infer<typeof paymentVerifySchema>;
 export type RazorpayVerifyPaymentInput = z.infer<typeof razorpayVerifyPaymentSchema>;
-export type ManualPaymentVerifyInput = z.infer<typeof manualPaymentVerifySchema>;
-export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
-export type CreatorAuthInput = z.infer<typeof creatorAuthSchema>;
-export type CreatorCardClaimInput = z.infer<typeof creatorCardClaimSchema>;

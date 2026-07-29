@@ -4,6 +4,7 @@ import { isMockPaymentsEnabled } from '@/services/server/config';
 import { markCardPaymentVerified } from '@/services/server/card-store';
 import { validateCapturedRazorpayPayment } from '@/services/server/payment-gateway';
 import { verifyRazorpayWebhook } from '@/services/server/security';
+import { deliverPaymentConfirmation } from '@/services/server/payment-email';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
         parsedMock.data.extends_at,
       );
       if (!ok) return NextResponse.json({ error: 'Card not found' }, { status: 404 });
+      await deliverPaymentConfirmation(parsedMock.data.card_id, paymentId);
       return NextResponse.json({ success: true, card_id: parsedMock.data.card_id, mock: true });
     }
 
@@ -95,6 +97,7 @@ export async function POST(req: NextRequest) {
       parsed.data.order_id,
     );
     if (!ok) return NextResponse.json({ error: 'Card not found' }, { status: 404 });
+    await deliverPaymentConfirmation(parsed.data.card_id, parsed.data.payment_id);
 
     return NextResponse.json({ success: true, card_id: parsed.data.card_id });
   } catch (err) {

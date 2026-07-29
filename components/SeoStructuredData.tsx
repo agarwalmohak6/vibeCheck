@@ -10,7 +10,7 @@ const faqItems = [
   {
     question: "Can I make a private sorry card online?",
     answer:
-      "Yes. VibeCheck lets you make a private sorry card online with a soft reveal, a custom apology message, a song, and a private reply room.",
+      "Yes. VibeCheck lets you make a private sorry card online with a soft reveal, a custom apology message, a song, and one-device access.",
   },
   {
     question: "Does the recipient need to install an app?",
@@ -20,7 +20,7 @@ const faqItems = [
   {
     question: "Can I track my VibeCheck card?",
     answer:
-      "Creators can use the dashboard to track created cards, payment status, recipient links, private rooms, and replies.",
+      "After payment, the purchaser receives an emailed receipt and recovery page with the one-person recipient link.",
   },
 ];
 
