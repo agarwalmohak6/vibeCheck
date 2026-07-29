@@ -18,11 +18,11 @@ function getAdminSecret() {
 }
 
 export function getConfiguredAdminEmail() {
-  return (process.env.VIBECHECK_ADMIN_EMAIL || 'agarwalmohak6@gmail.com').trim().toLowerCase();
+  return (process.env.VIBECHECK_ADMIN_EMAIL || '').trim().toLowerCase();
 }
 
 export function isAdminConfigured() {
-  return Boolean(getAdminSecret());
+  return Boolean(getAdminSecret() && getConfiguredAdminEmail());
 }
 
 function safeEqual(left: string, right: string) {
@@ -40,7 +40,7 @@ export function validateAdminCredentials(email: string, secret: string) {
   const normalizedEmail = email.trim().toLowerCase();
   const configuredSecret = getAdminSecret();
 
-  if (!configuredSecret) return false;
+  if (!configuredEmail || !configuredSecret) return false;
   return normalizedEmail === configuredEmail && safeEqual(secret.trim(), configuredSecret);
 }
 

@@ -62,17 +62,6 @@ function loadRazorpayScript() {
   });
 }
 
-function formatPrefillContact(value: string) {
-  const cleaned = value.trim().replace(/[^\d+]/g, '');
-  if (!cleaned) return '';
-  if (cleaned.startsWith('+')) return cleaned;
-
-  const digits = cleaned.replace(/\D/g, '');
-  if (digits.length === 10) return `+91${digits}`;
-  if (digits.length > 10) return `+${digits}`;
-  return digits;
-}
-
 export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: RazorpayCheckoutProps) {
   const [isStarting, setIsStarting] = useState(false);
   const [isFallbackVisible, setIsFallbackVisible] = useState(false);
@@ -80,7 +69,6 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
   const [isVerifyingSim, setIsVerifyingSim] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState('');
   const [error, setError] = useState('');
-  const prefillContact = formatPrefillContact(process.env.NEXT_PUBLIC_RAZORPAY_PREFILL_CONTACT || '');
 
   const handleSimulateSuccess = async (orderIdToUse?: string) => {
     setIsVerifyingSim(true);
@@ -160,11 +148,6 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
           card_id: cardId,
           product: 'vibecheck_private_card',
         },
-        prefill: prefillContact
-          ? {
-              contact: prefillContact,
-            }
-          : undefined,
         theme: {
           color: '#e91e8c',
           backdrop_color: '#fff0f6',

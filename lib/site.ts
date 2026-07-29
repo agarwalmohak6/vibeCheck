@@ -53,6 +53,41 @@ export const PUBLIC_SEO_ROUTES = [
     priority: 0.85,
     changeFrequency: "monthly" as const,
   },
+  {
+    path: "/about",
+    priority: 0.7,
+    changeFrequency: "monthly" as const,
+  },
+  {
+    path: "/pricing",
+    priority: 0.8,
+    changeFrequency: "weekly" as const,
+  },
+  {
+    path: "/contact",
+    priority: 0.6,
+    changeFrequency: "monthly" as const,
+  },
+  {
+    path: "/terms",
+    priority: 0.4,
+    changeFrequency: "monthly" as const,
+  },
+  {
+    path: "/privacy",
+    priority: 0.4,
+    changeFrequency: "monthly" as const,
+  },
+  {
+    path: "/refund-policy",
+    priority: 0.5,
+    changeFrequency: "monthly" as const,
+  },
+  {
+    path: "/shipping-policy",
+    priority: 0.5,
+    changeFrequency: "monthly" as const,
+  },
 ];
 
 export function absoluteUrl(path = "/") {

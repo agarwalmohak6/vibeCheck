@@ -71,6 +71,7 @@ export const sendMessageSchema = z.object({
 export const paymentWebhookSchema = z.object({
   card_id: z.string().uuid(),
   payment_id: z.string().trim().min(1).max(160).optional(),
+  order_id: z.string().trim().min(1).max(160).optional(),
   status: z.string().trim().max(40).optional(),
   extends_at: z.string().datetime().optional(),
 });
@@ -95,17 +96,11 @@ export const paymentVerifySchema = z.object({
   razorpay_signature: z.string().trim().min(1).max(240),
 });
 
-export const razorpayCreateOrderSchema = z.object({
-  amount: z.coerce.number().int().min(100),
-  currency: z.string().trim().min(3).max(3).default('INR'),
-  receipt: z.string().trim().min(1).max(40).optional(),
-});
-
 export const razorpayVerifyPaymentSchema = z.object({
   razorpay_order_id: z.string().trim().min(1).max(120),
   razorpay_payment_id: z.string().trim().min(1).max(120),
   razorpay_signature: z.string().trim().min(1).max(240),
-  card_id: z.string().uuid().optional(),
+  card_id: z.string().uuid(),
 });
 
 export const manualPaymentVerifySchema = z.object({
@@ -163,7 +158,6 @@ export type CreateCardInput = z.infer<typeof createCardSchema>;
 export type PaymentReferenceInput = z.infer<typeof paymentReferenceSchema>;
 export type PaymentOrderInput = z.infer<typeof paymentOrderSchema>;
 export type PaymentVerifyInput = z.infer<typeof paymentVerifySchema>;
-export type RazorpayCreateOrderInput = z.infer<typeof razorpayCreateOrderSchema>;
 export type RazorpayVerifyPaymentInput = z.infer<typeof razorpayVerifyPaymentSchema>;
 export type ManualPaymentVerifyInput = z.infer<typeof manualPaymentVerifySchema>;
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;

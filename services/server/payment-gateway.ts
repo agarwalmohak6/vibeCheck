@@ -3,8 +3,9 @@ import 'server-only';
 import { createHmac, timingSafeEqual } from 'crypto';
 import Razorpay from 'razorpay';
 import { TIERS } from '@/lib/themes';
-import type { PaymentVerifyInput, RazorpayCreateOrderInput, RazorpayVerifyPaymentInput } from '@/lib/contracts';
+import type { PaymentVerifyInput, RazorpayVerifyPaymentInput } from '@/lib/contracts';
 import { getPublicCard, markCardPaymentVerified } from './card-store';
+import { isMockPaymentsEnabled } from './config';
 import { getSupabaseAdmin } from './supabase-admin';
 
 type RazorpayOrderResult = {
@@ -16,16 +17,8 @@ type RazorpayOrderResult = {
   tier_label: string;
 };
 
-type GenericRazorpayOrderResult = {
-  order_id: string;
-  key_id: string;
-  amount: number;
-  currency: string;
-  receipt?: string;
-};
-
 function getRazorpayKeyId() {
-  return process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
+  return process.env.RAZORPAY_KEY_ID || '';
 }
 
 function getRazorpayKeySecret() {
@@ -50,7 +43,11 @@ function getRazorpayClient() {
 }
 
 function verifyCheckoutSignature(orderId: string, paymentId: string, signature: string) {
-  if (orderId.startsWith('order_mock_') || signature === 'mock_signature') {
+  if (
+    isMockPaymentsEnabled() &&
+    orderId.startsWith('order_mock_') &&
+    signature === 'mock_signature'
+  ) {
     return true;
   }
 
@@ -61,33 +58,6 @@ function verifyCheckoutSignature(orderId: string, paymentId: string, signature: 
   const providedBuffer = Buffer.from(signature);
   const expectedBuffer = Buffer.from(expected);
   return providedBuffer.length === expectedBuffer.length && timingSafeEqual(providedBuffer, expectedBuffer);
-}
-
-export async function createRazorpayOrder(input: RazorpayCreateOrderInput): Promise<GenericRazorpayOrderResult> {
-  if (!isRazorpayConfigured()) {
-    return {
-      order_id: `order_mock_${Date.now()}`,
-      key_id: 'rzp_test_mock',
-      amount: input.amount,
-      currency: input.currency,
-      receipt: input.receipt,
-    };
-  }
-
-  const client = getRazorpayClient();
-  const order = await client.orders.create({
-    amount: input.amount,
-    currency: input.currency,
-    receipt: input.receipt,
-  });
-
-  return {
-    order_id: String(order.id),
-    key_id: getRazorpayKeyId(),
-    amount: Number(order.amount || input.amount),
-    currency: String(order.currency || input.currency),
-    receipt: order.receipt ? String(order.receipt) : input.receipt,
-  };
 }
 
 export async function createRazorpayOrderForCard(cardId: string): Promise<RazorpayOrderResult | null> {
@@ -171,6 +141,15 @@ export async function verifyRazorpayCheckoutPayment(input: PaymentVerifyInput) {
     return { ok: false, reason: 'INVALID_SIGNATURE' };
   }
 
+  const isValidPayment = await validateCapturedRazorpayPayment(
+    input.card_id,
+    input.razorpay_order_id,
+    input.razorpay_payment_id,
+  );
+  if (!isValidPayment) {
+    return { ok: false, reason: 'PAYMENT_MISMATCH' };
+  }
+
   const ok = await markCardPaymentVerified(
     input.card_id,
     input.razorpay_payment_id,
@@ -192,8 +171,13 @@ export async function verifyRazorpayPaymentSignature(input: RazorpayVerifyPaymen
     return { ok: false, reason: 'INVALID_SIGNATURE' };
   }
 
-  if (!input.card_id) {
-    return { ok: true, reason: null };
+  const isValidPayment = await validateCapturedRazorpayPayment(
+    input.card_id,
+    input.razorpay_order_id,
+    input.razorpay_payment_id,
+  );
+  if (!isValidPayment) {
+    return { ok: false, reason: 'PAYMENT_MISMATCH' };
   }
 
   const ok = await markCardPaymentVerified(
@@ -204,4 +188,54 @@ export async function verifyRazorpayPaymentSignature(input: RazorpayVerifyPaymen
   );
 
   return { ok, reason: ok ? null : 'CARD_NOT_FOUND' };
+}
+
+function getRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object'
+    ? value as Record<string, unknown>
+    : {};
+}
+
+export async function validateCapturedRazorpayPayment(
+  cardId: string,
+  orderId: string,
+  paymentId: string,
+) {
+  if (
+    isMockPaymentsEnabled() &&
+    orderId.startsWith('order_mock_') &&
+    paymentId.startsWith('pay_sim_')
+  ) {
+    return true;
+  }
+
+  if (!isRazorpayConfigured()) return false;
+
+  const card = await getPublicCard(cardId);
+  if (!card) return false;
+
+  const tier = TIERS.find((item) => item.id === card.tier_selected);
+  if (!tier) return false;
+
+  const expectedAmount = tier.price * 100;
+  const client = getRazorpayClient();
+  const [orderResult, paymentResult] = await Promise.all([
+    client.orders.fetch(orderId),
+    client.payments.fetch(paymentId),
+  ]);
+  const order = getRecord(orderResult);
+  const payment = getRecord(paymentResult);
+  const notes = getRecord(order.notes);
+
+  return (
+    String(order.id || '') === orderId &&
+    String(notes.card_id || '') === cardId &&
+    Number(order.amount) === expectedAmount &&
+    String(order.currency || '').toUpperCase() === 'INR' &&
+    String(payment.id || '') === paymentId &&
+    String(payment.order_id || '') === orderId &&
+    Number(payment.amount) === expectedAmount &&
+    String(payment.currency || '').toUpperCase() === 'INR' &&
+    String(payment.status || '').toLowerCase() === 'captured'
+  );
 }

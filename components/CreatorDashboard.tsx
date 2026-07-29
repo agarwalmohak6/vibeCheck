@@ -88,11 +88,14 @@ export default function CreatorDashboard() {
   };
 
   useEffect(() => {
-    loadAccount()
-      .catch((err: Error) => {
-        setError(err.message);
-        setStatus('login');
-      });
+    const loadTimer = window.setTimeout(() => {
+      loadAccount()
+        .catch((err: Error) => {
+          setError(err.message);
+          setStatus('login');
+        });
+    }, 0);
+    return () => window.clearTimeout(loadTimer);
   }, []);
 
   const handleAuth = async (event: FormEvent<HTMLFormElement>) => {
@@ -241,7 +244,7 @@ export default function CreatorDashboard() {
               <input
                 value={identifier}
                 onChange={(event) => setIdentifier(event.target.value)}
-                placeholder="agarwalmohak6@gmail.com or 9565814426"
+                placeholder="you@example.com or your mobile number"
                 autoComplete="username"
                 className="mt-2 w-full rounded-2xl border border-pink-200 bg-white px-4 py-3 text-base font-black outline-none transition focus:border-pink-400 focus:ring-4 focus:ring-pink-200/60"
               />
