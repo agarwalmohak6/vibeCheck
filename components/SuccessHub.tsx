@@ -3,11 +3,13 @@
 import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { whatsappLink } from '@/lib/utils';
 
 export default function SuccessHub({
   cardId,
+  receiptToken,
+  recipientUrl,
   recipientName,
   creatorName,
   customerEmail,
@@ -16,6 +18,8 @@ export default function SuccessHub({
   emailSent,
 }: {
   cardId: string;
+  receiptToken: string;
+  recipientUrl: string;
   recipientName: string;
   creatorName: string;
   customerEmail: string;
@@ -24,8 +28,11 @@ export default function SuccessHub({
   emailSent: boolean;
 }) {
   const [copied, setCopied] = useState(false);
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || window.location.origin;
-  const cardUrl = `${baseUrl}/card/${cardId}`;
+  const [deliveryState, setDeliveryState] = useState<'sent' | 'pending' | 'sending' | 'config' | 'failed'>(
+    emailSent ? 'sent' : 'pending',
+  );
+  const retryStarted = useRef(false);
+  const cardUrl = recipientUrl;
   const maskedEmail = customerEmail.replace(/^(.{2}).*(@.*)$/, '$1•••$2');
   const expiry = expiresAt
     ? new Date(expiresAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
@@ -37,6 +44,34 @@ export default function SuccessHub({
     confetti({ particleCount: 60, spread: 80, origin: { y: 0.75 } });
     window.setTimeout(() => setCopied(false), 2200);
   };
+
+  const retryEmail = useCallback(async () => {
+    setDeliveryState('sending');
+    try {
+      const response = await fetch('/api/payment/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          card_id: cardId,
+          receipt_token: receiptToken,
+        }),
+      });
+      const result = await response.json() as { sent?: boolean; reason?: string };
+      if (response.ok && result.sent) {
+        setDeliveryState('sent');
+        return;
+      }
+      setDeliveryState(result.reason === 'EMAIL_NOT_CONFIGURED' ? 'config' : 'failed');
+    } catch {
+      setDeliveryState('failed');
+    }
+  }, [cardId, receiptToken]);
+
+  useEffect(() => {
+    if (emailSent || retryStarted.current) return;
+    retryStarted.current = true;
+    void retryEmail();
+  }, [emailSent, retryEmail]);
 
   return (
     <motion.section
@@ -58,7 +93,17 @@ export default function SuccessHub({
       <div className="mt-5 grid gap-3 text-left sm:grid-cols-3">
         <div className="rounded-2xl border border-pink-100 bg-white p-4">
           <p className="text-xs text-[#987084]">Confirmation</p>
-          <p className="mt-1 text-sm font-black text-[#3d1a2e]">{emailSent ? `Sent to ${maskedEmail}` : `Delivery pending to ${maskedEmail}`}</p>
+          <p className="mt-1 text-sm font-black text-[#3d1a2e]">
+            {deliveryState === 'sent'
+              ? `Sent to ${maskedEmail}`
+              : deliveryState === 'sending'
+                ? `Sending to ${maskedEmail}…`
+                : deliveryState === 'config'
+                  ? 'Gmail setup required'
+                  : deliveryState === 'failed'
+                    ? 'Gmail rejected delivery'
+                    : `Delivery pending to ${maskedEmail}`}
+          </p>
         </div>
         <div className="rounded-2xl border border-pink-100 bg-white p-4">
           <p className="text-xs text-[#987084]">Payment</p>
@@ -69,6 +114,25 @@ export default function SuccessHub({
           <p className="mt-1 text-sm font-black text-[#3d1a2e]">{expiry}</p>
         </div>
       </div>
+
+      {deliveryState !== 'sent' && (
+        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-left text-sm leading-6 text-rose-950">
+          <strong>
+            {deliveryState === 'config' ? 'Email is not configured on Render.' : 'The receipt link is safe, but email still needs attention.'}
+          </strong>{' '}
+          {deliveryState === 'config'
+            ? 'Add GMAIL_USER and GMAIL_APP_PASSWORD, then retry.'
+            : 'Check the Gmail App Password and Render logs, then retry below.'}
+          <button
+            type="button"
+            onClick={() => void retryEmail()}
+            disabled={deliveryState === 'sending'}
+            className="mt-3 block rounded-xl bg-[#3d1a2e] px-4 py-2 text-xs font-black text-white disabled:opacity-60"
+          >
+            {deliveryState === 'sending' ? 'Sending email…' : 'Retry confirmation email'}
+          </button>
+        </div>
+      )}
 
       <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-left text-sm leading-6 text-amber-950">
         <strong>How one-person access works:</strong> ask {recipientName} to open the link in their preferred browser and press “Unseal on this device.” That deliberate action binds the card to that browser. Link-preview bots cannot consume it, and forwarding it afterward will not open it elsewhere.
