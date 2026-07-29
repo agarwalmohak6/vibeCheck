@@ -47,3 +47,10 @@ npm run build
 Production payment verification is fail-closed: mock signatures are accepted
 only outside production, and a Razorpay payment must match the card, order,
 captured status, INR currency and selected tier amount before the card unlocks.
+
+## Availability monitoring
+
+The `Render uptime check` GitHub Actions workflow requests `/api/health` every
+five minutes and can also be run manually. It provides a lightweight availability
+check and keeps the free Render web service from reaching its 15-minute idle
+window during normal GitHub Actions operation.
