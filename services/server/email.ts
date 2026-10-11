@@ -1,4 +1,5 @@
 import 'server-only';
+import nodemailer from 'nodemailer';
 
 type AdminOtpEmailInput = {
   to: string;
@@ -34,8 +35,8 @@ type CreatorPaymentVerifiedEmailInput = {
 export type EmailDeliveryResult = {
   sent: boolean;
   to: string;
-  provider: 'resend';
-  reason?: 'missing_api_key';
+  provider: 'resend' | 'gmail';
+  reason?: 'missing_provider_config';
 };
 
 function escapeHtml(value: string) {
@@ -57,16 +58,42 @@ async function sendResendEmail(input: {
   const from = process.env.VIBECHECK_EMAIL_FROM || 'VibeCheck <onboarding@resend.dev>';
 
   if (!resendApiKey) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('RESEND_API_KEY is required to send emails.');
+    const gmailUser = process.env.GMAIL_USER?.trim();
+    const gmailAppPassword = process.env.GMAIL_APP_PASSWORD?.replace(/\s+/g, '');
+
+    if (gmailUser && gmailAppPassword) {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: gmailUser,
+          pass: gmailAppPassword,
+        },
+      });
+      await transporter.sendMail({
+        from: {
+          name: process.env.EMAIL_FROM_NAME?.trim() || 'VibeCheck',
+          address: gmailUser,
+        },
+        to: input.to,
+        replyTo: process.env.EMAIL_REPLY_TO?.trim() || gmailUser,
+        subject: input.subject,
+        text: input.text,
+        html: input.html,
+      });
+
+      return { sent: true, to: input.to, provider: 'gmail' };
     }
 
-    console.info('Email skipped because RESEND_API_KEY is not configured.', {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Email delivery requires RESEND_API_KEY or Gmail SMTP env vars.');
+    }
+
+    console.info('Email skipped because no email provider is configured.', {
       to: input.to,
       subject: input.subject,
       text: input.text,
     });
-    return { sent: false, to: input.to, provider: 'resend', reason: 'missing_api_key' };
+    return { sent: false, to: input.to, provider: 'resend', reason: 'missing_provider_config' };
   }
 
   const res = await fetch('https://api.resend.com/emails', {
