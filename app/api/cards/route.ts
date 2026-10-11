@@ -16,7 +16,11 @@ export async function POST(req: NextRequest) {
 
     const parsed = createCardSchema.safeParse(await req.json());
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid card payload', issues: parsed.error.flatten() }, { status: 400 });
+      const firstIssue = parsed.error.issues[0];
+      return NextResponse.json({
+        error: firstIssue?.message || 'Invalid card payload',
+        issues: parsed.error.flatten(),
+      }, { status: 400 });
     }
 
     const creatorSession = getCreatorSessionFromRequest(req);

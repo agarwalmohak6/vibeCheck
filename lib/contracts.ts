@@ -64,7 +64,7 @@ export const cardDataSchema = z.object({
     .optional()
     .or(z.literal('')),
   order_id: z.string().trim().max(40).optional().or(z.literal('')),
-  unlock_code: z.string().trim().min(2).max(80).optional().or(z.literal('')),
+  unlock_code: z.string().trim().min(1, 'Private lock answer is required when privacy is enabled.').max(80).optional().or(z.literal('')),
   unlock_question: z.string().trim().max(160).optional().or(z.literal('')),
   yes_btn_text: z.string().trim().min(1).max(36).optional(),
   no_btn_text: z.string().trim().min(1).max(36).optional(),

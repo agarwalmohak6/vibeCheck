@@ -125,6 +125,30 @@ function writeCheckoutSession(session: CheckoutSession) {
   window.localStorage.setItem(`creator_of_${session.cardId}`, 'true');
 }
 
+function getApiErrorMessage(data: unknown, fallback: string) {
+  if (!data || typeof data !== 'object') return fallback;
+
+  const response = data as {
+    error?: unknown;
+    issues?: {
+      fieldErrors?: Record<string, unknown>;
+      formErrors?: unknown[];
+    };
+  };
+  const fieldErrors = response.issues?.fieldErrors
+    ? Object.values(response.issues.fieldErrors).flat()
+    : [];
+  const firstFieldError = fieldErrors.find((message) => typeof message === 'string' && message);
+  const firstFormError = response.issues?.formErrors?.find((message) => typeof message === 'string' && message);
+
+  if (typeof response.error === 'string' && response.error !== 'Invalid card payload') return response.error;
+  if (typeof firstFieldError === 'string') return firstFieldError;
+  if (typeof firstFormError === 'string') return firstFormError;
+  if (typeof response.error === 'string') return response.error;
+
+  return fallback;
+}
+
 function CustomizePageContent() {
   const router = useRouter();
   const params = useSearchParams();
@@ -541,7 +565,7 @@ function CustomizePageContent() {
       } else {
         setNotice({
           tone: 'error',
-          message: data.error || 'We could not create the card yet. Check the required fields and try again.',
+          message: getApiErrorMessage(data, 'We could not create the card yet. Check the required fields and try again.'),
         });
       }
     } catch {
