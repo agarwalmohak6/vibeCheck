@@ -770,27 +770,44 @@ export async function clearAllCardsAndPayments() {
     const paymentCount = Object.keys(MOCK_PAYMENT_REFERENCES).length;
     for (const key of Object.keys(MOCK_STORE)) delete MOCK_STORE[key];
     for (const key of Object.keys(MOCK_PAYMENT_REFERENCES)) delete MOCK_PAYMENT_REFERENCES[key];
+    for (const key of Object.keys(MOCK_SECRETS)) delete MOCK_SECRETS[key];
     MOCK_CHATS.splice(0, MOCK_CHATS.length);
     MOCK_EVENTS.splice(0, MOCK_EVENTS.length);
     return { cards_deleted: cardCount, payments_deleted: paymentCount };
   }
 
   const zeroUuid = '00000000-0000-0000-0000-000000000000';
-  const { count: paymentsDeleted, error: paymentsError } = await admin
-    .from('payments')
-    .delete({ count: 'exact' })
-    .neq('id', zeroUuid);
-  if (paymentsError) throw paymentsError;
+  const supabaseAdmin = admin;
 
-  const { count: cardsDeleted, error: cardsError } = await admin
-    .from('cards')
-    .delete({ count: 'exact' })
-    .neq('id', zeroUuid);
-  if (cardsError) throw cardsError;
+  async function deleteTableRows(table: string, idColumn = 'id') {
+    const { count, error } = await supabaseAdmin
+      .from(table)
+      .delete({ count: 'exact' })
+      .neq(idColumn, zeroUuid);
+
+    if (error) {
+      const code = 'code' in error ? error.code : '';
+      if (code === '42P01') return 0;
+      throw error;
+    }
+
+    return count || 0;
+  }
+
+  const paymentsDeleted = await deleteTableRows('payments');
+  const secretsDeleted = await deleteTableRows('card_secrets', 'card_id');
+  const trackerEventsDeleted = await deleteTableRows('tracker_events');
+  const uploadsDeleted = await deleteTableRows('uploads');
+  const messagesDeleted = await deleteTableRows('messages');
+  const cardsDeleted = await deleteTableRows('cards');
 
   return {
-    cards_deleted: cardsDeleted || 0,
-    payments_deleted: paymentsDeleted || 0,
+    cards_deleted: cardsDeleted,
+    payments_deleted: paymentsDeleted,
+    card_secrets_deleted: secretsDeleted,
+    tracker_events_deleted: trackerEventsDeleted,
+    uploads_deleted: uploadsDeleted,
+    messages_deleted: messagesDeleted,
   };
 }
 
