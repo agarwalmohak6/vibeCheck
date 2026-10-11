@@ -39,6 +39,8 @@ export type EmailDeliveryResult = {
   reason?: 'missing_provider_config';
 };
 
+const EMAIL_TIMEOUT_MS = 12_000;
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, '&amp;')
@@ -63,7 +65,12 @@ async function sendResendEmail(input: {
 
     if (gmailUser && gmailAppPassword) {
       const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        connectionTimeout: EMAIL_TIMEOUT_MS,
+        greetingTimeout: EMAIL_TIMEOUT_MS,
+        socketTimeout: EMAIL_TIMEOUT_MS,
         auth: {
           user: gmailUser,
           pass: gmailAppPassword,
