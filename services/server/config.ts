@@ -19,6 +19,7 @@ export function isTestPaymentsEnabled() {
 export function getTokenSecret() {
   const secret =
     process.env.VIBECHECK_TOKEN_SECRET ||
+    process.env.VIBECHECK_ADMIN_SESSION_SECRET ||
     process.env.NEXTAUTH_SECRET ||
     process.env.RAZORPAY_KEY_SECRET;
 

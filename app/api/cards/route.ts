@@ -7,6 +7,26 @@ import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
+function getSafeCreateCardDetail(error: unknown) {
+  if (!error || typeof error !== 'object') return undefined;
+
+  const code = 'code' in error && typeof error.code === 'string' ? error.code : undefined;
+  const message = 'message' in error && typeof error.message === 'string' ? error.message : undefined;
+  const details = 'details' in error && typeof error.details === 'string' ? error.details : undefined;
+  const hint = 'hint' in error && typeof error.hint === 'string' ? error.hint : undefined;
+
+  if (message?.includes('VIBECHECK_TOKEN_SECRET')) {
+    return { code: 'server_token_secret_missing', message: 'Server token signing is not configured.' };
+  }
+
+  if (message?.includes('fetch failed') || message?.includes('ENOTFOUND')) {
+    return { code: 'storage_unreachable', message: 'Card storage is not reachable from the server.' };
+  }
+
+  if (!code && !message && !details && !hint) return undefined;
+  return { code, message, details, hint };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const ip = getClientIp(req);
@@ -51,7 +71,10 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error('Card creation error:', err);
-    return NextResponse.json({ error: 'Failed to create card' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Failed to create card',
+      detail: getSafeCreateCardDetail(err),
+    }, { status: 500 });
   }
 }
 
