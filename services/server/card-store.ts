@@ -6,7 +6,7 @@ import type { Card } from '@/lib/supabase';
 import type { CardEventType, ChatMessageDTO, PublicCard, TrackerEvent } from '@/types/vibecheck';
 import { captureServerEvent } from './analytics';
 import { createAccessToken, hashPasscode, verifyAccessToken, verifyPasscodeHash } from './security';
-import { getSupabaseAdmin } from './supabase-admin';
+import { disableSupabaseForRuntime, getSupabaseAdmin, isSupabaseConnectivityError } from './supabase-admin';
 
 type StoredSecret = {
   salt: string;
@@ -111,6 +111,53 @@ function normalizePaymentReference(reference: string) {
   return reference.trim().replace(/\s+/g, '').toUpperCase();
 }
 
+async function createMockCardDraft(
+  input: CreateCardInput,
+  accountId: string | null | undefined,
+  id: string,
+  orderId: string,
+  hasSecretCode: boolean,
+  cardData: ReturnType<typeof sanitizeCardData>,
+  expiresAt: string | null,
+  creatorToken: string,
+  fallbackReason?: string,
+) {
+  const card: Card = {
+    id,
+    recipient_name: input.recipient_name,
+    creator_name: input.creator_name,
+    template_type: input.template_type,
+    theme_selected: input.theme_selected,
+    card_data: cardData,
+    tier_selected: input.tier_selected,
+    account_id: accountId || null,
+    created_at: new Date().toISOString(),
+    expires_at: expiresAt,
+    is_paid: false,
+    payment_id: null,
+    music_track_id: input.music_track_id || null,
+  };
+
+  if (hasSecretCode && input.card_data.unlock_code) {
+    MOCK_SECRETS[id] = {
+      ...hashPasscode(input.card_data.unlock_code),
+      question: input.card_data.unlock_question || '',
+    };
+  }
+
+  MOCK_STORE[id] = card;
+  await captureServerEvent('card_draft_created', id, {
+    template_type: input.template_type,
+    tier_selected: input.tier_selected,
+    has_secret_code: hasSecretCode,
+    order_id: cardData.order_id,
+    mock: true,
+    fallback_reason: fallbackReason,
+  });
+
+  return { card: toPublicCard(card), creatorToken };
+}
+
 export async function createCardDraft(input: CreateCardInput, accountId?: string | null) {
   const admin = getSupabaseAdmin();
   const id = randomUUID();
@@ -121,82 +168,67 @@ export async function createCardDraft(input: CreateCardInput, accountId?: string
   const creatorToken = createAccessToken(id, 'creator');
 
   if (!admin) {
-    const card: Card = {
-      id,
-      recipient_name: input.recipient_name,
-      creator_name: input.creator_name,
-      template_type: input.template_type,
-      theme_selected: input.theme_selected,
-      card_data: cardData,
-      tier_selected: input.tier_selected,
-      account_id: accountId || null,
-      created_at: new Date().toISOString(),
-      expires_at: expiresAt,
-      is_paid: false,
-      payment_id: null,
-      music_track_id: input.music_track_id || null,
-    };
+    return createMockCardDraft(input, accountId, id, orderId, hasSecretCode, cardData, expiresAt, creatorToken);
+  }
+
+  try {
+    const { data: card, error } = await admin
+      .from('cards')
+      .insert({
+        id,
+        recipient_name: input.recipient_name,
+        creator_name: input.creator_name,
+        template_type: input.template_type,
+        theme_selected: input.theme_selected,
+        card_data: cardData,
+        tier_selected: input.tier_selected,
+        expires_at: expiresAt,
+        is_paid: false,
+        payment_id: null,
+        payment_status: 'pending',
+        music_track_id: input.music_track_id || null,
+        ...(accountId ? { account_id: accountId } : {}),
+      })
+      .select('*')
+      .single();
+
+    if (error) throw error;
 
     if (hasSecretCode && input.card_data.unlock_code) {
-      MOCK_SECRETS[id] = {
-        ...hashPasscode(input.card_data.unlock_code),
-        question: input.card_data.unlock_question || '',
-      };
+      const secret = hashPasscode(input.card_data.unlock_code);
+      const { error: secretError } = await admin.from('card_secrets').insert({
+        card_id: id,
+        passcode_salt: secret.salt,
+        passcode_hash: secret.hash,
+        unlock_question: input.card_data.unlock_question || null,
+      });
+      if (secretError) throw secretError;
     }
 
-    MOCK_STORE[id] = card;
     await captureServerEvent('card_draft_created', id, {
       template_type: input.template_type,
       tier_selected: input.tier_selected,
       has_secret_code: hasSecretCode,
       order_id: cardData.order_id,
-      mock: true,
     });
 
-    return { card: toPublicCard(card), creatorToken };
-  }
+    return { card: toPublicCard(card as Card), creatorToken };
+  } catch (error) {
+    if (!isSupabaseConnectivityError(error)) throw error;
 
-  const { data: card, error } = await admin
-    .from('cards')
-    .insert({
+    disableSupabaseForRuntime(error);
+    return createMockCardDraft(
+      input,
+      accountId,
       id,
-      recipient_name: input.recipient_name,
-      creator_name: input.creator_name,
-      template_type: input.template_type,
-      theme_selected: input.theme_selected,
-      card_data: cardData,
-      tier_selected: input.tier_selected,
-      expires_at: expiresAt,
-      is_paid: false,
-      payment_id: null,
-      payment_status: 'pending',
-      music_track_id: input.music_track_id || null,
-      ...(accountId ? { account_id: accountId } : {}),
-    })
-    .select('*')
-    .single();
-
-  if (error) throw error;
-
-  if (hasSecretCode && input.card_data.unlock_code) {
-    const secret = hashPasscode(input.card_data.unlock_code);
-    const { error: secretError } = await admin.from('card_secrets').insert({
-      card_id: id,
-      passcode_salt: secret.salt,
-      passcode_hash: secret.hash,
-      unlock_question: input.card_data.unlock_question || null,
-    });
-    if (secretError) throw secretError;
+      orderId,
+      hasSecretCode,
+      cardData,
+      expiresAt,
+      creatorToken,
+      'supabase_unreachable',
+    );
   }
-
-  await captureServerEvent('card_draft_created', id, {
-    template_type: input.template_type,
-    tier_selected: input.tier_selected,
-    has_secret_code: hasSecretCode,
-    order_id: cardData.order_id,
-  });
-
-  return { card: toPublicCard(card as Card), creatorToken };
 }
 
 export async function getPublicCard(id: string) {

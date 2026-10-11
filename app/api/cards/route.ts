@@ -4,6 +4,7 @@ import { createCardDraft, getPaymentStatus, getPublicCard } from '@/services/ser
 import { getCreatorSessionFromRequest } from '@/services/server/creator-auth';
 import { sendCreatorOrderNotifications } from '@/services/server/notifications';
 import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
+import { isSupabaseConnectivityError } from '@/services/server/supabase-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +20,7 @@ function getSafeCreateCardDetail(error: unknown) {
     return { code: 'server_token_secret_missing', message: 'Server token signing is not configured.' };
   }
 
-  if (message?.includes('fetch failed') || message?.includes('ENOTFOUND')) {
+  if (isSupabaseConnectivityError(error)) {
     return { code: 'storage_unreachable', message: 'Card storage is not reachable from the server.' };
   }
 
