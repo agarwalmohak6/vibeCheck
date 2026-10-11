@@ -25,7 +25,10 @@ export async function POST(req: NextRequest) {
 
     const parsed = manualPaymentVerifySchema.safeParse(await req.json());
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid UTR payload', issues: parsed.error.flatten() }, { status: 400 });
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || 'Enter the UPI UTR/reference to verify.' },
+        { status: 400 },
+      );
     }
 
     const result = await verifyUpiPaymentReference(parsed.data.utr);

@@ -10,7 +10,23 @@ type PaymentReferenceFormProps = {
 };
 
 function normalizeReference(value: string) {
-  return value.trim().replace(/\s+/g, '').toUpperCase();
+  const cleaned = value
+    .trim()
+    .toUpperCase()
+    .replace(
+      /\b(?:UPI|UTR|RRN|REF|REFERENCE|TRANSACTION|TXN|TXNID|TRN|ID|NO|NUMBER)\b\s*[:#-]*/gi,
+      ' ',
+    )
+    .replace(/[^A-Z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const tokens = cleaned
+    .split(/\s+/)
+    .map((token) => token.replace(/^-+|-+$/g, ''))
+    .filter((token) => token.length >= 6 && token.length <= 40);
+  const tokensWithDigits = tokens.filter((token) => /\d/.test(token));
+  if (tokensWithDigits.length) return tokensWithDigits[tokensWithDigits.length - 1];
+  return cleaned.replace(/[\s-]+/g, '');
 }
 
 export default function PaymentReferenceForm({

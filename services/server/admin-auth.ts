@@ -115,8 +115,21 @@ export function verifyAdminToken(token: string | null | undefined) {
   }
 }
 
+export function verifyAdminSecret(value: string | null | undefined) {
+  const configuredSecret = getAdminSecret();
+  const suppliedSecret = value?.trim();
+  if (!configuredSecret || !suppliedSecret) return null;
+  if (!safeEqual(suppliedSecret, configuredSecret)) return null;
+  return { email: getConfiguredAdminEmail(), source: 'secret' as const };
+}
+
 export function getAdminFromRequest(req: NextRequest) {
-  return verifyAdminToken(req.cookies.get(ADMIN_COOKIE_NAME)?.value);
+  const cookieAdmin = verifyAdminToken(req.cookies.get(ADMIN_COOKIE_NAME)?.value);
+  if (cookieAdmin) return cookieAdmin;
+
+  const bearerToken = req.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];
+  return verifyAdminSecret(req.headers.get('x-vibecheck-admin-secret')) ||
+    verifyAdminSecret(bearerToken);
 }
 
 export function setAdminCookie(response: NextResponse, token: string) {

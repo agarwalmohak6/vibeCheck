@@ -1064,9 +1064,39 @@ function PhotoClipAccordion({
     );
   }
 
+  const activeSource = images[activeIndex];
+  const activeCaption = captions[activeIndex % captions.length] || `for ${recipientName}`;
+  const orbitImages = images.filter((_, index) => index !== activeIndex).slice(0, 3);
+
   return (
     <div className="vc-photo-clip-light" aria-label="Photo clip reveal">
       <div className="vc-photo-clip-light__rail" aria-hidden />
+      <div className="vc-photo-clip-light__stage">
+        <div
+          className="vc-photo-clip-light__aura"
+          style={{ backgroundImage: `url("${activeSource}")` }}
+          aria-hidden
+        />
+        <div className="vc-photo-clip-light__spotlight">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={activeSource} alt="" draggable={false} />
+          <span>{String(activeIndex + 1).padStart(2, "0")} / {String(images.length).padStart(2, "0")}</span>
+          <strong>{activeCaption}</strong>
+        </div>
+        {orbitImages.length > 0 && (
+          <div className="vc-photo-clip-light__mini-stack" aria-hidden>
+            {orbitImages.map((source, index) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={`clip-orbit-${index}-${source.slice(0, 24)}`}
+                src={source}
+                alt=""
+                draggable={false}
+              />
+            ))}
+          </div>
+        )}
+      </div>
       <div className="vc-photo-clip-light__frames">
         {images.map((source, index) => {
           const isActive = index === activeIndex;

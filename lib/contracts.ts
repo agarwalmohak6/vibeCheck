@@ -3,6 +3,41 @@ import { z } from 'zod';
 const trimString = (min: number, max: number) =>
   z.string().trim().min(min).max(max);
 
+function normalizePaymentReferenceInput(value: unknown) {
+  const raw = typeof value === 'string' ? value : '';
+  const cleaned = raw
+    .trim()
+    .toUpperCase()
+    .replace(
+      /\b(?:UPI|UTR|RRN|REF|REFERENCE|TRANSACTION|TXN|TXNID|TRN|ID|NO|NUMBER)\b\s*[:#-]*/gi,
+      ' ',
+    )
+    .replace(/[^A-Z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const tokens = cleaned
+    .split(/\s+/)
+    .map((token) => token.replace(/^-+|-+$/g, ''))
+    .filter((token) => token.length >= 6 && token.length <= 40);
+  const tokensWithDigits = tokens.filter((token) => /\d/.test(token));
+  if (tokensWithDigits.length) return tokensWithDigits[tokensWithDigits.length - 1];
+
+  const compact = cleaned.replace(/[\s-]+/g, '');
+  if (compact.length >= 6 && compact.length <= 40) return compact;
+
+  return cleaned.replace(/\s+/g, '');
+}
+
+const paymentReferenceValueSchema = z.preprocess(
+  normalizePaymentReferenceInput,
+  z.string()
+    .trim()
+    .min(6, 'Enter the 6+ character UPI UTR or transaction reference.')
+    .max(40, 'UPI reference should be 40 characters or less.')
+    .regex(/^[A-Z0-9-]+$/, 'Use the UPI UTR/reference number only.'),
+);
+
 export const storyQuestionSchema = z.object({
   id: z.string().trim().min(1).max(80),
   eyebrow: z.string().trim().min(1).max(60),
@@ -81,11 +116,7 @@ export const paymentWebhookSchema = z.object({
 
 export const paymentReferenceSchema = z.object({
   card_id: z.string().uuid(),
-  utr: z.string()
-    .trim()
-    .min(6)
-    .max(40)
-    .regex(/^[A-Za-z0-9\s-]+$/, 'Use only letters, numbers, spaces, or hyphens.'),
+  utr: paymentReferenceValueSchema,
 });
 
 export const paymentOrderSchema = z.object({
@@ -113,11 +144,7 @@ export const razorpayVerifyPaymentSchema = z.object({
 });
 
 export const manualPaymentVerifySchema = z.object({
-  utr: z.string()
-    .trim()
-    .min(6)
-    .max(40)
-    .regex(/^[A-Za-z0-9\s-]+$/, 'Use only letters, numbers, spaces, or hyphens.'),
+  utr: paymentReferenceValueSchema,
 });
 
 export const testPaymentModeSchema = z.object({

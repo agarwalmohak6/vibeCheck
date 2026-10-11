@@ -15,7 +15,10 @@ export async function POST(req: NextRequest) {
 
     const parsed = paymentReferenceSchema.safeParse(await req.json());
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid UTR/reference payload', issues: parsed.error.flatten() }, { status: 400 });
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message || 'Enter the UPI UTR or transaction reference.' },
+        { status: 400 },
+      );
     }
 
     const status = await submitUpiPaymentReference(parsed.data.card_id, parsed.data.utr);
