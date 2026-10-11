@@ -20,7 +20,7 @@ const faqItems = [
   {
     question: "Can I track my VibeCheck card?",
     answer:
-      "Creators can use the dashboard to track created cards, payment status, recipient links, private rooms, and replies.",
+      "Creators can use their private creator link to track card status, recipient links, private rooms, and replies.",
   },
 ];
 

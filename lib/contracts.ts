@@ -19,11 +19,21 @@ export const cardDataSchema = z.object({
   music_url: z.string().url().optional().or(z.literal('')),
   music_label: z.string().trim().max(160).optional().or(z.literal('')),
   cover_image_url: z.string().max(400_000).optional().or(z.literal('')),
+  cover_image_urls: z.array(z.string().max(400_000)).max(8).optional().default([]),
+  creator_email: z.string().trim().email().max(160).optional().or(z.literal('')),
+  creator_whatsapp: z.string()
+    .trim()
+    .min(8)
+    .max(24)
+    .regex(/^[0-9+\-\s()]+$/, 'Use a valid WhatsApp number.')
+    .optional()
+    .or(z.literal('')),
+  order_id: z.string().trim().max(40).optional().or(z.literal('')),
   unlock_code: z.string().trim().min(2).max(80).optional().or(z.literal('')),
   unlock_question: z.string().trim().max(160).optional().or(z.literal('')),
   yes_btn_text: z.string().trim().min(1).max(36).optional(),
   no_btn_text: z.string().trim().min(1).max(36).optional(),
-  story_questions: z.array(storyQuestionSchema).min(3).max(5),
+  story_questions: z.array(storyQuestionSchema).max(5).optional().default([]),
 });
 
 export const createCardSchema = z.object({
@@ -34,15 +44,6 @@ export const createCardSchema = z.object({
   tier_selected: trimString(1, 40),
   music_track_id: z.string().trim().max(80).optional().nullable(),
   card_data: cardDataSchema,
-}).superRefine((value, ctx) => {
-  const hasSong = Boolean(value.music_track_id?.trim() || value.card_data.music_url?.trim());
-  if (!hasSong) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['music_track_id'],
-      message: 'A song is required before creating a card.',
-    });
-  }
 });
 
 export const unlockCardSchema = z.object({
@@ -71,6 +72,9 @@ export const sendMessageSchema = z.object({
 export const paymentWebhookSchema = z.object({
   card_id: z.string().uuid(),
   payment_id: z.string().trim().min(1).max(160).optional(),
+  order_id: z.string().trim().min(1).max(120).optional(),
+  amount: z.coerce.number().int().positive().optional(),
+  currency: z.string().trim().length(3).optional(),
   status: z.string().trim().max(40).optional(),
   extends_at: z.string().datetime().optional(),
 });
@@ -116,9 +120,20 @@ export const manualPaymentVerifySchema = z.object({
     .regex(/^[A-Za-z0-9\s-]+$/, 'Use only letters, numbers, spaces, or hyphens.'),
 });
 
+export const testPaymentModeSchema = z.object({
+  card_id: z.string().uuid(),
+  reason: z.string().trim().max(120).optional().or(z.literal('')),
+});
+
+export const adminOtpRequestSchema = z.object({
+  email: z.string().trim().email().max(160).optional().or(z.literal('')),
+});
+
 export const adminLoginSchema = z.object({
-  email: z.string().trim().email().max(160),
-  secret: z.string().trim().min(12).max(240),
+  otp: z.string()
+    .trim()
+    .length(6)
+    .regex(/^\d{6}$/, 'Enter the 6-digit OTP.'),
 });
 
 export const creatorAuthSchema = z.object({
@@ -166,6 +181,8 @@ export type PaymentVerifyInput = z.infer<typeof paymentVerifySchema>;
 export type RazorpayCreateOrderInput = z.infer<typeof razorpayCreateOrderSchema>;
 export type RazorpayVerifyPaymentInput = z.infer<typeof razorpayVerifyPaymentSchema>;
 export type ManualPaymentVerifyInput = z.infer<typeof manualPaymentVerifySchema>;
+export type TestPaymentModeInput = z.infer<typeof testPaymentModeSchema>;
+export type AdminOtpRequestInput = z.infer<typeof adminOtpRequestSchema>;
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
 export type CreatorAuthInput = z.infer<typeof creatorAuthSchema>;
 export type CreatorCardClaimInput = z.infer<typeof creatorCardClaimSchema>;

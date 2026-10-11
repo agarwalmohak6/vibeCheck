@@ -5,8 +5,8 @@ This app is a Next.js full-stack app.
 - Frontend pages live in `app/*`.
 - API routes live in `app/api/*`.
 - Supabase stores cards, messages, payments, and uploads.
-- Vercel should serve the public frontend.
-- Render should serve the backend API.
+- Vercel can serve the public frontend.
+- Render can serve the full app or the backend API.
 
 Vercel will call Render for `/api/*` through `BACKEND_ORIGIN`.
 
@@ -39,12 +39,19 @@ Use these on both Vercel and Render unless the `Where` column says otherwise.
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Vercel + Render | Supabase service role key |
 | `SUPABASE_UPLOAD_BUCKET` | Yes | Vercel + Render | `card-uploads` |
 | `GIPHY_API_KEY` | Yes for GIF search | Render | GIPHY API key |
-| `NEXT_PUBLIC_UPI_VPA` | Yes for direct UPI | Vercel + Render | `yourbrand@upi` |
+| `NEXT_PUBLIC_UPI_VPA` | Yes for direct UPI checkout | Vercel + Render | `yourbrand@upi` |
+| `RESEND_API_KEY` | Yes for real email delivery | Vercel + Render | Resend API key |
+| `VIBECHECK_EMAIL_FROM` | Yes for real email delivery | Vercel + Render | `VibeCheck <admin@your-domain.com>` |
+| `VIBECHECK_ADMIN_EMAIL` | Yes for OTP + UPI review alerts | Vercel + Render | `agarwalmohak6@gmail.com` |
+| `VIBECHECK_ADMIN_WHATSAPP` | Optional for admin WhatsApp alerts | Vercel + Render | `919565814426` |
+| `WHATSAPP_CLOUD_API_TOKEN` | Optional for automatic WhatsApp delivery | Vercel + Render | Meta Cloud API token |
+| `WHATSAPP_PHONE_NUMBER_ID` | Optional for automatic WhatsApp delivery | Vercel + Render | Meta phone number ID |
+| `WHATSAPP_CLOUD_API_VERSION` | Optional | Vercel + Render | `v24.0` |
 | `NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS` | No in production | Vercel + Render | `false` |
 | `POSTHOG_API_KEY` | Optional | Vercel + Render | PostHog key |
 | `POSTHOG_HOST` | Optional | Vercel + Render | `https://app.posthog.com` |
 
-Only keep Razorpay variables if you decide to use Razorpay later:
+Direct UPI is the active checkout path. Razorpay remains available as an optional UPI-first gateway path when you want automatic payment confirmation:
 
 | Variable | Required | Where |
 | --- | --- | --- |
@@ -107,37 +114,34 @@ After this, the frontend will be on Vercel and API calls to `/api/*` will be pro
 
 ## 6. Recommended Payment Setup
 
-You asked for UPI payments that are free and do not cost convenience fees.
-
-The cleanest low-cost launch path is **direct UPI QR / UPI intent**:
+Use **Direct UPI as the primary path** for the current mobile-first launch:
 
 1. User creates a card.
-2. App shows a UPI QR or opens the user's UPI app.
-3. User pays directly to your UPI VPA.
-4. User enters the UPI reference number / UTR after payment.
-5. You verify the payment in your bank or UPI app.
-6. You mark the card as paid.
+2. The app creates a unique order ID and sends the creator tracking link by email/WhatsApp when provider keys are configured.
+3. The checkout shows an exact-amount UPI QR and mobile `upi://pay` intent.
+4. Creator pays in PhonePe, GPay, Paytm, or any UPI app.
+5. Creator submits the UTR/reference number.
+6. Admin receives an email alert and verifies the UTR from `/admin`.
+7. The card unlocks and the creator gets a verified-payment notification.
 
-This avoids payment gateway platform fees, but it is not fully automatic unless you get a bank/PSP integration.
+Use **Razorpay Checkout** when instant automatic confirmation matters more than the gateway fee. The Razorpay code still creates server-side Orders, verifies checkout signatures, validates amount/currency/payment status, and accepts signed webhooks.
 
 ## 7. Direct UPI: What To Use
-
-Use this for launch:
 
 | Need | Use |
 | --- | --- |
 | No gateway convenience fee | Direct UPI VPA |
 | Easy customer payment | UPI QR + mobile UPI intent |
 | Payment proof | UTR/reference number |
-| Verification | Manual admin check first |
-| Later automation | Bank statement API, PSP API, or gateway |
+| Verification | Manual admin check |
+| Automatic verification | Razorpay checkout + signed webhook |
 
 Current app support:
 
 - `lib/upi.ts` already builds a `upi://pay` intent.
-- `components/QRCheckout.tsx` already renders a UPI QR.
+- `components/QRCheckout.tsx` renders the active direct UPI checkout.
 - `NEXT_PUBLIC_UPI_VPA` controls the payment VPA.
-- The current webhook path can mark a card paid, but production direct-UPI verification still needs an admin or bank integration.
+- UPI payments made inside Razorpay are automatically verified; direct VPA payments still require UTR/admin or bank/PSP verification.
 
 ## 8. Direct UPI Production Flow
 
@@ -146,18 +150,24 @@ For the first live version, keep it simple:
 1. Set `NEXT_PUBLIC_UPI_VPA` to your real merchant VPA.
 2. Keep `NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS=false`.
 3. Show the QR / UPI intent on checkout.
-4. Ask the user for:
-   - UPI app used
-   - UTR / reference number
-   - Optional screenshot
-5. Add a small admin-only way to verify and mark `is_paid=true`.
-6. Release the card only after verification.
+4. Ask the user for UTR / reference number.
+5. Email `VIBECHECK_ADMIN_EMAIL` when the UTR is submitted.
+6. Verify from the OTP-gated `/admin` dashboard and mark `is_paid=true`.
+7. Release the card only after verification.
 
 This is not instant, but it preserves the no-convenience-fee requirement.
 
-## 9. If You Need Instant Auto-Verification
+## 9. Razorpay Webhook Configuration
 
-Use a payment gateway or official bank/PSP integration.
+In the Razorpay Dashboard, create a webhook pointing to:
+
+`https://your-domain.com/api/payment/webhook`
+
+Subscribe to the payment events used by your account, especially `payment.authorized`, `payment.captured`, and `payment.failed`. Copy the webhook secret into `RAZORPAY_WEBHOOK_SECRET` on the server. Never expose `RAZORPAY_KEY_SECRET` or the webhook secret in a browser variable.
+
+The route rejects unsigned webhooks and validates the payment amount and card/order association before unlocking anything.
+
+## 10. Payment Tradeoffs
 
 Tradeoff:
 
@@ -169,7 +179,7 @@ Tradeoff:
 
 Razorpay is convenient because webhooks are easy, but it is not the no-fee option. Their pricing page currently advertises payment gateway/platform fees, so use it only if instant verification matters more than zero fees.
 
-## 10. Production Checklist
+## 11. Production Checklist
 
 1. `main` is pushed.
 2. `npm run build` passes locally.
@@ -179,16 +189,18 @@ Razorpay is convenient because webhooks are easy, but it is not the no-fee optio
 6. Vercel frontend is deployed.
 7. `BACKEND_ORIGIN` on Vercel points to Render.
 8. `NEXT_PUBLIC_BASE_URL` uses the final Vercel/domain URL.
-9. `NEXT_PUBLIC_UPI_VPA` uses your real UPI VPA.
-10. Mock payments are off in production.
-11. GIF search works with `GIPHY_API_KEY`.
-12. Create a test card.
-13. Pay using UPI.
-14. Verify and mark paid.
-15. Open the recipient card link.
-16. Test creator and recipient chat.
+9. `NEXT_PUBLIC_UPI_VPA` uses your real merchant VPA.
+10. `RESEND_API_KEY` and `VIBECHECK_EMAIL_FROM` are configured if you expect real email.
+11. WhatsApp Cloud API env vars are configured if you expect automatic WhatsApp messages; otherwise the app provides `wa.me` share links.
+12. Mock payments are off in production.
+13. GIF search works with `GIPHY_API_KEY`.
+14. Create a test card.
+15. Complete a direct UPI payment, submit UTR, receive admin email, approve it in `/admin`, and confirm unlock.
+16. If using Razorpay, configure keys/webhook, test UPI with `success@razorpay`, and confirm automatic unlock.
+17. Open the recipient card link.
+18. Test creator tracking and recipient reactions.
 
-## 11. SEO + Google Search Console Go-Live
+## 12. SEO + Google Search Console Go-Live
 
 The app already generates:
 

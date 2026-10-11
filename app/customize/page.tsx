@@ -4,20 +4,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
-import { PRIMARY_TEMPLATE_TYPES, TEMPLATE_TYPES, TIERS, ThemeId, type StoryQuestion } from '@/lib/themes';
+import { PRIMARY_TEMPLATE_TYPES, TEMPLATE_TYPES, TIERS, ThemeId } from '@/lib/themes';
 import GiphyModal from '@/components/GiphyModal';
 import SuccessHub from '@/components/SuccessHub';
 import MusicSelector from '@/components/MusicSelector';
 import QRCheckout from '@/components/QRCheckout';
-import RazorpayCheckout from '@/components/RazorpayCheckout';
+import PaymentTestModeToggle from '@/components/PaymentTestModeToggle';
 import { compressImage } from '@/lib/imageCompressor';
 import HeartCanvas from '@/components/HeartCanvas';
 import AmbientBackground from '@/components/AmbientBackground';
-import CardStoryline from '@/components/CardStoryline';
 
 interface FormData {
   recipientName: string;
   creatorName: string;
+  creatorEmail: string;
+  creatorWhatsapp: string;
   templateType: string;
   theme: ThemeId;
   messageTitle: string;
@@ -25,6 +26,7 @@ interface FormData {
   musicTrackId: string;
   gifUrl: string;
   coverImageUrl: string;
+  coverImageUrls: string[];
   hasSecretCode: boolean;
   unlockCode: string;
   unlockQuestion: string;
@@ -34,7 +36,6 @@ interface FormData {
   noBtnText: string;
   selectedMusicUrl: string;
   musicLabel: string;
-  storyQuestions: StoryQuestion[];
 }
 
 type Notice = {
@@ -43,18 +44,21 @@ type Notice = {
 };
 
 const STEPS = ['basics', 'content', 'lock', 'payment'];
-const STEP_LABELS = ['Card', 'Message', 'Privacy', 'Pay'];
-const DEFAULT_TEMPLATE = 'maan_jao';
-const DEFAULT_TIER = '2_day';
-const MIN_STORY_QUESTIONS = 3;
-const MAX_STORY_QUESTIONS = 5;
+const STEP_LABELS = ['Moment', 'Message', 'Privacy', 'Pay'];
+const DEFAULT_TEMPLATE = 'bestie_check';
+const DEFAULT_TIER = 'one_moment';
 const ACTIVE_CHECKOUT_KEY = 'vibecheck_active_checkout';
+const MAX_UPLOAD_IMAGES = 8;
+const MIN_REVEAL_IMAGES = 3;
 
 type CheckoutSession = {
   cardId: string;
   creatorToken?: string | null;
   recipientName?: string;
   creatorName?: string;
+  creatorEmail?: string;
+  creatorWhatsapp?: string;
+  orderId?: string;
   tierId?: string;
   paid?: boolean;
   updatedAt?: string;
@@ -81,37 +85,6 @@ function stripEmojiLabel(label: string) {
   return label.replace(/\s[^\s]*$/, '').trim();
 }
 
-function cloneStoryQuestions(templateType: string): StoryQuestion[] {
-  const template = TEMPLATE_TYPES.find(t => t.id === templateType) || PRIMARY_TEMPLATE_TYPES[0];
-  return template.storyQuestions.slice(0, MAX_STORY_QUESTIONS).map((question, index) => ({
-    id: question.id || `story-${index + 1}`,
-    eyebrow: question.eyebrow,
-    question: question.question,
-    options: question.options.slice(0, 3),
-  }));
-}
-
-function createBlankStoryQuestion(index: number): StoryQuestion {
-  return {
-    id: `custom-${Date.now()}-${index + 1}`,
-    eyebrow: `Moment ${index + 1}`,
-    question: '',
-    options: ['', '', ''],
-  };
-}
-
-function sanitizeStoryQuestions(questions: StoryQuestion[]): StoryQuestion[] {
-  return questions
-    .slice(0, MAX_STORY_QUESTIONS)
-    .map((question, index) => ({
-      id: question.id?.trim() || `custom-${index + 1}`,
-      eyebrow: question.eyebrow.trim() || `Moment ${index + 1}`,
-      question: question.question.trim(),
-      options: question.options.map(option => option.trim()).filter(Boolean).slice(0, 3),
-    }))
-    .filter(question => question.question && question.options.length >= 2);
-}
-
 function readCheckoutSession(): CheckoutSession | null {
   if (typeof window === 'undefined') return null;
 
@@ -126,6 +99,9 @@ function readCheckoutSession(): CheckoutSession | null {
       creatorToken: parsed.creatorToken || window.localStorage.getItem(`creator_token_${parsed.cardId}`),
       recipientName: parsed.recipientName || '',
       creatorName: parsed.creatorName || '',
+      creatorEmail: parsed.creatorEmail || '',
+      creatorWhatsapp: parsed.creatorWhatsapp || '',
+      orderId: parsed.orderId || '',
       tierId: parsed.tierId || '',
       paid: Boolean(parsed.paid),
       updatedAt: parsed.updatedAt || '',
@@ -163,13 +139,16 @@ function CustomizePageContent() {
   const [form, setForm] = useState<FormData>({
     recipientName: '',
     creatorName: '',
+    creatorEmail: '',
+    creatorWhatsapp: '',
     templateType: initialTemplate,
     theme: initialTmplMeta?.recommendedTheme || 'soft_coquette',
-    messageTitle: '',
-    mainBody: '',
+    messageTitle: initialTmplMeta?.messagePresets[0]?.title || '',
+    mainBody: initialTmplMeta?.messagePresets[0]?.body || '',
     musicTrackId: '',
     gifUrl: '',
-    coverImageUrl: initialTmplMeta?.defaultCoverImage || TEMPLATE_TYPES.find(t => t.id === 'shoot_shot')?.defaultCoverImage || '',
+    coverImageUrl: '',
+    coverImageUrls: [],
     hasSecretCode: false,
     unlockCode: '',
     unlockQuestion: '',
@@ -179,7 +158,6 @@ function CustomizePageContent() {
     noBtnText: initialTmplMeta?.defaultNoText || 'No 💔',
     selectedMusicUrl: '',
     musicLabel: '',
-    storyQuestions: cloneStoryQuestions(initialTemplate),
   });
 
   const [showGiphy, setShowGiphy] = useState(false);
@@ -187,10 +165,10 @@ function CustomizePageContent() {
   const [isCompressing, setIsCompressing] = useState(false);
   const [createdCardId, setCreatedCardId] = useState<string | null>(null);
   const [creatorToken, setCreatorToken] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string>('');
   const [paymentStep, setPaymentStep] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const allowMockPayments = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS !== 'false';
   const paymentVpa = (process.env.NEXT_PUBLIC_UPI_VPA || '').trim();
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) => setForm(p => ({ ...p, [k]: v }));
@@ -202,12 +180,10 @@ function CustomizePageContent() {
         ...prev,
         templateType: templateId,
         theme: tmpl.recommendedTheme,
-        coverImageUrl: tmpl.defaultCoverImage,
         yesBtnText: tmpl.defaultYesText,
         noBtnText: tmpl.defaultNoText,
-        messageTitle: '',
-        mainBody: '',
-        storyQuestions: cloneStoryQuestions(templateId),
+        messageTitle: tmpl.messagePresets[0]?.title || '',
+        mainBody: tmpl.messagePresets[0]?.body || '',
       }));
       setTheme(tmpl.recommendedTheme);
     }
@@ -226,14 +202,11 @@ function CustomizePageContent() {
   const displayCreatorName = formatPersonName(form.creatorName, 'Aarav');
   const submitRecipientName = formatPersonName(form.recipientName);
   const submitCreatorName = formatPersonName(form.creatorName);
+  const uploadedImages = form.coverImageUrls.filter((source) => source.trim());
+  const primaryUploadedImage = uploadedImages[0] || '';
   const gifSearchTerms = selectedTemplate.gifSearchTerms?.length
     ? selectedTemplate.gifSearchTerms
     : [`${stripEmojiLabel(selectedTemplate.label)} reaction`];
-  const cleanStoryQuestions = sanitizeStoryQuestions(form.storyQuestions);
-  const hasSelectedSong = Boolean(
-    form.musicTrackId.trim() || form.selectedMusicUrl.trim() || form.musicLabel.trim(),
-  );
-
   const rememberCheckout = (
     cardId: string,
     token: string | null | undefined,
@@ -245,6 +218,9 @@ function CustomizePageContent() {
       creatorToken: token || creatorToken || existing?.creatorToken || null,
       recipientName: submitRecipientName || displayRecipientName || existing?.recipientName || '',
       creatorName: submitCreatorName || displayCreatorName || existing?.creatorName || '',
+      creatorEmail: form.creatorEmail.trim().toLowerCase() || existing?.creatorEmail || '',
+      creatorWhatsapp: form.creatorWhatsapp.trim() || existing?.creatorWhatsapp || '',
+      orderId: orderId || existing?.orderId || '',
       tierId: form.tierId || existing?.tierId || selectedTier.id,
       paid,
     });
@@ -257,51 +233,60 @@ function CustomizePageContent() {
     setLoading(false);
   };
 
-  const isStoryQuestionComplete = (question: StoryQuestion) => {
-    const options = question.options.map(option => option.trim()).filter(Boolean);
-    return Boolean(question.question.trim() && options.length >= 2);
-  };
-
   useEffect(() => {
-    if (params.get('new') === '1') {
-      window.localStorage.removeItem(ACTIVE_CHECKOUT_KEY);
-      return;
-    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (params.get('new') === '1') {
+        window.localStorage.removeItem(ACTIVE_CHECKOUT_KEY);
+        return;
+      }
 
-    const stored = readCheckoutSession();
-    if (!stored?.cardId) return;
+      const stored = readCheckoutSession();
+      if (!stored?.cardId || cancelled) return;
 
-    // Recover the payment/result screen after a refresh.
-    setCreatedCardId(stored.cardId);
-    setCreatorToken(stored.creatorToken || null);
-    if (stored.recipientName || stored.creatorName || stored.tierId) {
-      setForm(prev => ({
-        ...prev,
-        recipientName: stored.recipientName || prev.recipientName,
-        creatorName: stored.creatorName || prev.creatorName,
-        tierId: stored.tierId || prev.tierId,
-      }));
-    }
+      // Recover the payment/result screen after a refresh.
+      setCreatedCardId(stored.cardId);
+      setCreatorToken(stored.creatorToken || null);
+      setOrderId(stored.orderId || '');
+      if (stored.recipientName || stored.creatorName || stored.tierId) {
+        setForm(prev => ({
+          ...prev,
+          recipientName: stored.recipientName || prev.recipientName,
+          creatorName: stored.creatorName || prev.creatorName,
+          creatorEmail: stored.creatorEmail || prev.creatorEmail,
+          creatorWhatsapp: stored.creatorWhatsapp || prev.creatorWhatsapp,
+          tierId: stored.tierId || prev.tierId,
+        }));
+      }
 
-    if (stored.paid) {
-      setIsPaid(true);
-      setPaymentStep(false);
-      return;
-    }
+      if (stored.paid) {
+        setIsPaid(true);
+        setPaymentStep(false);
+        return;
+      }
 
-    setPaymentStep(true);
-    fetch(`/api/cards?id=${stored.cardId}&status=payment`, { cache: 'no-store' })
-      .then((res) => res.ok ? res.json() : null)
-      .then((status) => {
-        if (status?.is_paid) {
-          writeCheckoutSession({ ...stored, paid: true });
-          setIsPaid(true);
-          setPaymentStep(false);
-        }
-      })
-      .catch(() => {
-        // The payment screen will keep polling; avoid blocking the creator on transient errors.
-      });
+      setPaymentStep(true);
+      fetch(`/api/cards?id=${stored.cardId}&status=payment`, { cache: 'no-store' })
+        .then((res) => res.ok ? res.json() : null)
+        .then((status) => {
+          if (!cancelled && status?.order_id) {
+            setOrderId(status.order_id);
+          }
+          if (!cancelled && status?.is_paid) {
+            writeCheckoutSession({ ...stored, paid: true });
+            setIsPaid(true);
+            setPaymentStep(false);
+          }
+        })
+        .catch(() => {
+          // The payment screen will keep polling; avoid blocking the creator on transient errors.
+        });
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -313,6 +298,9 @@ function CustomizePageContent() {
       try {
         const res = await fetch(`/api/cards?id=${createdCardId}&status=payment`, { cache: 'no-store' });
         const status = res.ok ? await res.json() : null;
+        if (!cancelled && status?.order_id) {
+          setOrderId(status.order_id);
+        }
         if (!cancelled && status?.is_paid) {
           markCheckoutPaid(createdCardId, creatorToken);
         }
@@ -341,26 +329,8 @@ function CustomizePageContent() {
     if (stepIndex === 1) {
       if (!form.messageTitle.trim()) issues.push('Write a headline or choose a starting point.');
       if (!form.mainBody.trim()) issues.push('Write the main message or choose a starting point.');
-      if (!hasSelectedSong) issues.push('Select one song. The card cannot be created without music.');
-
-      if (form.storyQuestions.length < MIN_STORY_QUESTIONS) {
-        issues.push(`Add at least ${MIN_STORY_QUESTIONS} story questions.`);
-      }
-
-      if (form.storyQuestions.length > MAX_STORY_QUESTIONS) {
-        issues.push(`Keep story questions to ${MAX_STORY_QUESTIONS} or fewer.`);
-      }
-
-      const incompleteIndexes = form.storyQuestions
-        .map((question, index) => isStoryQuestionComplete(question) ? null : index + 1)
-        .filter((index): index is number => index !== null);
-
-      if (incompleteIndexes.length) {
-        issues.push(`Complete question ${incompleteIndexes[0]} with a question and at least 2 answers.`);
-      }
-
-      if (cleanStoryQuestions.length < MIN_STORY_QUESTIONS) {
-        issues.push(`You need ${MIN_STORY_QUESTIONS} complete questions before payment.`);
+      if (uploadedImages.length < MIN_REVEAL_IMAGES) {
+        issues.push(`Upload at least ${MIN_REVEAL_IMAGES} photos so the reveal uses only your images.`);
       }
     }
 
@@ -375,6 +345,19 @@ function CustomizePageContent() {
 
       if (!form.useCustomQuestion && form.unlockCode.trim().length !== 4) {
         issues.push('The private code must be exactly 4 digits.');
+      }
+    }
+
+    if (stepIndex === 3) {
+      const email = form.creatorEmail.trim();
+      const whatsapp = form.creatorWhatsapp.trim();
+      if (!email) issues.push('Add your email so we can send the order tracking link.');
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        issues.push('Enter a valid email for the order tracking link.');
+      }
+      if (!whatsapp) issues.push('Add your WhatsApp number for order tracking.');
+      if (whatsapp && !/^[0-9+\-\s()]{8,24}$/.test(whatsapp)) {
+        issues.push('Enter a valid WhatsApp number for order tracking.');
       }
     }
 
@@ -421,67 +404,66 @@ function CustomizePageContent() {
     return true;
   };
 
-  const updateStoryQuestion = (
-    index: number,
-    patch: Partial<StoryQuestion> | { optionIndex: number; option: string },
-  ) => {
-    setForm(prev => ({
-      ...prev,
-      storyQuestions: prev.storyQuestions.map((question, questionIndex) => {
-        if (questionIndex !== index) return question;
-        if ('optionIndex' in patch) {
-          return {
-            ...question,
-            options: question.options.map((option, optionIndex) =>
-              optionIndex === patch.optionIndex ? patch.option : option
-            ),
-          };
-        }
-        return { ...question, ...patch };
-      }),
-    }));
-  };
-
-  const addStoryQuestion = () => {
-    setForm(prev => {
-      if (prev.storyQuestions.length >= MAX_STORY_QUESTIONS) return prev;
-
+  const removeUploadedImage = (indexToRemove: number) => {
+    setForm((prev) => {
+      const nextImages = prev.coverImageUrls.filter((_, index) => index !== indexToRemove);
       return {
         ...prev,
-        storyQuestions: [
-          ...prev.storyQuestions,
-          createBlankStoryQuestion(prev.storyQuestions.length),
-        ],
+        coverImageUrls: nextImages,
+        coverImageUrl: nextImages[0] || '',
       };
     });
   };
 
-  const removeStoryQuestion = (index: number) => {
-    setForm(prev => {
-      if (prev.storyQuestions.length <= MIN_STORY_QUESTIONS) return prev;
-
-      return {
-        ...prev,
-        storyQuestions: prev.storyQuestions.filter((_, questionIndex) => questionIndex !== index),
-      };
-    });
-  };
-
-  // Compress image on select
+  // Compress images on select
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const selectedFiles = Array.from(e.target.files || []).filter((file) =>
+      file.type.startsWith('image/'),
+    );
+    const openSlots = Math.max(0, MAX_UPLOAD_IMAGES - form.coverImageUrls.length);
+    const files = selectedFiles.slice(0, openSlots);
+
+    e.target.value = '';
+
+    if (!files.length) {
+      if (selectedFiles.length && openSlots === 0) {
+        setNotice({
+          tone: 'info',
+          message: `You can upload up to ${MAX_UPLOAD_IMAGES} photos for one reveal.`,
+        });
+      }
+      return;
+    }
 
     setIsCompressing(true);
     setNotice(null);
     try {
-      const result = await compressImage(file);
-      set('coverImageUrl', result.dataUrl); // store base64 in coverImageUrl
+      const compressedImages: string[] = [];
+      for (const file of files) {
+        const result = await compressImage(file);
+        compressedImages.push(result.dataUrl);
+      }
+
+      setForm((prev) => {
+        const nextImages = [...prev.coverImageUrls, ...compressedImages].slice(0, MAX_UPLOAD_IMAGES);
+        return {
+          ...prev,
+          coverImageUrls: nextImages,
+          coverImageUrl: nextImages[0] || '',
+        };
+      });
+
+      if (selectedFiles.length > files.length) {
+        setNotice({
+          tone: 'info',
+          message: `Added ${files.length} photos. One card supports up to ${MAX_UPLOAD_IMAGES} photos.`,
+        });
+      }
     } catch (err) {
       console.error(err);
       setNotice({
         tone: 'error',
-        message: 'That photo is too heavy for a smooth card. Try a smaller image or screenshot.',
+        message: 'One of those photos is too heavy for a smooth card. Try smaller images or screenshots.',
       });
     } finally {
       setIsCompressing(false);
@@ -507,27 +489,54 @@ function CustomizePageContent() {
             message_title: form.messageTitle.trim(),
             main_body: form.mainBody.trim(),
             gif_url: form.gifUrl,
-            cover_image_url: form.coverImageUrl,
+            cover_image_url: primaryUploadedImage,
+            cover_image_urls: uploadedImages,
+            creator_email: form.creatorEmail.trim().toLowerCase(),
+            creator_whatsapp: form.creatorWhatsapp.trim(),
             unlock_code: form.hasSecretCode ? form.unlockCode : '',
             unlock_question: form.hasSecretCode && form.useCustomQuestion ? form.unlockQuestion : '',
             yes_btn_text: form.yesBtnText,
             no_btn_text: form.noBtnText,
             music_url: form.selectedMusicUrl || undefined,
             music_label: form.musicLabel || undefined,
-            story_questions: cleanStoryQuestions,
           },
         }),
       });
       const data = await res.json();
       if (res.ok && data.id) {
         setCreatedCardId(data.id);
+        const newOrderId = data.card?.card_data?.order_id || data.id;
+        setOrderId(newOrderId);
         if (data.creator_token) {
           setCreatorToken(data.creator_token);
           localStorage.setItem(`creator_token_${data.id}`, data.creator_token);
         }
         // Identify this browser as the creator of the card
         localStorage.setItem(`creator_of_${data.id}`, 'true');
-        rememberCheckout(data.id, data.creator_token || null, false);
+        writeCheckoutSession({
+          cardId: data.id,
+          creatorToken: data.creator_token || null,
+          recipientName: submitRecipientName || displayRecipientName,
+          creatorName: submitCreatorName || displayCreatorName,
+          creatorEmail: form.creatorEmail.trim().toLowerCase(),
+          creatorWhatsapp: form.creatorWhatsapp.trim(),
+          orderId: newOrderId,
+          tierId: form.tierId,
+          paid: false,
+        });
+        const orderEmail = data.notifications?.email;
+        const orderWhatsapp = data.notifications?.whatsapp;
+        if (orderEmail?.sent || orderWhatsapp?.sent) {
+          setNotice({
+            tone: 'success',
+            message: 'Tracking link sent. Keep this page open for payment verification.',
+          });
+        } else if (orderEmail || orderWhatsapp) {
+          setNotice({
+            tone: 'info',
+            message: 'Tracking link is saved. Local email/WhatsApp delivery is skipped until provider keys are configured.',
+          });
+        }
         setPaymentStep(true);
       } else {
         setNotice({
@@ -545,28 +554,6 @@ function CustomizePageContent() {
     }
   };
 
-  // Handle mock trigger on mobile viewport
-  const handleMobileMockSuccess = async () => {
-    if (!createdCardId) return;
-    setLoading(true);
-    try {
-      const res = await fetch('/api/payment/webhook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-vibecheck-mock-payment': 'true' },
-        body: JSON.stringify({
-          card_id: createdCardId,
-          payment_id: `mock_mobile_${Date.now()}`,
-          status: 'success'
-        }),
-      });
-      if (res.ok) markCheckoutPaid(createdCardId, creatorToken);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // ── Success phase ───────────────────────────────────
   if (isPaid && createdCardId) {
     return (
@@ -577,6 +564,9 @@ function CustomizePageContent() {
           recipientName={displayRecipientName}
           creatorName={displayCreatorName}
           creatorToken={creatorToken || localStorage.getItem(`creator_token_${createdCardId}`) || undefined}
+          orderId={orderId}
+          creatorEmail={form.creatorEmail}
+          creatorWhatsapp={form.creatorWhatsapp}
         />
       </main>
     );
@@ -585,53 +575,57 @@ function CustomizePageContent() {
   // ── Payment Screen ────────────────────────────
   if (paymentStep && createdCardId && !isPaid) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center p-6 text-center space-y-6" style={{ background: 'var(--bg)' }}>
-        <div className="absolute -top-10 -left-10 w-44 h-44 bg-pink-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-        <RazorpayCheckout
-          cardId={createdCardId}
-          amount={selectedTier.price}
-          onPaid={() => {
-            markCheckoutPaid(createdCardId, creatorToken);
-          }}
-          fallback={(
-            <QRCheckout
-              cardId={createdCardId}
-              amount={selectedTier.price}
-              onPaid={() => {
-                markCheckoutPaid(createdCardId, creatorToken);
-              }}
-              vpa={paymentVpa}
-            />
-          )}
-        />
-
-        <div className="w-full max-w-sm space-y-3">
-          {allowMockPayments && (
-            <button
-              onClick={handleMobileMockSuccess}
-              className="w-full bg-white/8 border border-white/15 hover:bg-white/12 text-neutral-100 font-bold py-3 px-6 rounded-2xl text-xs transition-colors cursor-pointer"
+      <main className="relative min-h-screen overflow-hidden px-4 py-8 text-center sm:px-6" style={{ background: 'var(--bg)' }}>
+        <AmbientBackground />
+        <AnimatePresence>
+          {notice && (
+            <motion.div
+              role={notice.tone === 'error' ? 'alert' : 'status'}
+              initial={{ opacity: 0, y: -18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -12, scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+              className={`vc-form-notice vc-form-notice--${notice.tone}`}
             >
-              Simulate Mock Success Payment 🛠️
-            </button>
+              <span>{notice.message}</span>
+              <button type="button" aria-label="Dismiss notification" onClick={() => setNotice(null)}>×</button>
+            </motion.div>
           )}
+        </AnimatePresence>
+        <div className="pointer-events-none absolute -left-16 top-10 h-64 w-64 rounded-full bg-pink-500/15 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 bottom-10 h-72 w-72 rounded-full bg-amber-400/15 blur-3xl" />
 
-          {allowMockPayments && (
-            <button
-              onClick={() => markCheckoutPaid(createdCardId, creatorToken)}
-              className="w-full bg-white/12 border border-white/20 hover:bg-white/18 text-white font-bold py-3 px-6 rounded-2xl text-xs tracking-wide transition-colors cursor-pointer shadow-lg shadow-black/20"
-            >
-              Bypass payment locally
-            </button>
+        <div className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl flex-col justify-center gap-5">
+          <div className="mx-auto inline-flex w-fit items-center gap-2 rounded-full border border-pink-200/70 bg-white/75 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-pink-500 shadow-lg shadow-pink-100">
+            Final unlock step
+          </div>
+
+          <QRCheckout
+            cardId={createdCardId}
+            amount={selectedTier.price}
+            orderId={orderId}
+            creatorEmail={form.creatorEmail}
+            creatorWhatsapp={form.creatorWhatsapp}
+            onPaid={() => {
+              markCheckoutPaid(createdCardId, creatorToken);
+            }}
+            vpa={paymentVpa}
+          />
+
+          <PaymentTestModeToggle
+            cardId={createdCardId}
+            amount={selectedTier.price}
+            creatorToken={creatorToken}
+            onPaid={() => markCheckoutPaid(createdCardId, creatorToken)}
+          />
+
+          {loading && (
+            <div className="mx-auto mt-1 flex w-fit flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 backdrop-blur">
+              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }} className="text-xl">🌀</motion.div>
+              <p className="text-xs font-bold text-neutral-200">Waiting for payment confirmation...</p>
+            </div>
           )}
         </div>
-
-        {loading && (
-          <div className="flex flex-col items-center gap-2 mt-4">
-            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }} className="text-xl">🌀</motion.div>
-            <p className="text-xs text-neutral-200">Waiting for payment confirmation from bank...</p>
-          </div>
-        )}
       </main>
     );
   }
@@ -644,12 +638,12 @@ function CustomizePageContent() {
             <p className="vc-builder-eyebrow">Choose your card</p>
             <h2 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>What&apos;s the moment?</h2>
             <p className="text-sm leading-relaxed" style={{ color: 'var(--text2)' }}>
-              Pick the card first. The cover, colors, buttons, and mood will match automatically.
+              Pick the feeling first. The colors, buttons, and reveal mood will match automatically.
             </p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text2)' }}>Card type</label>
+            <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text2)' }}>What are you trying to say?</label>
             <div className="grid md:grid-cols-3 gap-3">
               {PRIMARY_TEMPLATE_TYPES.map(t => (
                 <motion.button key={t.id} whileTap={{ scale: 0.96 }}
@@ -779,83 +773,9 @@ function CustomizePageContent() {
             </div>
           </div>
 
-          <div className="vc-question-editor vc-soft-panel">
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div>
-                <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text2)' }}>Tiny story questions *</label>
-                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text3)' }}>
-                  Add {MIN_STORY_QUESTIONS}-{MAX_STORY_QUESTIONS} questions. Each one needs a question and at least 2 answer choices.
-                </p>
-              </div>
-              <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={addStoryQuestion}
-                  disabled={form.storyQuestions.length >= MAX_STORY_QUESTIONS}
-                  className="vc-mini-action disabled:opacity-45 disabled:cursor-not-allowed"
-                >
-                  Add
-                </button>
-                <button
-                  type="button"
-                  onClick={() => set('storyQuestions', cloneStoryQuestions(form.templateType))}
-                  className="vc-mini-action"
-                >
-                  Reset
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {form.storyQuestions.map((question, questionIndex) => (
-                <div key={question.id} className="vc-question-editor__item">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span>{questionIndex + 1}</span>
-                    <input
-                      value={question.eyebrow}
-                      onChange={e => updateStoryQuestion(questionIndex, { eyebrow: e.target.value })}
-                      placeholder="Tiny label"
-                      maxLength={60}
-                      className="vc-builder-input flex-1 px-3 py-2 outline-none text-xs"
-                    />
-                    {form.storyQuestions.length > MIN_STORY_QUESTIONS && (
-                      <button
-                        type="button"
-                        onClick={() => removeStoryQuestion(questionIndex)}
-                        className="vc-question-editor__remove"
-                        aria-label={`Remove question ${questionIndex + 1}`}
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                  <input
-                    value={question.question}
-                    onChange={e => updateStoryQuestion(questionIndex, { question: e.target.value })}
-                    placeholder="Question they will answer..."
-                    maxLength={160}
-                    className="vc-builder-input w-full px-3 py-2.5 outline-none text-xs mb-2"
-                  />
-                  <div className="grid md:grid-cols-3 gap-2">
-                    {question.options.slice(0, 3).map((option, optionIndex) => (
-                      <input
-                        key={`${question.id}-option-${optionIndex}`}
-                        value={option}
-                        onChange={e => updateStoryQuestion(questionIndex, { optionIndex, option: e.target.value })}
-                        placeholder={`Answer ${optionIndex + 1}`}
-                        maxLength={60}
-                        className="vc-builder-input px-3 py-2 outline-none text-xs"
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <div className="space-y-2">
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>Add a song *</label>
-            <p className="text-[11px]" style={{ color: 'var(--text3)' }}>Required. One good song does more than a paragraph.</p>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>Add a song <span className="font-normal opacity-70">(optional)</span></label>
+            <p className="text-[11px]" style={{ color: 'var(--text3)' }}>A song can deepen the reveal, but the message should stand on its own.</p>
             <MusicSelector
               selectedTrackId={form.musicTrackId}
               selectedLabel={form.musicLabel}
@@ -870,52 +790,76 @@ function CustomizePageContent() {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>Add a cover photo</label>
-            <p className="mb-2 text-[11px]" style={{ color: 'var(--text3)' }}>A photo of you two makes it ten times more personal.</p>
-            {form.coverImageUrl ? (
-              <div className="relative rounded-xl overflow-hidden border border-white/10" style={{ height: 160 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={form.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => set('coverImageUrl', '')}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-black/80 hover:bg-black text-white cursor-pointer"
-                >
-                  ✕
-                </button>
+          <div className="vc-bulk-upload-panel">
+            <div className="vc-bulk-upload-head">
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>Upload reveal photos *</label>
+                <p className="text-[11px]" style={{ color: 'var(--text3)' }}>
+                  Add at least {MIN_REVEAL_IMAGES}. Only your uploaded photos will appear in the recipient card.
+                </p>
+              </div>
+              <span>{uploadedImages.length}/{MAX_UPLOAD_IMAGES}</span>
+            </div>
+
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              className="hidden"
+              id="image-upload-input"
+              disabled={isCompressing || uploadedImages.length >= MAX_UPLOAD_IMAGES}
+            />
+            <label
+              htmlFor="image-upload-input"
+              className={`vc-bulk-upload-drop ${
+                isCompressing || uploadedImages.length >= MAX_UPLOAD_IMAGES
+                  ? 'is-disabled'
+                  : ''
+              }`}
+            >
+              {isCompressing ? (
+                <>
+                  <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="text-xl">🌀</motion.span>
+                  <strong>Preparing photos...</strong>
+                  <small>Compressing locally for faster loading</small>
+                </>
+              ) : uploadedImages.length >= MAX_UPLOAD_IMAGES ? (
+                <>
+                  <span className="text-2xl">✅</span>
+                  <strong>Gallery full</strong>
+                  <small>Remove a photo to add another</small>
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl">📸</span>
+                  <strong>Bulk upload photos</strong>
+                  <small>Select multiple images at once</small>
+                </>
+              )}
+            </label>
+
+            {uploadedImages.length ? (
+              <div className="vc-bulk-upload-grid" aria-label="Uploaded reveal photos">
+                {uploadedImages.map((source, index) => (
+                  <div key={`${source.slice(0, 42)}-${index}`} className="vc-bulk-upload-tile">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={source} alt={`Uploaded reveal photo ${index + 1}`} />
+                    <span>{index === 0 ? 'Cover' : String(index + 1).padStart(2, '0')}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeUploadedImage(index)}
+                      aria-label={`Remove uploaded photo ${index + 1}`}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  id="image-upload-input"
-                  disabled={isCompressing}
-                />
-                <label
-                  htmlFor="image-upload-input"
-                  className={`w-full py-6 rounded-xl text-sm font-medium border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors ${
-                    isCompressing
-                      ? 'border-neutral-800 bg-neutral-900/20 text-neutral-500 cursor-not-allowed'
-                      : 'border-white/10 hover:border-white/20 bg-neutral-900/40 text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  {isCompressing ? (
-                    <>
-                      <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="text-xl">🌀</motion.span>
-                      <span>Preparing photo for fast delivery...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-2xl">📸</span>
-                      <span>Upload photo</span>
-                      <span className="text-[10px] text-neutral-500 font-medium">Optimized locally for faster loading</span>
-                    </>
-                  )}
-                </label>
+              <div className="vc-bulk-upload-empty">
+                <strong>No photos yet</strong>
+                <span>The reveal will stay image-free until you upload your own photos.</span>
               </div>
             )}
           </div>
@@ -1019,10 +963,36 @@ function CustomizePageContent() {
       case 3: return (
         <div className="flex flex-col gap-4">
           <div className="space-y-2">
-            <p className="vc-builder-eyebrow">Preview and send</p>
-            <h2 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>This is exactly what they&apos;ll see.</h2>
+            <p className="vc-builder-eyebrow">Order tracking</p>
+            <h2 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Where should we send your tracking link?</h2>
             <p className="text-sm leading-relaxed" style={{ color: 'var(--text2)' }}>
-              Pay once, get the private link, and share it while the moment is still warm.
+              Before payment, add your email and WhatsApp. Every order gets a unique ID and a private creator link.
+            </p>
+          </div>
+          <div className="vc-order-contact-card">
+            <div>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>Email for tracking *</label>
+              <input
+                type="email"
+                value={form.creatorEmail}
+                onChange={e => set('creatorEmail', e.target.value)}
+                placeholder="you@example.com"
+                className="vc-builder-input w-full px-4 py-3 outline-none text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>WhatsApp number *</label>
+              <input
+                type="tel"
+                inputMode="tel"
+                value={form.creatorWhatsapp}
+                onChange={e => set('creatorWhatsapp', e.target.value)}
+                placeholder="+91 98765 43210"
+                className="vc-builder-input w-full px-4 py-3 outline-none text-sm"
+              />
+            </div>
+            <p>
+              We keep this attached to your order only, so the tracking link and payment status do not get lost.
             </p>
           </div>
           {TIERS.map(t => (
@@ -1060,7 +1030,7 @@ function CustomizePageContent() {
             {loading ? 'Generating link...' : `Looks good - send it for ₹${selectedTier.price}`}
           </motion.button>
           <p className="text-xs text-center font-medium leading-relaxed" style={{ color: 'var(--text2)' }}>
-            Secure payment · UPI deep links / QR codes accepted · instant confirmation
+            Secure direct UPI · QR/deep links accepted · admin verified by UTR
           </p>
         </div>
       );
@@ -1099,7 +1069,7 @@ function CustomizePageContent() {
       </AnimatePresence>
 
       {/* Navigation */}
-      <nav className="sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b"
+      <nav className="vc-customize-nav sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b"
         style={{
           background: 'color-mix(in srgb, var(--bg), white 12%)',
           backdropFilter: 'blur(20px) saturate(1.15)',
@@ -1128,10 +1098,10 @@ function CustomizePageContent() {
       </nav>
 
       {/* Main layout container (2 Columns on large screen, 1 Column on mobile) */}
-      <div className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-[1.15fr_0.95fr] gap-10 relative z-10">
+      <div className="vc-builder-workbench max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-[1.15fr_0.95fr] gap-10 relative z-10">
 
         {/* Column 1: Customizer Form */}
-        <div className="space-y-6">
+        <div className="vc-builder-column space-y-6">
           {/* Progress bar */}
           <div className="w-full h-1.5 rounded-full vc-progress-track">
             <motion.div className="h-full rounded-full"
@@ -1176,7 +1146,7 @@ function CustomizePageContent() {
 
         {/* Column 2: Sticky Live Preview Mirror */}
         <div className="hidden lg:block">
-          <div className="sticky top-24 space-y-4">
+          <div className="vc-preview-column sticky top-24 space-y-4">
             <div className="flex items-center justify-between px-2">
               <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Live Simulator Preview</span>
               <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-extrabold px-2 py-0.5 rounded-full animate-pulse">AUTOSAVING</span>
@@ -1232,16 +1202,29 @@ function CustomizePageContent() {
                   </div>
                 )}
 
-                {/* Uploaded Cover Image preview */}
-                {form.coverImageUrl && (
+                {/* Uploaded gallery preview */}
+                {primaryUploadedImage ? (
                   <div className="vc-preview-cover rounded-2xl overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={form.coverImageUrl}
+                      src={primaryUploadedImage}
                       alt="Cover Preview"
                       className="vc-preview-cover__image rounded-2xl mx-auto block"
                       draggable={false}
                     />
+                    {uploadedImages.length > 1 && (
+                      <div className="vc-preview-cover-strip" aria-label="Uploaded photo count">
+                        {uploadedImages.slice(0, 4).map((source, index) => (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img key={`${source.slice(0, 32)}-${index}`} src={source} alt="" draggable={false} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="vc-preview-cover vc-preview-cover--empty rounded-2xl">
+                    <strong>Upload {MIN_REVEAL_IMAGES} photos</strong>
+                    <span>Your images become the full reveal gallery.</span>
                   </div>
                 )}
 
@@ -1265,12 +1248,6 @@ function CustomizePageContent() {
                     {previewBody}
                   </p>
                 </div>
-
-                <CardStoryline
-                  templateType={form.templateType}
-                  questions={cleanStoryQuestions}
-                  compact
-                />
 
                 {/* Runaway buttons mock */}
                 {TEMPLATE_TYPES.find(t => t.id === form.templateType)?.hasRunaway && (

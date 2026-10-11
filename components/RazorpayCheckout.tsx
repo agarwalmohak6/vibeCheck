@@ -6,6 +6,7 @@ type RazorpayCheckoutProps = {
   cardId: string;
   amount: number;
   onPaid: () => void;
+  creatorToken?: string | null;
   fallback?: ReactNode;
 };
 
@@ -73,7 +74,7 @@ function formatPrefillContact(value: string) {
   return digits;
 }
 
-export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: RazorpayCheckoutProps) {
+export default function RazorpayCheckout({ cardId, amount, onPaid, creatorToken, fallback }: RazorpayCheckoutProps) {
   const [isStarting, setIsStarting] = useState(false);
   const [isFallbackVisible, setIsFallbackVisible] = useState(false);
   const [showSimulator, setShowSimulator] = useState(false);
@@ -86,24 +87,25 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
     setIsVerifyingSim(true);
     setError('');
     try {
-      const verifyRes = await fetch('/api/verify-payment', {
+      const verifyRes = await fetch('/api/payment/test-mode', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(creatorToken ? { 'x-vibecheck-creator-token': creatorToken } : {}),
+        },
         body: JSON.stringify({
           card_id: cardId,
-          razorpay_order_id: orderIdToUse || currentOrderId || `order_mock_${Date.now()}`,
-          razorpay_payment_id: `pay_sim_${Date.now()}`,
-          razorpay_signature: 'mock_signature',
+          reason: orderIdToUse || currentOrderId || 'razorpay_sandbox_simulator',
         }),
       });
       if (verifyRes.ok) {
         onPaid();
       } else {
         const data = await verifyRes.json();
-        setError(data.error || 'Mock verification failed');
+        setError(data.error || 'Test mode payment could not be flagged.');
       }
     } catch {
-      setError('Network error while simulating payment verification.');
+      setError('Network error while flagging test mode payment.');
     } finally {
       setIsVerifyingSim(false);
       setShowSimulator(false);
@@ -144,7 +146,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
 
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded || !window.Razorpay) {
-        setError('Payment sheet could not load. You can use direct UPI below.');
+        setError('The secure payment sheet could not load. A manual UPI recovery option is available below.');
         setIsFallbackVisible(true);
         return;
       }
@@ -165,6 +167,27 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
               contact: prefillContact,
             }
           : undefined,
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: 'Pay with UPI',
+                instruments: [{ method: 'upi' }],
+              },
+              other: {
+                name: 'Other payment methods',
+                instruments: [
+                  { method: 'card' },
+                  { method: 'netbanking' },
+                  { method: 'wallet' },
+                ],
+              },
+            },
+            sequence: ['block.upi', 'block.other'],
+            preferences: { show_default_blocks: false },
+          },
+        },
+        retry: { enabled: true, max_count: 3 },
         theme: {
           color: '#e91e8c',
           backdrop_color: '#fff0f6',
@@ -173,7 +196,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
           ondismiss: () => {
             setIsStarting(false);
             setIsFallbackVisible(true);
-            setError('Razorpay did not complete this time. Direct UPI is ready below, and your card will still unlock after UTR verification.');
+            setError('Payment was not completed. You can reopen UPI or use the manual recovery option below.');
           },
         },
         handler: async (response: RazorpaySuccessResponse) => {
@@ -190,7 +213,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
           const verifyData = await verifyRes.json();
 
           if (!verifyRes.ok) {
-            setError(verifyData.error || 'Payment completed, but verification failed. Use direct UPI below and submit the UTR.');
+          setError(verifyData.error || 'Payment completed, but we could not verify it yet. Keep this page open and try again.');
             setIsFallbackVisible(true);
             setIsStarting(false);
             return;
@@ -201,14 +224,14 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
       });
 
       checkout.on('payment.failed', () => {
-        setError('Payment was not completed. Try Razorpay again or use direct UPI below.');
+        setError('Payment was not completed. Try UPI again or use the manual recovery option below.');
         setIsFallbackVisible(true);
         setIsStarting(false);
       });
 
       checkout.open();
     } catch {
-      setError('Could not start Razorpay right now. Direct UPI is ready below.');
+      setError('Could not start the secure checkout. A manual UPI recovery option is available below.');
       setIsFallbackVisible(true);
     } finally {
       setIsStarting(false);
@@ -231,18 +254,18 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
               Your VibeCheck is almost ready
             </div>
             <div className="space-y-3">
-              <h2 className="font-[var(--font-display)] text-5xl font-black leading-[0.92] text-[#3d1a2e] sm:text-6xl">
-                The best thing for them is cooking.
-              </h2>
-              <p className="max-w-xl text-base font-bold leading-relaxed text-[#7b3f6e] sm:text-lg">
-                We have wrapped the card, hidden the tiny questions, warmed up the song, and kept the reveal waiting at the door.
-              </p>
+                <h2 className="font-[var(--font-display)] text-5xl font-black leading-[0.92] text-[#3d1a2e] sm:text-6xl">
+                  Your private moment is ready.
+                </h2>
+                <p className="max-w-xl text-base font-bold leading-relaxed text-[#7b3f6e] sm:text-lg">
+                We have wrapped the reveal and kept the private link waiting until your payment is confirmed.
+                </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
               {[
-                ['💗', 'One private link'],
-                ['🎵', 'Song attached'],
+                ['💗', 'One honest message'],
+                ['✨', 'Made for one person'],
                 ['🔐', 'Unlocks after payment'],
               ].map(([icon, label]) => (
                 <div key={label} className="rounded-3xl border border-pink-200 bg-white/70 p-4 shadow-xl shadow-pink-100/70">
@@ -274,7 +297,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
                   Pay ₹{amount} and unlock instantly
                 </h3>
                 <p className="mx-auto max-w-sm text-xs leading-relaxed text-neutral-300">
-                  Razorpay can show UPI, Cards, NetBanking or Wallets. If unavailable, direct UPI is ready below.
+                  UPI is placed first for a fast phone checkout. After the bank confirms it, the private link unlocks automatically.
                 </p>
               </div>
 
@@ -296,7 +319,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
                 disabled={isStarting}
                 className="w-full rounded-2xl bg-linear-to-r from-pink-500 via-rose-500 to-amber-500 px-5 py-4 text-sm font-black text-white shadow-xl shadow-pink-500/25 transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
               >
-                {isStarting ? 'Opening secure payment...' : 'Pay securely with Razorpay'}
+                {isStarting ? 'Opening secure payment...' : 'Pay with UPI or card'}
               </button>
 
               <button
@@ -304,7 +327,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
                 onClick={() => setIsFallbackVisible((value) => !value)}
                 className="text-[12px] font-black text-neutral-300 underline decoration-white/20 underline-offset-4 hover:text-pink-200"
               >
-                {isFallbackVisible ? 'Hide direct UPI backup' : 'Razorpay stuck? Use direct UPI backup'}
+                {isFallbackVisible ? 'Hide manual UPI backup' : 'Need another way? Show manual UPI'}
               </button>
 
               {error && (
@@ -312,6 +335,9 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
                   {error}
                 </p>
               )}
+              <p className="text-[11px] leading-relaxed text-neutral-400">
+                UPI payments made inside Razorpay are verified automatically. Your private link unlocks only after the server confirms the payment.
+              </p>
             </div>
           </section>
         </div>
@@ -374,7 +400,7 @@ export default function RazorpayCheckout({ cardId, amount, onPaid, fallback }: R
                 disabled={isVerifyingSim}
                 className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white font-black text-sm shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-transform cursor-pointer disabled:opacity-50"
               >
-                {isVerifyingSim ? 'Verifying payment...' : `Simulate Successful Payment (₹${amount}) ⚡`}
+                {isVerifyingSim ? 'Flagging test payment...' : `Flag Test Mode Success (₹${amount}) ⚡`}
               </button>
 
               <button

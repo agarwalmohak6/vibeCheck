@@ -1,10 +1,10 @@
 export const SITE_NAME = "VibeCheck";
 
 export const SITE_TITLE =
-  "VibeCheck - Private interactive greeting cards for one person";
+  "VibeCheck - Say the thing. Make it unforgettable.";
 
 export const SITE_DESCRIPTION =
-  "Create private interactive greeting cards for sorry, happy birthday, bestie, love, and special moments. Add a photo, song, tiny questions, and one private link.";
+  "Create a beautiful private moment for feelings, proposals, and sincere apologies. Add your words, share one link, and let them respond on their phone.";
 
 export const DEFAULT_SITE_URL = "https://vibecheck-gh7u.onrender.com";
 
@@ -15,19 +15,17 @@ export const SITE_URL = (
 export const SITE_KEYWORDS = [
   "VibeCheck",
   "VibeCheck cards",
-  "private greeting cards",
-  "interactive greeting cards",
-  "digital greeting card",
-  "personalized greeting card",
-  "online greeting card",
+  "private emotional message",
+  "interactive proposal",
+  "digital apology card",
+  "personalized feelings message",
+  "private digital card",
   "private digital card",
   "sorry card online",
   "apology card",
-  "happy birthday card online",
-  "birthday digital card",
-  "bestie card",
-  "best friend card",
-  "love card online",
+  "proposal message online",
+  "feelings message online",
+  "private love message",
   "digital card India",
   "personalized card India",
 ];
@@ -41,16 +39,6 @@ export const PUBLIC_SEO_ROUTES = [
   {
     path: "/sorry-card",
     priority: 0.9,
-    changeFrequency: "monthly" as const,
-  },
-  {
-    path: "/birthday-card",
-    priority: 0.85,
-    changeFrequency: "monthly" as const,
-  },
-  {
-    path: "/bestie-card",
-    priority: 0.85,
     changeFrequency: "monthly" as const,
   },
 ];

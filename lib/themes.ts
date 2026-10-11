@@ -21,7 +21,7 @@ export const THEMES: Theme[] = [
     label: 'Midnight Romance',
     emoji: '🌙',
     description: 'Dark, cinematic, and high-conversion',
-    coverImage: '/themes/midnight_romance.png',
+    coverImage: '/themes/proposal_universal_cover.png',
     preview: {
       bg: '#0B0F19',
       accent: '#FF2E93',
@@ -102,12 +102,12 @@ export const TEMPLATE_TYPES: {
 }[] = [
   {
     id: 'shoot_shot',
-    label: 'Love Letter 💘',
+    label: 'Ask the big question 💍',
     emoji: '💍',
-    description: 'A cinematic confession for someone special',
+    description: 'A private, beautiful way to make the big ask',
     builderHint: 'Best when the message needs to feel brave, private, and memorable.',
     hasRunaway: true,
-    defaultCoverImage: '/themes/midnight_romance.png',
+    defaultCoverImage: '/themes/proposal_universal_cover.png',
     recommendedTheme: 'midnight_romance',
     defaultYesText: 'YES 💖',
     defaultNoText: 'No 💔',
@@ -144,7 +144,7 @@ export const TEMPLATE_TYPES: {
     description: 'For when "sorry" over text just does not cut it.',
     builderHint: 'Best for apologizing without sounding lazy, copied, or performative.',
     hasRunaway: true,
-    defaultCoverImage: '/themes/maan_jao_cover.png',
+    defaultCoverImage: '/themes/sorry_universal_cover.png',
     recommendedTheme: 'soft_coquette',
     defaultYesText: 'Forgiven',
     defaultNoText: 'No way',
@@ -181,7 +181,7 @@ export const TEMPLATE_TYPES: {
     description: 'A birthday card that actually feels like a gift.',
     builderHint: 'Best for friends, siblings, and partners when a plain story post feels too lazy.',
     hasRunaway: true,
-    defaultCoverImage: '/themes/birthday_roast_cover.png',
+    defaultCoverImage: '/themes/birthday_universal_cover.png',
     recommendedTheme: 'desi_festive',
     defaultYesText: 'Aww, thanks',
     defaultNoText: 'Still an idiot',
@@ -213,15 +213,15 @@ export const TEMPLATE_TYPES: {
   },
   {
     id: 'bestie_check',
-    label: 'Bestie Card ✨',
+    label: 'Tell them how you feel 💗',
     emoji: '✨',
-    description: "Tell your person they're one of the best parts of your life.",
-    builderHint: 'Best for affection, inside jokes, and quick shareability without making it too heavy.',
+    description: 'Say the honest thing that never fits in a normal text.',
+    builderHint: 'Best for saying the honest thing without making it feel like a copied paragraph.',
     hasRunaway: true,
     defaultCoverImage: '/themes/bestie_cover.png',
     recommendedTheme: 'kdrama_romance',
-    defaultYesText: 'Love you bestie',
-    defaultNoText: 'Eww, cringe',
+    defaultYesText: 'I feel it too 💗',
+    defaultNoText: 'Let me think',
     gifSearchTerms: ['best friends cheers', 'bestie drinks toast', 'girls night sparkle'],
     storyQuestions: [
       { id: 'vibe', eyebrow: 'Vibe check', question: 'Is this person officially your chaos partner?', options: ['Unfortunately yes', 'Certified'] },
@@ -233,18 +233,18 @@ export const TEMPLATE_TYPES: {
     messagePresets: [
       {
         style: 'Sincere',
-        title: 'One of the best parts',
-        body: "I don't say this enough, but you're one of the best parts of my life.\nThank you for being exactly who you are, every late-night call, every ridiculous plan.\nI've got you, always.",
+        title: 'I need to say this properly',
+        body: "I don't know the perfect way to say this, so I'll say the honest version.\nYou matter to me more than I usually let on.\nI wanted you to know that, without hiding behind a normal text.",
       },
       {
-        style: 'Funny',
-        title: 'Official notice',
-        body: "Official notice: you've been appointed my Chief Chaos Partner and Emotional Support Human, effective immediately.\nNo refunds, no returns.\nLove you, bestie.",
+        style: 'Playful',
+        title: 'A tiny confession',
+        body: "This is me being brave for approximately thirty seconds.\nI like you. A lot.\nPlease respond with kindness—and maybe a little honesty.",
       },
       {
         style: 'Soft',
-        title: 'My person',
-        body: 'Some people come and go, but you feel like forever.\nThank you for being my person through everything.\nJust a tiny reminder that I love you, always.',
+        title: 'No mixed signals',
+        body: "I like the way life feels when you're in it.\nI don't want to keep pretending this is casual for me.\nWould you give this a real chance?",
       },
     ],
   },
@@ -287,41 +287,21 @@ export const TEMPLATE_TYPES: {
   },
 ];
 
-export const PRIMARY_TEMPLATE_IDS: TemplateId[] = ['maan_jao', 'birthday_roast', 'bestie_check'];
-export const PRIMARY_TEMPLATE_TYPES = TEMPLATE_TYPES.filter((template) =>
-  PRIMARY_TEMPLATE_IDS.includes(template.id)
-);
+export const PRIMARY_TEMPLATE_IDS: TemplateId[] = ['bestie_check', 'shoot_shot', 'maan_jao'];
+export const PRIMARY_TEMPLATE_TYPES = PRIMARY_TEMPLATE_IDS
+  .map((id) => TEMPLATE_TYPES.find((template) => template.id === id))
+  .filter((template): template is (typeof TEMPLATE_TYPES)[number] => Boolean(template));
 
 export const TIERS = [
   {
-    id: '1_day',
-    label: 'Short & Sweet',
-    price: 29,
-    duration: '1 Day',
-    durationHours: 24,
-    icon: '⚡',
-    description: 'Best for fast, high-intent sends',
-    popular: false,
-  },
-  {
-    id: '2_day',
-    label: 'Most Popular',
-    price: 69,
-    duration: '2 Days',
-    durationHours: 48,
-    icon: '🔥',
-    description: 'Best balance of urgency and shareability',
-    popular: true,
-  },
-  {
-    id: 'lifetime',
-    label: 'Lifetime',
-    price: 99,
-    duration: 'Lifetime',
+    id: 'one_moment',
+    label: 'One unforgettable moment',
+    price: 199,
+    duration: 'Keep it forever',
     durationHours: null,
-    icon: '💎',
-    description: 'Best for keepsake cards they can revisit anytime',
-    popular: false,
+    icon: '💌',
+    description: 'Private link, interactive reveal, photo, music, and replies',
+    popular: true,
   },
 ];
 

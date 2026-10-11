@@ -18,6 +18,10 @@ export interface PublicCardData {
   music_url?: string;
   music_label?: string;
   cover_image_url?: string;
+  cover_image_urls?: string[];
+  creator_email?: string;
+  creator_whatsapp?: string;
+  order_id?: string;
   yes_btn_text?: string;
   no_btn_text?: string;
   unlock_question?: string;

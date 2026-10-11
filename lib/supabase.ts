@@ -21,6 +21,10 @@ export interface CardData {
   unlock_code?: string;
   unlock_question?: string;
   cover_image_url?: string;
+  cover_image_urls?: string[];
+  creator_email?: string;
+  creator_whatsapp?: string;
+  order_id?: string;
   yes_btn_text?: string;
   no_btn_text?: string;
   has_secret_code?: boolean;

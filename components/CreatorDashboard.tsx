@@ -88,11 +88,15 @@ export default function CreatorDashboard() {
   };
 
   useEffect(() => {
-    loadAccount()
-      .catch((err: Error) => {
-        setError(err.message);
-        setStatus('login');
-      });
+    const timer = window.setTimeout(() => {
+      loadAccount()
+        .catch((err: Error) => {
+          setError(err.message);
+          setStatus('login');
+        });
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleAuth = async (event: FormEvent<HTMLFormElement>) => {
@@ -169,7 +173,7 @@ export default function CreatorDashboard() {
               VibeCheck
             </Link>
             <h1 className="mt-2 font-[var(--font-display)] text-5xl font-black leading-none">
-              Your creator dashboard
+              Your private creator space
             </h1>
             <p className="mt-2 max-w-2xl text-sm font-bold text-[#7b3f6e]">
               Track cards you created, payment status, recipient links, private creator rooms, and reactions.

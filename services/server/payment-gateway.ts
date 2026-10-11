@@ -63,6 +63,46 @@ function verifyCheckoutSignature(orderId: string, paymentId: string, signature: 
   return providedBuffer.length === expectedBuffer.length && timingSafeEqual(providedBuffer, expectedBuffer);
 }
 
+async function validateRazorpayPaymentForCard(input: {
+  cardId: string;
+  orderId?: string;
+  paymentId: string;
+  amount?: number;
+  currency?: string;
+}) {
+  const card = await getPublicCard(input.cardId);
+  if (!card) return { ok: false as const, reason: 'CARD_NOT_FOUND' };
+
+  const tier = TIERS.find((item) => item.id === card.tier_selected) || TIERS[0];
+  const expectedAmount = tier.price * 100;
+  if (input.amount !== undefined && input.amount !== expectedAmount) {
+    return { ok: false as const, reason: 'AMOUNT_MISMATCH' };
+  }
+  if (input.currency && input.currency !== 'INR') {
+    return { ok: false as const, reason: 'CURRENCY_MISMATCH' };
+  }
+
+  // The signed checkout response proves the browser received a valid Razorpay
+  // response. Fetching the payment from Razorpay as well prevents a valid
+  // signature from being replayed against the wrong card or amount.
+  if (isRazorpayConfigured() && input.orderId && !input.orderId.startsWith('order_mock_')) {
+    const client = getRazorpayClient();
+    const payment = await client.payments.fetch(input.paymentId);
+    const status = String(payment.status || '').toLowerCase();
+    if (String(payment.order_id || '') !== input.orderId) {
+      return { ok: false as const, reason: 'ORDER_MISMATCH' };
+    }
+    if (Number(payment.amount) !== expectedAmount || String(payment.currency || 'INR') !== 'INR') {
+      return { ok: false as const, reason: 'AMOUNT_MISMATCH' };
+    }
+    if (!['authorized', 'captured'].includes(status)) {
+      return { ok: false as const, reason: 'PAYMENT_NOT_CAPTURED' };
+    }
+  }
+
+  return { ok: true as const, reason: null };
+}
+
 export async function createRazorpayOrder(input: RazorpayCreateOrderInput): Promise<GenericRazorpayOrderResult> {
   if (!isRazorpayConfigured()) {
     return {
@@ -125,6 +165,14 @@ export async function createRazorpayOrderForCard(cardId: string): Promise<Razorp
     amount: amountInPaise,
     currency: 'INR',
     receipt,
+    payment: {
+      capture: 'automatic',
+      capture_options: {
+        automatic_expiry_period: 12,
+        manual_expiry_period: 720,
+        refund_speed: 'normal',
+      },
+    },
     notes: {
       card_id: card.id,
       tier: card.tier_selected,
@@ -171,6 +219,13 @@ export async function verifyRazorpayCheckoutPayment(input: PaymentVerifyInput) {
     return { ok: false, reason: 'INVALID_SIGNATURE' };
   }
 
+  const paymentCheck = await validateRazorpayPaymentForCard({
+    cardId: input.card_id,
+    orderId: input.razorpay_order_id,
+    paymentId: input.razorpay_payment_id,
+  });
+  if (!paymentCheck.ok) return paymentCheck;
+
   const ok = await markCardPaymentVerified(
     input.card_id,
     input.razorpay_payment_id,
@@ -179,6 +234,16 @@ export async function verifyRazorpayCheckoutPayment(input: PaymentVerifyInput) {
   );
 
   return { ok, reason: ok ? null : 'CARD_NOT_FOUND' };
+}
+
+export async function verifyRazorpayWebhookPayment(input: {
+  cardId: string;
+  orderId?: string;
+  paymentId: string;
+  amount?: number;
+  currency?: string;
+}) {
+  return validateRazorpayPaymentForCard(input);
 }
 
 export async function verifyRazorpayPaymentSignature(input: RazorpayVerifyPaymentInput) {

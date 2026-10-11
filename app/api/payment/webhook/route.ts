@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { paymentWebhookSchema } from '@/lib/contracts';
 import { isMockPaymentsEnabled } from '@/services/server/config';
-import { markCardPaymentVerified } from '@/services/server/card-store';
-import { verifyRazorpayWebhook } from '@/services/server/security';
+import { getCardIdForProviderOrder, getPublicCard, markCardPaymentVerified } from '@/services/server/card-store';
+import { createAccessToken, verifyRazorpayWebhook } from '@/services/server/security';
+import { verifyRazorpayWebhookPayment } from '@/services/server/payment-gateway';
+import { sendCreatorPaymentVerifiedNotifications } from '@/services/server/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,12 +32,26 @@ export async function POST(req: NextRequest) {
       ? body.payload.payment.entity as Record<string, unknown>
       : null;
 
+    const paymentNotes = razorpayPayment && typeof razorpayPayment.notes === 'object' && razorpayPayment.notes
+      ? razorpayPayment.notes as Record<string, unknown>
+      : null;
+    const paymentOrderId = razorpayPayment && typeof razorpayPayment.order_id === 'string'
+      ? razorpayPayment.order_id
+      : undefined;
+    const notesCardId = paymentNotes && typeof paymentNotes.card_id === 'string'
+      ? paymentNotes.card_id
+      : undefined;
+    const recoveredCardId = !notesCardId && paymentOrderId
+      ? await getCardIdForProviderOrder(paymentOrderId)
+      : null;
+
     const normalizedBody = razorpayPayment
       ? {
-          card_id: typeof razorpayPayment.notes === 'object' && razorpayPayment.notes
-            ? (razorpayPayment.notes as Record<string, unknown>).card_id
-            : undefined,
+          card_id: notesCardId || recoveredCardId || undefined,
           payment_id: razorpayPayment.id,
+          order_id: paymentOrderId,
+          amount: razorpayPayment.amount,
+          currency: razorpayPayment.currency,
           status: razorpayPayment.status,
         }
       : body;
@@ -52,10 +68,42 @@ export async function POST(req: NextRequest) {
     }
 
     const paymentId = parsed.data.payment_id || `verified_${Date.now()}`;
-    const ok = await markCardPaymentVerified(parsed.data.card_id, paymentId, parsed.data.extends_at);
+    const paymentCheck = await verifyRazorpayWebhookPayment({
+      cardId: parsed.data.card_id,
+      orderId: parsed.data.order_id,
+      paymentId,
+      amount: parsed.data.amount,
+      currency: parsed.data.currency,
+    });
+    if (!paymentCheck.ok) {
+      return NextResponse.json({ error: 'Payment could not be matched to this card.' }, { status: 400 });
+    }
+
+    const ok = await markCardPaymentVerified(
+      parsed.data.card_id,
+      paymentId,
+      parsed.data.extends_at,
+      parsed.data.order_id,
+    );
     if (!ok) return NextResponse.json({ error: 'Card not found' }, { status: 404 });
 
-    return NextResponse.json({ success: true, card_id: parsed.data.card_id });
+    const card = await getPublicCard(parsed.data.card_id);
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
+    const notifications = card
+      ? await sendCreatorPaymentVerifiedNotifications({
+          creatorEmail: card.card_data.creator_email,
+          creatorWhatsapp: card.card_data.creator_whatsapp,
+          orderId: card.card_data.order_id || card.id,
+          recipientName: card.recipient_name,
+          creatorName: card.creator_name,
+          trackingUrl: `${baseUrl.replace(/\/$/, '')}/card/${card.id}?ct=${encodeURIComponent(createAccessToken(card.id, 'creator'))}`,
+        }).catch((error) => {
+          console.error('Creator payment verified notifications failed:', error);
+          return null;
+        })
+      : null;
+
+    return NextResponse.json({ success: true, notifications, card_id: parsed.data.card_id });
   } catch (err) {
     console.error('Payment webhook error:', err);
     return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });

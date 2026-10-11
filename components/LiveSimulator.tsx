@@ -15,7 +15,7 @@ const TEMPLATE_SAMPLES: Record<
 > = {
   shoot_shot: {
     emoji: "💍",
-    badge: "Shoot Your Shot",
+    badge: "Proposal",
     title: "A little something I made for you",
     body: "I wanted this to feel more personal than a text.\nMore private than a story.\nAnd more memorable than a screenshot.\nSo here it is, just for you.",
   },
@@ -32,10 +32,10 @@ const TEMPLATE_SAMPLES: Record<
     body: "Another year down, and somehow you're still this iconic.\nWishing you a birthday as extra as you are, cake first, adulting later.\nHere's to more stories, more chaos, and more reasons to celebrate you.",
   },
   bestie_check: {
-    emoji: "✨",
-    badge: "Bestie Card",
-    title: "One of the best parts",
-    body: "I don't say this enough, but you're one of the best parts of my life.\nThank you for being exactly who you are, every late-night call, every ridiculous plan.\nI've got you, always.",
+    emoji: "💗",
+    badge: "Feelings",
+    title: "I need to say this properly",
+    body: "I don't know the perfect way to say this, so I'll say the honest version.\nYou matter to me more than I usually let on.\nI wanted you to know that, without hiding behind a normal text.",
   },
   netflix_chill: {
     emoji: "🍿",
@@ -287,8 +287,8 @@ export default function LiveSimulator() {
                       <strong>{sample.badge}</strong>
                     </div>
                     <div className="vc-sim-unlock-card">
-                      <span>Tiny story</span>
-                      <strong>3 questions before the answer</strong>
+                      <span>One honest message</span>
+                      <strong>A private answer when they are ready</strong>
                     </div>
                     <div className="vc-sim-unlock-card">
                       <span>After they reply</span>
@@ -378,8 +378,8 @@ export default function LiveSimulator() {
                     </motion.div>
 
                     <div className="vc-simulator-locked-card">
-                      <span>A tiny story before the answer</span>
-                      <strong>Questions, buttons, and replies continue here.</strong>
+                      <span>Made for one person</span>
+                      <strong>One-tap answer, private reply room, and shareable link.</strong>
                     </div>
                   </div>
 
@@ -387,7 +387,7 @@ export default function LiveSimulator() {
                     <span>Preview unlocked</span>
                     <h3>Want to see the full card?</h3>
                     <p>
-                      Create your card and pay to unlock the full reveal,
+                      Create your card and pay to publish the full reveal,
                       answer flow, reply room, and private send link.
                     </p>
                     <Link href={`/customize?type=${activeTemplate}&new=1`}>
@@ -458,8 +458,8 @@ export default function LiveSimulator() {
                   <h3>Open the card to reveal the full moment.</h3>
                   <p>
                     The recipient gets a polished card preview first. The full
-                    story, answers, replies, and private link stay locked until
-                    it feels worth paying for.
+                    message, answer, reply room, and private link stay locked
+                    until it feels worth paying for.
                   </p>
                   <button type="button" onClick={handleOpen} disabled={isOpening}>
                     {isOpening ? "Opening..." : "Open demo card"}
@@ -482,8 +482,8 @@ export default function LiveSimulator() {
                     </div>
 
                     <div className="vc-simulator-desktop__story">
-                      <small>A tiny story before the answer</small>
-                      <strong>The questions, choices, replies, and ending unlock after payment.</strong>
+                      <small>The moment after they open</small>
+                      <strong>Your message, their answer, and a private reply room.</strong>
                       <div>
                         <span>Custom questions</span>
                         <span>Private answer</span>
@@ -497,7 +497,7 @@ export default function LiveSimulator() {
                     <h3>See the full card</h3>
                     <p>
                       Pay only when the demo feels send-worthy. The real card
-                      opens with the complete story, answer flow, and private
+                      opens with the complete message, answer flow, and private
                       link for your person.
                     </p>
                     <Link href={`/customize?type=${activeTemplate}&new=1`}>

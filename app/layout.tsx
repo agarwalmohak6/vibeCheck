@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   authors: [{ name: SITE_NAME, url: SITE_URL }],
   creator: SITE_NAME,
   publisher: SITE_NAME,
-  category: "Private digital greeting cards",
+  category: "Private emotional messages",
   keywords: SITE_KEYWORDS,
   alternates: {
     canonical: "/",
@@ -91,7 +91,7 @@ export const metadata: Metadata = {
         url: absoluteUrl("/images/hero_image.png"),
         width: 1024,
         height: 1024,
-        alt: "VibeCheck private interactive greeting card preview",
+        alt: "VibeCheck private emotional message preview",
       },
     ],
     locale: "en_IN",

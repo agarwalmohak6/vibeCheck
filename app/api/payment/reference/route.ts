@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { paymentReferenceSchema } from '@/lib/contracts';
-import { submitUpiPaymentReference } from '@/services/server/card-store';
+import { getPublicCard, submitUpiPaymentReference } from '@/services/server/card-store';
+import { sendAdminPaymentReviewNotifications } from '@/services/server/notifications';
 import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Card not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, ...status });
+    const card = await getPublicCard(parsed.data.card_id);
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
+    const notifications = card
+      ? await sendAdminPaymentReviewNotifications({
+          baseUrl,
+          orderId: card.card_data.order_id || card.id,
+          cardId: card.id,
+          recipientName: card.recipient_name,
+          creatorName: card.creator_name,
+          paymentReference: status.payment_reference || parsed.data.utr,
+        }).catch((error) => {
+          console.error('Admin payment review notifications failed:', error);
+          return null;
+        })
+      : null;
+
+    return NextResponse.json({ success: true, notifications, ...status });
   } catch (err) {
     if (err instanceof Error && err.message === 'PAYMENT_REFERENCE_ALREADY_USED') {
       return NextResponse.json({ error: 'This UPI reference is already linked to another card.' }, { status: 409 });

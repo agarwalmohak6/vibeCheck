@@ -11,22 +11,30 @@ interface QRCheckoutProps {
   amount: number;
   onPaid: () => void;
   vpa?: string;
+  orderId?: string;
+  creatorEmail?: string;
+  creatorWhatsapp?: string;
 }
 
-export default function QRCheckout({ cardId, amount, onPaid, vpa }: QRCheckoutProps) {
+export default function QRCheckout({
+  cardId,
+  amount,
+  onPaid,
+  vpa,
+  orderId,
+  creatorEmail,
+  creatorWhatsapp,
+}: QRCheckoutProps) {
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
   const [referenceSubmitted, setReferenceSubmitted] = useState(false);
-  const allowMockPayments = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS !== 'false';
   const configuredVpa = (vpa || process.env.NEXT_PUBLIC_UPI_VPA || '').trim();
   const hasValidVpa = isValidUpiVpa(configuredVpa);
 
   // 1. Build the UPI Intent URL
   const payeeName = "VibeCheck";
-  const txnId = cardId.replace(/-/g, '').substring(0, 32); // clean txn id
+  const txnId = (orderId || cardId).replace(/[^A-Za-z0-9]/g, '').substring(0, 32); // clean txn id
   const upiIntent = hasValidVpa
-    ? buildUpiIntent(configuredVpa, payeeName, txnId, amount, `VibeCheck Premium ID ${cardId.substring(0, 8)}`)
+    ? buildUpiIntent(configuredVpa, payeeName, txnId, amount, `VibeCheck ${orderId || cardId.substring(0, 8)}`)
     : '';
 
   // 2. Countdown Timer
@@ -97,37 +105,8 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa }: QRCheckoutPr
     };
   }, [cardId, onPaid, timeLeft]);
 
-  // 5. Mock Payment Trigger (to bypass payment in dev/demo)
-  const handleMockPayment = async () => {
-    setIsVerifying(true);
-    setErrorMsg('');
-    try {
-      const res = await fetch('/api/payment/webhook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-vibecheck-mock-payment': 'true' },
-        body: JSON.stringify({
-          card_id: cardId,
-          payment_id: `mock_txn_${Date.now()}`,
-          status: 'success'
-        }),
-      });
-
-      if (res.ok) {
-        onPaid();
-      } else {
-        const errData = await res.json();
-        setErrorMsg(errData.error || 'Failed to trigger mock payment');
-      }
-    } catch (err) {
-      setErrorMsg('Network error trying to simulate payment');
-      console.error(err);
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
   return (
-    <section className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-[2.5rem] border border-pink-200/80 bg-white/[0.82] p-4 text-left shadow-2xl shadow-pink-200/50 backdrop-blur sm:p-6 lg:p-8">
+    <section className="relative mx-auto w-full max-w-5xl overflow-hidden rounded-[1.75rem] border border-pink-200/80 bg-white/[0.86] p-3 text-left shadow-2xl shadow-pink-200/50 backdrop-blur sm:rounded-[2.25rem] sm:p-5 lg:p-7">
       <div className="pointer-events-none absolute -left-16 top-8 h-64 w-64 rounded-full bg-pink-300/45 blur-3xl" />
       <div className="pointer-events-none absolute right-[-4rem] top-[-4rem] h-72 w-72 rounded-full bg-amber-200/55 blur-3xl" />
       <div className="pointer-events-none absolute bottom-[-6rem] left-1/3 h-72 w-72 rounded-full bg-rose-300/35 blur-3xl" />
@@ -135,23 +114,31 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa }: QRCheckoutPr
       <div className="pointer-events-none absolute right-14 top-12 text-4xl opacity-20">🍰</div>
       <div className="pointer-events-none absolute bottom-10 right-1/3 text-5xl opacity-20">💌</div>
 
-      <div className="relative grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
-        <div className="flex flex-col justify-between rounded-[2rem] border border-pink-200 bg-linear-to-br from-white via-pink-50 to-amber-50 p-5 shadow-xl shadow-pink-100/80">
+      <div className="relative grid gap-4 lg:grid-cols-[0.9fr_1.1fr] lg:items-stretch">
+        <div className="order-2 flex flex-col justify-between rounded-[1.5rem] border border-pink-200 bg-linear-to-br from-white via-pink-50 to-amber-50 p-4 shadow-xl shadow-pink-100/80 sm:rounded-[2rem] sm:p-5 lg:order-1">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-pink-500">Direct UPI backup</p>
-            <h3 className="mt-3 font-[var(--font-display)] text-4xl font-black leading-[0.95] text-[#3d1a2e] sm:text-5xl">
-              Your surprise is still cooking.
+            <p className="text-[11px] font-black uppercase tracking-[0.24em] text-pink-500">UPI checkout</p>
+            <h3 className="mt-3 font-[var(--font-display)] text-3xl font-black leading-[0.95] text-[#3d1a2e] sm:text-5xl">
+              Pay fast. Paste UTR. Unlock clean.
             </h3>
             <p className="mt-3 text-sm font-bold leading-relaxed text-[#7b3f6e]">
-              Razorpay was being moody, so here is the cute manual route. Pay, paste the UTR, and the card unlocks after verification.
+              Tap the UPI button on mobile or scan the QR on desktop. After payment, submit the exact UTR so admin can verify and unlock the card.
             </p>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          <div className="mt-5 rounded-3xl border border-pink-200 bg-white/70 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-pink-500">Order tracking</p>
+            <p className="mt-1 font-mono text-lg font-black text-[#3d1a2e]">{orderId || cardId.slice(0, 8).toUpperCase()}</p>
+            <p className="mt-2 text-xs font-bold leading-relaxed text-[#7b3f6e]">
+              Tracking link saved for {creatorEmail || 'your email'}{creatorWhatsapp ? ` and ${creatorWhatsapp}` : ''}.
+            </p>
+          </div>
+
+          <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
             {[
-              ['1', 'Scan or open UPI'],
+              ['1', 'Open UPI app'],
               ['2', 'Pay the exact amount'],
-              ['3', 'Paste UTR below'],
+              ['3', 'Submit UTR'],
             ].map(([step, label]) => (
               <div key={step} className="flex items-center gap-3 rounded-2xl border border-pink-200 bg-white/75 p-3 shadow-lg shadow-pink-100">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-linear-to-r from-pink-500 to-amber-500 text-sm font-black text-white">
@@ -162,19 +149,19 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa }: QRCheckoutPr
             ))}
           </div>
 
-          <div className="mt-6 rounded-3xl border border-amber-200 bg-amber-50/80 p-4">
+          <div className="mt-5 rounded-3xl border border-amber-200 bg-amber-50/80 p-4">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Tiny promise</p>
             <p className="mt-2 text-sm font-black leading-relaxed text-[#7b3f6e]">
-              This is the last boring step before the lovely part opens.
+              This is direct UPI, so verification uses your UTR instead of silently trusting a screenshot.
             </p>
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-pink-200 bg-white/85 p-5 text-center shadow-xl shadow-pink-100/80">
-          <div className="grid gap-5 lg:grid-cols-[auto_1fr] lg:items-center lg:text-left">
-            <div className="mx-auto inline-block rounded-[2rem] border border-pink-200 bg-white p-4 shadow-2xl shadow-pink-200/60">
+        <div className="order-1 rounded-[1.5rem] border border-pink-200 bg-white/88 p-4 text-center shadow-xl shadow-pink-100/80 sm:rounded-[2rem] sm:p-5 lg:order-2">
+          <div className="grid gap-4 lg:grid-cols-[auto_1fr] lg:items-center lg:text-left">
+            <div className="mx-auto inline-block rounded-[1.5rem] border border-pink-200 bg-white p-3 shadow-2xl shadow-pink-200/60 sm:rounded-[2rem] sm:p-4">
               {!hasValidVpa ? (
-                <div className="flex h-[220px] w-[220px] flex-col items-center justify-center rounded-2xl bg-pink-50 p-4 text-center text-[#3d1a2e]">
+                <div className="flex h-[190px] w-[190px] flex-col items-center justify-center rounded-2xl bg-pink-50 p-4 text-center text-[#3d1a2e] sm:h-[220px] sm:w-[220px]">
                   <span className="mb-2 text-3xl">⚠️</span>
                   <p className="text-sm font-black">UPI ID missing or invalid</p>
                   <p className="mt-1 text-xs font-bold leading-snug text-[#7b3f6e]">Set NEXT_PUBLIC_UPI_VPA and redeploy.</p>
@@ -182,13 +169,13 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa }: QRCheckoutPr
               ) : timeLeft > 0 ? (
                 <QRCodeSVG
                   value={upiIntent}
-                  size={220}
+                  size={210}
                   level="M"
                   fgColor="#3d1a2e"
                   bgColor="#FFFFFF"
                 />
               ) : (
-                <div className="flex h-[220px] w-[220px] flex-col items-center justify-center rounded-2xl bg-pink-50 p-4 text-center text-[#3d1a2e]">
+                <div className="flex h-[190px] w-[190px] flex-col items-center justify-center rounded-2xl bg-pink-50 p-4 text-center text-[#3d1a2e] sm:h-[220px] sm:w-[220px]">
                   <span className="mb-2 text-3xl">⏰</span>
                   <p className="text-sm font-black">QR expired</p>
                   <button
@@ -223,11 +210,11 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa }: QRCheckoutPr
                     href={upiIntent}
                     className="block rounded-2xl bg-linear-to-r from-pink-500 via-rose-500 to-amber-500 px-5 py-4 text-center text-sm font-black text-white shadow-xl shadow-pink-300/45 transition hover:-translate-y-0.5"
                   >
-                    Open UPI app and pay
+                    Open PhonePe / GPay / Paytm
                   </a>
-                  <div className="rounded-2xl border border-pink-200 bg-white/80 px-4 py-3 text-xs font-black text-[#7b3f6e]">
-                    Paying to <span className="text-pink-500">{configuredVpa}</span>
-                  </div>
+              <div className="rounded-2xl border border-pink-200 bg-white/80 px-4 py-3 text-xs font-black text-[#7b3f6e]">
+                Paying to <span className="text-pink-500">{configuredVpa}</span>
+              </div>
                 </div>
               )}
             </div>
@@ -253,20 +240,6 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa }: QRCheckoutPr
             </div>
           </div>
 
-          {allowMockPayments && (
-            <div className="mt-4 border-t border-pink-100 pt-4">
-              <button
-                onClick={handleMockPayment}
-                disabled={isVerifying}
-                className="w-full rounded-2xl border border-pink-200 bg-pink-50 px-4 py-3 text-xs font-black text-pink-600 transition hover:bg-pink-100 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isVerifying ? 'Processing sim...' : 'Test Pay (Instant Success)'}
-              </button>
-              {errorMsg && (
-                <p className="mt-2 text-[10px] font-bold text-red-500">{errorMsg}</p>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </section>

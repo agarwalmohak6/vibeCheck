@@ -8,6 +8,14 @@ export function isMockPaymentsEnabled() {
   return process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS !== 'false';
 }
 
+export function isTestPaymentsEnabled() {
+  if (process.env.NODE_ENV !== 'production') {
+    return process.env.NEXT_PUBLIC_ENABLE_TEST_MODE !== 'false';
+  }
+
+  return process.env.VIBECHECK_ENABLE_TEST_MODE === 'true';
+}
+
 export function getTokenSecret() {
   const secret =
     process.env.VIBECHECK_TOKEN_SECRET ||

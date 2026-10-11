@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'media2.giphy.com' },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/dashboard',
+        destination: '/admin',
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     const backendOrigin = process.env.BACKEND_ORIGIN;
     if (!backendOrigin) return [];

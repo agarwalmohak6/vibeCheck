@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 type SeoUseCasePageProps = {
   eyebrow: string;
@@ -45,7 +46,7 @@ export default function SeoUseCasePage({
         </div>
         <div className="vc-seo-hero__card" aria-hidden="true">
           <span>{accentEmoji}</span>
-          <img src={image} alt={imageAlt} />
+          <Image src={image} alt={imageAlt} width={800} height={800} />
         </div>
       </section>
 

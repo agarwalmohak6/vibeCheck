@@ -71,13 +71,22 @@ export type AdminCardSummary = CreatorCardSummary & {
   account_id: string | null;
 };
 
-function sanitizeCardData(input: CreateCardInput['card_data'], hasSecretCode: boolean) {
+function createOrderId(cardId: string) {
+  const timePart = Date.now().toString(36).toUpperCase();
+  const idPart = cardId.replace(/-/g, '').slice(0, 6).toUpperCase();
+  return `VC-${timePart}-${idPart}`;
+}
+
+function sanitizeCardData(input: CreateCardInput['card_data'], hasSecretCode: boolean, orderId: string) {
   const { unlock_question, cover_image_url, ...rest } = input;
   delete rest.unlock_code;
 
   return {
     ...rest,
     cover_image_url,
+    creator_email: input.creator_email?.trim().toLowerCase() || '',
+    creator_whatsapp: input.creator_whatsapp?.trim() || '',
+    order_id: input.order_id?.trim() || orderId,
     unlock_question: hasSecretCode ? unlock_question || '' : '',
     has_secret_code: hasSecretCode,
   };
@@ -105,8 +114,9 @@ function normalizePaymentReference(reference: string) {
 export async function createCardDraft(input: CreateCardInput, accountId?: string | null) {
   const admin = getSupabaseAdmin();
   const id = randomUUID();
+  const orderId = createOrderId(id);
   const hasSecretCode = Boolean(input.card_data.unlock_code?.trim());
-  const cardData = sanitizeCardData(input.card_data, hasSecretCode);
+  const cardData = sanitizeCardData(input.card_data, hasSecretCode, orderId);
   const expiresAt = computeExpiresAt(input.tier_selected);
   const creatorToken = createAccessToken(id, 'creator');
 
@@ -139,6 +149,7 @@ export async function createCardDraft(input: CreateCardInput, accountId?: string
       template_type: input.template_type,
       tier_selected: input.tier_selected,
       has_secret_code: hasSecretCode,
+      order_id: cardData.order_id,
       mock: true,
     });
 
@@ -182,6 +193,7 @@ export async function createCardDraft(input: CreateCardInput, accountId?: string
     template_type: input.template_type,
     tier_selected: input.tier_selected,
     has_secret_code: hasSecretCode,
+    order_id: cardData.order_id,
   });
 
   return { card: toPublicCard(card as Card), creatorToken };
@@ -217,7 +229,7 @@ export async function getPaymentStatus(id: string) {
       .from('payments')
       .select('provider_payment_id, status, created_at')
       .eq('card_id', id)
-      .eq('provider', 'upi_manual')
+      .in('provider', ['upi_manual', 'test_mode'])
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -240,8 +252,26 @@ export async function getPaymentStatus(id: string) {
     payment_reference: paymentReference?.payment_reference || null,
     payment_reference_submitted: Boolean(paymentReference),
     payment_reference_status: paymentReference?.status || null,
+    order_id: card.card_data.order_id || null,
     expires_at: card.expires_at || null,
   };
+}
+
+export async function getCardIdForProviderOrder(providerOrderId: string) {
+  const admin = getSupabaseAdmin();
+  if (!admin || !providerOrderId) return null;
+
+  const { data, error } = await admin
+    .from('payments')
+    .select('card_id')
+    .eq('provider_order_id', providerOrderId)
+    .eq('provider', 'razorpay')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.card_id || null;
 }
 
 export async function submitUpiPaymentReference(id: string, reference: string) {
@@ -391,6 +421,84 @@ export async function verifyUpiPaymentReference(reference: string) {
   };
 }
 
+export async function markCardPaymentTestMode(id: string, reason?: string) {
+  const card = await getPublicCard(id);
+  if (!card) return null;
+
+  const admin = getSupabaseAdmin();
+  const now = new Date().toISOString();
+  const paymentId = `test_mode_${id.replace(/-/g, '').slice(0, 18)}_${Date.now()}`;
+  const payload = {
+    source: 'test_mode_toggle',
+    test_mode: true,
+    skipped_payment: true,
+    reason: reason || 'creator_checkout_toggle',
+    card_id: id,
+    created_at: now,
+  };
+
+  if (!admin) {
+    const mockCard = MOCK_STORE[id];
+    if (!mockCard) return null;
+    mockCard.is_paid = true;
+    mockCard.payment_id = paymentId;
+    MOCK_PAYMENT_REFERENCES[id] = {
+      payment_reference: paymentId,
+      status: 'paid',
+      submitted_at: now,
+    };
+    await captureServerEvent('payment_succeeded', id, {
+      provider: 'test_mode',
+      payment_id: paymentId,
+      test_mode: true,
+      skipped_payment: true,
+      mock: true,
+    });
+    return {
+      card_id: id,
+      payment_id: paymentId,
+      payment_reference: paymentId,
+      status: 'paid',
+      test_mode: true,
+    };
+  }
+
+  const { error: cardError } = await admin
+    .from('cards')
+    .update({
+      is_paid: true,
+      payment_id: paymentId,
+      payment_status: 'paid',
+    })
+    .eq('id', id);
+  if (cardError) throw cardError;
+
+  const { error: paymentError } = await admin.from('payments').insert({
+    card_id: id,
+    provider: 'test_mode',
+    provider_payment_id: paymentId,
+    status: 'paid',
+    verified_at: now,
+    raw_payload: payload,
+  });
+  if (paymentError) throw paymentError;
+
+  await captureServerEvent('payment_succeeded', id, {
+    provider: 'test_mode',
+    payment_id: paymentId,
+    test_mode: true,
+    skipped_payment: true,
+  });
+
+  return {
+    card_id: id,
+    payment_id: paymentId,
+    payment_reference: paymentId,
+    status: 'paid',
+    test_mode: true,
+  };
+}
+
 export async function listManualPaymentReferences(limit = 75): Promise<ManualPaymentSubmission[]> {
   const cappedLimit = Math.min(Math.max(limit, 1), 150);
   const admin = getSupabaseAdmin();
@@ -426,7 +534,7 @@ export async function listManualPaymentReferences(limit = 75): Promise<ManualPay
   const { data: payments, error } = await admin
     .from('payments')
     .select('id, card_id, provider_payment_id, status, created_at, verified_at, raw_payload')
-    .eq('provider', 'upi_manual')
+    .in('provider', ['upi_manual', 'test_mode'])
     .order('created_at', { ascending: false })
     .limit(cappedLimit);
 
@@ -536,7 +644,7 @@ export async function listCreatorCards(accountId: string): Promise<CreatorCardSu
     const { data: payments, error: paymentsError } = await admin
       .from('payments')
       .select('card_id, provider_payment_id')
-      .eq('provider', 'upi_manual')
+      .in('provider', ['upi_manual', 'test_mode'])
       .in('card_id', cardIds)
       .order('created_at', { ascending: false });
 
@@ -610,7 +718,7 @@ export async function listAdminCards(limit = 200): Promise<AdminCardSummary[]> {
     const { data: payments, error: paymentsError } = await admin
       .from('payments')
       .select('card_id, provider_payment_id')
-      .eq('provider', 'upi_manual')
+      .in('provider', ['upi_manual', 'test_mode'])
       .in('card_id', cardIds)
       .order('created_at', { ascending: false });
 
