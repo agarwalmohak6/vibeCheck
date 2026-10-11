@@ -30,6 +30,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
     console.error('Admin cleanup error:', error);
-    return NextResponse.json({ error: 'Could not clear cards and payments.' }, { status: 500 });
+    const detail = error && typeof error === 'object'
+      ? {
+          code: 'code' in error && typeof error.code === 'string' ? error.code : undefined,
+          message: 'message' in error && typeof error.message === 'string' ? error.message : undefined,
+          details: 'details' in error && typeof error.details === 'string' ? error.details : undefined,
+          hint: 'hint' in error && typeof error.hint === 'string' ? error.hint : undefined,
+        }
+      : undefined;
+    return NextResponse.json({ error: 'Could not clear cards and payments.', detail }, { status: 500 });
   }
 }
