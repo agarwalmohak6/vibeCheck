@@ -187,7 +187,6 @@ export async function createCardDraft(input: CreateCardInput, accountId?: string
         payment_id: null,
         payment_status: 'pending',
         music_track_id: input.music_track_id || null,
-        ...(accountId ? { account_id: accountId } : {}),
       })
       .select('*')
       .single();
@@ -648,53 +647,11 @@ export async function listCreatorCards(accountId: string): Promise<CreatorCardSu
       }));
   }
 
-  const { data: cards, error } = await admin
-    .from('cards')
-    .select('id, recipient_name, creator_name, template_type, tier_selected, is_paid, payment_status, payment_id, expires_at, created_at')
-    .eq('account_id', accountId)
-    .order('created_at', { ascending: false })
-    .limit(200);
-
-  if (error) throw error;
-
-  const typedCards = (cards || []) as Array<{
-    id: string;
-    recipient_name: string;
-    creator_name: string;
-    template_type: string;
-    tier_selected: string;
-    is_paid: boolean;
-    payment_status: string;
-    payment_id: string | null;
-    expires_at?: string | null;
-    created_at: string;
-  }>;
-  const cardIds = typedCards.map((card) => card.id);
-  const paymentReferencesByCardId = new Map<string, string>();
-
-  if (cardIds.length > 0) {
-    const { data: payments, error: paymentsError } = await admin
-      .from('payments')
-      .select('card_id, provider_payment_id')
-      .in('provider', ['upi_manual', 'test_mode'])
-      .in('card_id', cardIds)
-      .order('created_at', { ascending: false });
-
-    if (paymentsError) throw paymentsError;
-
-    for (const payment of payments || []) {
-      const row = payment as { card_id: string; provider_payment_id: string | null };
-      if (!paymentReferencesByCardId.has(row.card_id) && row.provider_payment_id) {
-        paymentReferencesByCardId.set(row.card_id, row.provider_payment_id);
-      }
-    }
-  }
-
-  return typedCards.map((card) => ({
-    ...card,
-    payment_reference: paymentReferencesByCardId.get(card.id) || null,
-    creator_token: createAccessToken(card.id, 'creator'),
-  }));
+  // Creator account ownership was retired in the latest production schema.
+  // Keep the endpoint non-fatal for older UI sessions without querying a dropped column.
+  void admin;
+  void accountId;
+  return [];
 }
 
 export async function listAdminCards(limit = 200): Promise<AdminCardSummary[]> {
@@ -724,7 +681,7 @@ export async function listAdminCards(limit = 200): Promise<AdminCardSummary[]> {
 
   const { data: cards, error } = await admin
     .from('cards')
-    .select('id, recipient_name, creator_name, template_type, tier_selected, is_paid, payment_status, payment_id, expires_at, created_at, account_id')
+    .select('id, recipient_name, creator_name, template_type, tier_selected, is_paid, payment_status, payment_id, expires_at, created_at')
     .order('created_at', { ascending: false })
     .limit(cappedLimit);
 
@@ -741,7 +698,6 @@ export async function listAdminCards(limit = 200): Promise<AdminCardSummary[]> {
     payment_id: string | null;
     expires_at?: string | null;
     created_at: string;
-    account_id?: string | null;
   }>;
   const cardIds = typedCards.map((card) => card.id);
   const paymentReferencesByCardId = new Map<string, string>();
@@ -766,7 +722,7 @@ export async function listAdminCards(limit = 200): Promise<AdminCardSummary[]> {
 
   return typedCards.map((card) => ({
     ...card,
-    account_id: card.account_id || null,
+    account_id: null,
     payment_reference: paymentReferencesByCardId.get(card.id) || null,
     creator_token: createAccessToken(card.id, 'creator'),
   }));
@@ -783,15 +739,9 @@ export async function claimCreatorCard(cardId: string, creatorToken: string, acc
     return card;
   }
 
-  const { data, error } = await admin
-    .from('cards')
-    .update({ account_id: accountId })
-    .eq('id', cardId)
-    .select('*')
-    .maybeSingle();
-
-  if (error) throw error;
-  return data ? toPublicCard(data as Card) : null;
+  void admin;
+  void accountId;
+  return getPublicCard(cardId);
 }
 
 export async function clearAllCardsAndPayments() {
