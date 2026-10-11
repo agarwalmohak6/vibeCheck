@@ -11,6 +11,7 @@ import MusicSelector from '@/components/MusicSelector';
 import QRCheckout from '@/components/QRCheckout';
 import PaymentTestModeToggle from '@/components/PaymentTestModeToggle';
 import { compressImage } from '@/lib/imageCompressor';
+import { DEFAULT_UPI_VPA } from '@/lib/upi';
 import HeartCanvas from '@/components/HeartCanvas';
 import AmbientBackground from '@/components/AmbientBackground';
 
@@ -193,7 +194,7 @@ function CustomizePageContent() {
   const [paymentStep, setPaymentStep] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const paymentVpa = (process.env.NEXT_PUBLIC_UPI_VPA || '').trim();
+  const paymentVpa = (process.env.NEXT_PUBLIC_UPI_VPA || DEFAULT_UPI_VPA).trim();
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) => setForm(p => ({ ...p, [k]: v }));
 

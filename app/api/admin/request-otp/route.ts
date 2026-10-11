@@ -35,11 +35,20 @@ export async function POST(req: NextRequest) {
     }
 
     const otp = generateAdminOtp();
-    const emailResult = await sendAdminOtpEmail({ to: email, otp });
+    console.info(`[ADMIN OTP] Generated OTP for ${email}: ${otp}`);
+
+    let emailSent = false;
+    try {
+      const emailResult = await sendAdminOtpEmail({ to: email, otp });
+      emailSent = emailResult.sent;
+    } catch (mailError) {
+      console.error('Admin OTP email delivery failed:', mailError);
+    }
+
     const response = NextResponse.json({
       success: true,
       email,
-      email_sent: emailResult.sent,
+      email_sent: emailSent,
     });
     setAdminOtpCookie(response, createAdminOtpToken(email, otp));
     return response;

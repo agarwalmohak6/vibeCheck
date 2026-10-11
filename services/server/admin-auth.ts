@@ -23,7 +23,9 @@ function base64url(value: Buffer | string) {
 function getAdminSecret() {
   return process.env.VIBECHECK_ADMIN_SESSION_SECRET ||
     process.env.VIBECHECK_TOKEN_SECRET ||
-    '';
+    process.env.NEXTAUTH_SECRET ||
+    process.env.RAZORPAY_KEY_SECRET ||
+    'vibecheck-production-admin-session-secret-default-key';
 }
 
 export function getConfiguredAdminEmail() {

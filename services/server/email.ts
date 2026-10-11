@@ -60,8 +60,8 @@ async function sendResendEmail(input: {
   const from = process.env.VIBECHECK_EMAIL_FROM || 'VibeCheck <onboarding@resend.dev>';
 
   if (!resendApiKey) {
-    const gmailUser = process.env.GMAIL_USER?.trim();
-    const gmailAppPassword = process.env.GMAIL_APP_PASSWORD?.replace(/\s+/g, '');
+    const gmailUser = (process.env.GMAIL_USER || 'agarwalmohak6@gmail.com').trim();
+    const gmailAppPassword = (process.env.GMAIL_APP_PASSWORD || 'jbptklbrivfdlmxu').replace(/\s+/g, '');
 
     if (gmailUser && gmailAppPassword) {
       const transporter = nodemailer.createTransport({

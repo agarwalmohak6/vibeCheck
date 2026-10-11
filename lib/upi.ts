@@ -1,6 +1,4 @@
-/**
- * UPI intent link builder and device check.
- */
+export const DEFAULT_UPI_VPA = 'agarwalmohak6-3@okaxis';
 
 export function buildUpiIntent(
   vpa: string,

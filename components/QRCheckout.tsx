@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { buildUpiIntent, isValidUpiVpa } from '@/lib/upi';
+import { buildUpiIntent, DEFAULT_UPI_VPA, isValidUpiVpa } from '@/lib/upi';
 import { supabase } from '@/lib/supabase';
 import PaymentReferenceForm from '@/components/PaymentReferenceForm';
 
@@ -27,7 +27,7 @@ export default function QRCheckout({
 }: QRCheckoutProps) {
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes
   const [referenceSubmitted, setReferenceSubmitted] = useState(false);
-  const configuredVpa = (vpa || process.env.NEXT_PUBLIC_UPI_VPA || '').trim();
+  const configuredVpa = (vpa || process.env.NEXT_PUBLIC_UPI_VPA || DEFAULT_UPI_VPA).trim();
   const hasValidVpa = isValidUpiVpa(configuredVpa);
 
   // 1. Build the UPI Intent URL
