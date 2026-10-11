@@ -112,7 +112,7 @@ Use these files when changing app copy:
 - `app/customize/page.tsx`: builder step headings, field labels, helper text, preview fallback behavior.
 - `components/LiveSimulator.tsx`: landing page simulator sample flow and visual demo copy.
 - `components/RecipientView.tsx`: recipient-side reveal, unlock, buttons, and reply flow.
-- `components/SuccessHub.tsx`: post-payment creator dashboard and sharing copy.
+- `components/SuccessHub.tsx`: post-payment receipt, recovery, and sharing copy.
 
 ## Content Writer Brief
 

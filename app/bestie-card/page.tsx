@@ -5,7 +5,7 @@ import { absoluteUrl, SITE_NAME } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Bestie Card Online - Private Best Friend Digital Card",
   description:
-    "Create a private bestie card online for your best friend with a personal message, music, inside-joke questions, and a private reply room.",
+    "Create a private bestie card online for your best friend with a personal message, music, inside-joke questions, and one-device access.",
   alternates: {
     canonical: "/bestie-card",
   },
@@ -30,7 +30,7 @@ export default function BestieCardPage() {
     <SeoUseCasePage
       eyebrow="Private best friend card"
       title="Make a bestie card for the person who gets every inside joke."
-      description="VibeCheck lets you create a private digital bestie card with your message, a bright cover, music, tiny questions, and a reply room for the two of you."
+      description="VibeCheck lets you create a private digital bestie card with your message, a bright cover, music, tiny questions, and one-device access."
       image="/themes/bestie_cover.png"
       imageAlt="Bestie greeting card cover"
       ctaHref="/customize?type=bestie_check&new=1"
@@ -45,13 +45,13 @@ export default function BestieCardPage() {
         "Choose the Bestie Card mood.",
         "Write the message like you actually talk to them.",
         "Add a song and customize three to five questions.",
-        "Share the private link and keep the reply room open while the card is active.",
+        "Share the private link so the intended recipient can unseal it on one browser.",
       ]}
       faqs={[
         {
           question: "Can I make a bestie card online?",
           answer:
-            "Yes. VibeCheck gives you a private bestie card link with music, questions, and a reply room.",
+            "Yes. VibeCheck gives you a private bestie card link with music, questions, and one-device unsealing.",
         },
         {
           question: "Is the bestie card public?",

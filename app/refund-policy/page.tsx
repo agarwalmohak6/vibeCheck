@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import ComplianceFooter from '@/components/ComplianceFooter';
+import { BUSINESS_EMAIL, POLICY_EFFECTIVE_DATE } from '@/lib/business';
 
 export const metadata = {
   title: 'Refund & Cancellation Policy',
@@ -7,13 +9,14 @@ export const metadata = {
 
 export default function RefundPolicyPage() {
   return (
+    <>
     <main className="min-h-screen bg-neutral-950 text-neutral-200 px-6 py-16 max-w-4xl mx-auto space-y-8 font-sans">
       <div className="border-b border-white/10 pb-6">
         <Link href="/" className="text-xs font-bold text-pink-400 uppercase tracking-widest hover:underline">
           ← Back to Home
         </Link>
         <h1 className="text-3xl md:text-4xl font-black text-white mt-4">Cancellation & Refund Policy</h1>
-        <p className="text-xs text-neutral-400 mt-2">Last updated: July 2026</p>
+        <p className="text-xs text-neutral-400 mt-2">Effective date: {POLICY_EFFECTIVE_DATE}</p>
       </div>
 
       <section className="space-y-4 text-sm leading-relaxed text-neutral-300">
@@ -33,7 +36,7 @@ export default function RefundPolicyPage() {
 
         <h2 className="text-lg font-bold text-white">3. How to Request a Refund</h2>
         <p>
-          To request a refund, please send an email to <a href="mailto:agarwalmohak6@gmail.com" className="text-pink-400 hover:underline">agarwalmohak6@gmail.com</a> within 7 days of the transaction. Include:
+          To request a refund, email <a href={`mailto:${BUSINESS_EMAIL}`} className="text-pink-400 hover:underline">{BUSINESS_EMAIL}</a> within 7 calendar days of the transaction. Include:
         </p>
         <ul className="list-disc pl-6 space-y-1 text-neutral-300">
           <li>Your Payment Reference / Transaction ID / Razorpay Payment ID</li>
@@ -43,9 +46,16 @@ export default function RefundPolicyPage() {
 
         <h2 className="text-lg font-bold text-white">4. Refund Timeline</h2>
         <p>
-          Approved refunds will be processed back to the original payment source (Bank account, Credit/Debit card, or UPI) within 5 to 7 business days as per banking standard settlement cycles.
+          We review complete requests within 2 business days. Approved refunds are initiated to the original payment source within 5 to 7 business days. The customer&apos;s bank or payment provider may require additional processing time.
+        </p>
+
+        <h2 className="text-lg font-bold text-white">5. Cancellations</h2>
+        <p>
+          A draft may be abandoned before payment without charge. After payment and digital delivery, cancellation is not normally available because the personalised service has already been supplied. This does not limit refunds for duplicate charges or verified technical non-delivery.
         </p>
       </section>
     </main>
+    <ComplianceFooter />
+    </>
   );
 }
