@@ -40,9 +40,13 @@ Supabase service-role keys, or application token secrets.
 ## Validation
 
 ```bash
+npm test
 npm run lint
 npm run build
 ```
+
+For free production email on Render, configure `BREVO_API_KEY` and a verified
+`BREVO_SENDER_EMAIL`. See the email setup section in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 Production payment verification is fail-closed: mock signatures are accepted
 only outside production, and a Razorpay payment must match the card, order,

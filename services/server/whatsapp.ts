@@ -50,11 +50,7 @@ export async function sendWhatsAppText(input: {
   }
 
   if (!token || !phoneNumberId) {
-    console.info('WhatsApp skipped because Cloud API credentials are not configured.', {
-      to,
-      message: input.message,
-      actionUrl,
-    });
+    console.info('WhatsApp skipped because Cloud API credentials are not configured.');
     return {
       sent: false,
       to,
@@ -80,6 +76,7 @@ export async function sendWhatsAppText(input: {
         body: input.message,
       },
     }),
+    signal: AbortSignal.timeout(12_000),
   });
 
   if (!res.ok) {

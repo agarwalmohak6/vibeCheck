@@ -34,14 +34,17 @@ Use these on both Vercel and Render unless the `Where` column says otherwise.
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Recommended for SEO | Vercel + Render | Google Search Console meta verification code |
 | `BACKEND_ORIGIN` | Yes for split deploy | Vercel only | `https://vibecheck-api.onrender.com` |
 | `VIBECHECK_TOKEN_SECRET` | Yes | Vercel + Render | Long random secret |
+| `VIBECHECK_ADMIN_SESSION_SECRET` | Recommended; otherwise uses `VIBECHECK_TOKEN_SECRET` | API host | Separate long random admin session secret |
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Vercel + Render | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Vercel + Render | Supabase anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Vercel + Render | Supabase service role key |
 | `SUPABASE_UPLOAD_BUCKET` | Yes | Vercel + Render | `card-uploads` |
 | `GIPHY_API_KEY` | Yes for GIF search | Render | GIPHY API key |
 | `NEXT_PUBLIC_UPI_VPA` | Yes for direct UPI checkout | Vercel + Render | `yourbrand@upi` |
-| `RESEND_API_KEY` | Yes for real email delivery | Vercel + Render | Resend API key |
-| `VIBECHECK_EMAIL_FROM` | Yes for real email delivery | Vercel + Render | `VibeCheck <admin@your-domain.com>` |
+| `BREVO_API_KEY` | Yes for Brevo Free email | API host | Brevo API key (not an SMTP key) |
+| `BREVO_SENDER_EMAIL` | Yes with Brevo | API host | Sender inbox verified in Brevo |
+| `RESEND_API_KEY` | Optional alternative to Brevo | API host | Resend API key |
+| `VIBECHECK_EMAIL_FROM` | Required only with Resend | API host | `VibeCheck <admin@your-domain.com>` |
 | `VIBECHECK_ADMIN_EMAIL` | Yes for OTP + UPI review alerts | Vercel + Render | `agarwalmohak6@gmail.com` |
 | `VIBECHECK_ADMIN_WHATSAPP` | Optional for admin WhatsApp alerts | Vercel + Render | `919565814426` |
 | `WHATSAPP_CLOUD_API_TOKEN` | Optional for automatic WhatsApp delivery | Vercel + Render | Meta Cloud API token |
@@ -50,6 +53,61 @@ Use these on both Vercel and Render unless the `Where` column says otherwise.
 | `NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS` | No in production | Vercel + Render | `false` |
 | `POSTHOG_API_KEY` | Optional | Vercel + Render | PostHog key |
 | `POSTHOG_HOST` | Optional | Vercel + Render | `https://app.posthog.com` |
+
+### Email delivery on Render
+
+Render Free blocks outbound SMTP ports 25, 465, and 587. Gmail app passwords
+cannot make SMTP work on that plan. Use Brevo's HTTPS API on its **Free** plan:
+
+1. Create a free Brevo account and complete its account/transactional sending
+   activation. Stay on the Free plan; no paid subscription is needed within its limit.
+2. Under Settings > Senders, Domains, IPs > Senders, add the sender inbox and
+   verify it with the code Brevo sends there. For an existing Gmail inbox,
+   Brevo currently substitutes a compliant sending domain. Brevo describes that
+   substitution as temporary, not a permanent alternative to domain authentication.
+3. Create a Brevo **API key** (not an SMTP key). Set `BREVO_API_KEY` and
+   `BREVO_SENDER_EMAIL` on the server handling `/api/*`. The sender must exactly
+   match the verified inbox. `EMAIL_FROM_NAME=VibeCheck` controls the display name;
+   `EMAIL_REPLY_TO` is optional and defaults to the sender inbox.
+4. Set `VIBECHECK_ADMIN_EMAIL` to the owner's inbox. Set
+   `VIBECHECK_ADMIN_SESSION_SECRET` or `VIBECHECK_TOKEN_SECRET` to a long random
+   secret; production admin login has no built-in signing secret.
+5. Set `NEXT_PUBLIC_BASE_URL` to the public frontend URL and redeploy after
+   changing environment variables. With a split deployment, configure email
+   on Render, because Vercel forwards API calls there.
+6. Request an OTP and create a test order. Confirm the provider accepted each
+   email in Brevo's transactional logs, then check both the inbox and spam folder. API success
+   means provider acceptance, not guaranteed inbox delivery.
+
+Brevo's Free plan currently allows **300 emails per day**, shared by OTPs,
+order links, payment confirmations, review alerts, and other sending on the account.
+Above that limit, transactional emails can be queued for a later day, which is
+too late for a 10-minute OTP. Monitor daily usage; this app does not upgrade plans
+or purchase credits. Free emails include Brevo branding.
+
+Provider selection is deterministic: Brevo when `BREVO_API_KEY` is set, otherwise
+Resend when `RESEND_API_KEY` is set, otherwise explicitly configured Gmail SMTP.
+There are no automatic cross-provider retries that might duplicate a private email.
+If you already have a verified domain on Resend, set `RESEND_API_KEY` and
+`VIBECHECK_EMAIL_FROM` instead. Its `resend.dev` test sender cannot send order
+links to arbitrary customers and is rejected in production.
+
+Logs contain delivery reason codes (`missing_provider_config`, `invalid_sender`,
+`provider_error`, `timeout`) and provider HTTP status, without exposing OTPs or
+private tracking links. A failed OTP send returns 502/503 without replacing the
+pending OTP cookie. Order creation still succeeds and reports each channel's
+delivery result; the checkout page also exposes the private tracking link.
+
+For local or SMTP-capable hosts, `GMAIL_USER` and `GMAIL_APP_PASSWORD` remain an
+explicit alternative when no Resend key is configured. Never put credentials in
+source code. Revoke and replace the Gmail app password previously committed to
+this repository; removing it from the latest code does not remove Git history.
+
+References: [Brevo Free limits](https://help.brevo.com/hc/en-us/articles/208580669-FAQs-What-are-the-limits-of-the-Free-plan),
+[Brevo sender setup](https://help.brevo.com/hc/en-us/articles/208836149-Create-a-new-sender-From-name-and-From-email),
+[Brevo sender replacement](https://help.brevo.com/hc/en-us/articles/14925263522578-Comply-with-Gmail-Yahoo-and-Microsoft-s-requirements-for-email-senders),
+[Render Free restrictions](https://render.com/docs/free#other-limitations)
+and [Resend test sender restrictions](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain).
 
 Direct UPI is the active checkout path. Razorpay remains available as an optional UPI-first gateway path when you want automatic payment confirmation:
 
@@ -70,7 +128,7 @@ Direct UPI is the active checkout path. Razorpay remains available as an optiona
    - Runtime: `Node`
    - Build Command: `npm ci && npm run build`
    - Start Command: `npm run start`
-   - Node version: `20` or newer
+   - Node version: `20.19+`, `22.12+`, or `24+` (the tests and build were verified on Node 24)
 7. Add all required environment variables.
 8. Leave `BACKEND_ORIGIN` blank on Render.
 9. Deploy.
@@ -190,7 +248,7 @@ Razorpay is convenient because webhooks are easy, but it is not the no-fee optio
 7. `BACKEND_ORIGIN` on Vercel points to Render.
 8. `NEXT_PUBLIC_BASE_URL` uses the final Vercel/domain URL.
 9. `NEXT_PUBLIC_UPI_VPA` uses your real merchant VPA.
-10. `RESEND_API_KEY` and `VIBECHECK_EMAIL_FROM` are configured if you expect real email.
+10. `BREVO_API_KEY` and verified `BREVO_SENDER_EMAIL` are configured (or the Resend alternative), and email quota remains available.
 11. WhatsApp Cloud API env vars are configured if you expect automatic WhatsApp messages; otherwise the app provides `wa.me` share links.
 12. Mock payments are off in production.
 13. GIF search works with `GIPHY_API_KEY`.

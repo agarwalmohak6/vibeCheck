@@ -25,7 +25,7 @@ function getAdminSecret() {
     process.env.VIBECHECK_TOKEN_SECRET ||
     process.env.NEXTAUTH_SECRET ||
     process.env.RAZORPAY_KEY_SECRET ||
-    'vibecheck-production-admin-session-secret-default-key';
+    (process.env.NODE_ENV === 'production' ? '' : 'vibecheck-local-admin-session-secret');
 }
 
 export function getConfiguredAdminEmail() {
@@ -43,7 +43,9 @@ function safeEqual(left: string, right: string) {
 }
 
 function sign(value: string) {
-  return createHmac('sha256', getAdminSecret()).update(value).digest('base64url');
+  const secret = getAdminSecret();
+  if (!secret) throw new Error('Admin session signing is not configured.');
+  return createHmac('sha256', secret).update(value).digest('base64url');
 }
 
 export function createAdminToken(email: string, maxAgeSeconds = 60 * 60 * 24 * 7) {

@@ -35,6 +35,38 @@ type AdminPaymentReviewNotificationInput = {
 
 type CreatorPaymentVerifiedNotificationInput = CreatorOrderNotificationInput;
 
+async function deliverNotifications(input: {
+  emailTo?: string;
+  email: (to: string) => Promise<EmailDeliveryResult>;
+  whatsappTo?: string;
+  message: string;
+}): Promise<NotificationResult> {
+  const whatsappUrl = input.whatsappTo
+    ? buildWhatsAppActionUrl(input.whatsappTo, input.message)
+    : undefined;
+
+  // A failed or slow channel must not discard another channel's result.
+  const [email, whatsapp] = await Promise.all([
+    input.emailTo ? input.email(input.emailTo).catch((): EmailDeliveryResult => {
+      console.error('Email notification failed unexpectedly.');
+      return { sent: false, to: input.emailTo!, provider: 'none', reason: 'provider_error' };
+    }) : undefined,
+    input.whatsappTo ? sendWhatsAppText({ to: input.whatsappTo, message: input.message })
+      .catch((): WhatsAppDeliveryResult => {
+        console.error('WhatsApp notification failed.');
+        return {
+          sent: false,
+          to: input.whatsappTo!,
+          provider: 'whatsapp_cloud',
+          reason: 'provider_error',
+          actionUrl: whatsappUrl,
+        };
+      }) : undefined,
+  ]);
+
+  return { email, whatsapp, whatsappUrl };
+}
+
 function buildCreatorTrackingMessage(input: CreatorOrderNotificationInput) {
   return [
     `VibeCheck order ${input.orderId} is ready.`,
@@ -64,79 +96,50 @@ function buildAdminReviewMessage(input: AdminPaymentReviewNotificationInput, adm
 }
 
 export async function sendCreatorOrderNotifications(input: CreatorOrderNotificationInput): Promise<NotificationResult> {
-  const result: NotificationResult = {};
-  const message = buildCreatorTrackingMessage(input);
-
-  if (input.creatorEmail) {
-    result.email = await sendCreatorOrderEmail({
-      to: input.creatorEmail,
+  return deliverNotifications({
+    emailTo: input.creatorEmail,
+    email: (to) => sendCreatorOrderEmail({
+      to,
       orderId: input.orderId,
       recipientName: input.recipientName,
       creatorName: input.creatorName,
       trackingUrl: input.trackingUrl,
-    });
-  }
-
-  if (input.creatorWhatsapp) {
-    result.whatsappUrl = buildWhatsAppActionUrl(input.creatorWhatsapp, message);
-    result.whatsapp = await sendWhatsAppText({
-      to: input.creatorWhatsapp,
-      message,
-    });
-  }
-
-  return result;
+    }),
+    whatsappTo: input.creatorWhatsapp,
+    message: buildCreatorTrackingMessage(input),
+  });
 }
 
 export async function sendAdminPaymentReviewNotifications(input: AdminPaymentReviewNotificationInput): Promise<NotificationResult> {
   const adminEmail = getConfiguredAdminEmail();
   const adminUrl = `${input.baseUrl.replace(/\/$/, '')}/admin`;
-  const result: NotificationResult = {};
-
-  result.email = await sendAdminPaymentReviewEmail({
-    to: adminEmail,
-    orderId: input.orderId,
-    cardId: input.cardId,
-    recipientName: input.recipientName,
-    creatorName: input.creatorName,
-    paymentReference: input.paymentReference,
-    adminUrl,
+  return deliverNotifications({
+    emailTo: adminEmail,
+    email: (to) => sendAdminPaymentReviewEmail({
+      to,
+      orderId: input.orderId,
+      cardId: input.cardId,
+      recipientName: input.recipientName,
+      creatorName: input.creatorName,
+      paymentReference: input.paymentReference,
+      adminUrl,
+    }),
+    whatsappTo: process.env.VIBECHECK_ADMIN_WHATSAPP?.trim(),
+    message: buildAdminReviewMessage(input, adminUrl),
   });
-
-  const adminWhatsapp = process.env.VIBECHECK_ADMIN_WHATSAPP?.trim();
-  if (adminWhatsapp) {
-    const message = buildAdminReviewMessage(input, adminUrl);
-    result.whatsappUrl = buildWhatsAppActionUrl(adminWhatsapp, message);
-    result.whatsapp = await sendWhatsAppText({
-      to: adminWhatsapp,
-      message,
-    });
-  }
-
-  return result;
 }
 
 export async function sendCreatorPaymentVerifiedNotifications(input: CreatorPaymentVerifiedNotificationInput): Promise<NotificationResult> {
-  const result: NotificationResult = {};
-  const message = buildCreatorVerifiedMessage(input);
-
-  if (input.creatorEmail) {
-    result.email = await sendCreatorPaymentVerifiedEmail({
-      to: input.creatorEmail,
+  return deliverNotifications({
+    emailTo: input.creatorEmail,
+    email: (to) => sendCreatorPaymentVerifiedEmail({
+      to,
       orderId: input.orderId,
       recipientName: input.recipientName,
       creatorName: input.creatorName,
       trackingUrl: input.trackingUrl,
-    });
-  }
-
-  if (input.creatorWhatsapp) {
-    result.whatsappUrl = buildWhatsAppActionUrl(input.creatorWhatsapp, message);
-    result.whatsapp = await sendWhatsAppText({
-      to: input.creatorWhatsapp,
-      message,
-    });
-  }
-
-  return result;
+    }),
+    whatsappTo: input.creatorWhatsapp,
+    message: buildCreatorVerifiedMessage(input),
+  });
 }

@@ -7,6 +7,8 @@ import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
 import { isSupabaseConnectivityError } from '@/services/server/supabase-admin';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 30;
 
 function getSafeCreateCardDetail(error: unknown) {
   if (!error || typeof error !== 'object') return undefined;
@@ -46,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     const creatorSession = getCreatorSessionFromRequest(req);
     const { card, creatorToken } = await createCardDraft(parsed.data, creatorSession?.accountId);
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
+    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL?.trim() || req.nextUrl.origin).replace(/\/+$/, '');
     const creatorUrl = `${baseUrl}/card/${card.id}?ct=${encodeURIComponent(creatorToken)}`;
     const creatorEmail = card.card_data.creator_email?.trim();
     const creatorWhatsapp = card.card_data.creator_whatsapp?.trim();
@@ -57,9 +59,6 @@ export async function POST(req: NextRequest) {
       recipientName: card.recipient_name,
       creatorName: card.creator_name,
       trackingUrl: creatorUrl,
-    }).catch((error) => {
-      console.error('Creator order notifications failed:', error);
-      return null;
     });
 
     return NextResponse.json({

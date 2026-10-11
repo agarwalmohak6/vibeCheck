@@ -33,13 +33,20 @@ type CreatorPaymentVerifiedEmailInput = {
 };
 
 export type EmailDeliveryResult = {
+  // "sent" means accepted by the provider, not confirmed inbox delivery.
   sent: boolean;
   to: string;
-  provider: 'resend' | 'gmail';
-  reason?: 'missing_provider_config';
+  provider: 'brevo' | 'resend' | 'gmail' | 'none';
+  reason?: 'missing_provider_config' | 'invalid_sender' | 'provider_error' | 'timeout';
+  messageId?: string;
 };
 
 const EMAIL_TIMEOUT_MS = 12_000;
+
+function setting(name: string) {
+  const value = process.env[name]?.trim() || '';
+  return /^replace-with-/i.test(value) ? '' : value;
+}
 
 function escapeHtml(value: string) {
   return value
@@ -50,74 +57,131 @@ function escapeHtml(value: string) {
     .replace(/'/g, '&#39;');
 }
 
-async function sendResendEmail(input: {
+function failedDelivery(
+  to: string,
+  provider: EmailDeliveryResult['provider'],
+  reason: NonNullable<EmailDeliveryResult['reason']>,
+  status?: number,
+): EmailDeliveryResult {
+  // Never log OTPs, private creator URLs, or provider credentials.
+  console.error('Email delivery failed.', { provider, reason, status });
+  return { sent: false, to, provider, reason };
+}
+
+function isTimeout(error: unknown) {
+  if (!error || typeof error !== 'object') return false;
+  return ('name' in error && (error.name === 'TimeoutError' || error.name === 'AbortError')) ||
+    ('code' in error && error.code === 'ETIMEDOUT');
+}
+
+async function sendEmail(input: {
   to: string;
   subject: string;
   text: string;
   html: string;
 }): Promise<EmailDeliveryResult> {
-  const resendApiKey = process.env.RESEND_API_KEY;
-  const from = process.env.VIBECHECK_EMAIL_FROM || 'VibeCheck <onboarding@resend.dev>';
-
-  if (!resendApiKey) {
-    const gmailUser = (process.env.GMAIL_USER || 'agarwalmohak6@gmail.com').trim();
-    const gmailAppPassword = (process.env.GMAIL_APP_PASSWORD || 'jbptklbrivfdlmxu').replace(/\s+/g, '');
-
-    if (gmailUser && gmailAppPassword) {
-      const transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 465,
-        secure: true,
-        connectionTimeout: EMAIL_TIMEOUT_MS,
-        greetingTimeout: EMAIL_TIMEOUT_MS,
-        socketTimeout: EMAIL_TIMEOUT_MS,
-        auth: {
-          user: gmailUser,
-          pass: gmailAppPassword,
-        },
-      });
-      await transporter.sendMail({
-        from: {
-          name: process.env.EMAIL_FROM_NAME?.trim() || 'VibeCheck',
-          address: gmailUser,
-        },
-        to: input.to,
-        replyTo: process.env.EMAIL_REPLY_TO?.trim() || gmailUser,
-        subject: input.subject,
-        text: input.text,
-        html: input.html,
-      });
-
-      return { sent: true, to: input.to, provider: 'gmail' };
+  // Brevo's free HTTPS API works on Render without opening SMTP ports.
+  const brevoApiKey = setting('BREVO_API_KEY');
+  if (brevoApiKey) {
+    const senderEmail = setting('BREVO_SENDER_EMAIL');
+    if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(senderEmail)) {
+      return failedDelivery(input.to, 'brevo', 'invalid_sender');
     }
-
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('Email delivery requires RESEND_API_KEY or Gmail SMTP env vars.');
+    try {
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: { 'api-key': brevoApiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender: { email: senderEmail, name: setting('EMAIL_FROM_NAME') || 'VibeCheck' },
+          to: [{ email: input.to }],
+          replyTo: { email: setting('EMAIL_REPLY_TO') || senderEmail },
+          subject: input.subject,
+          textContent: input.text,
+          htmlContent: input.html,
+        }),
+        signal: AbortSignal.timeout(EMAIL_TIMEOUT_MS),
+        cache: 'no-store',
+      });
+      if (!res.ok) return failedDelivery(input.to, 'brevo', 'provider_error', res.status);
+      const result = await res.json() as { messageId?: string };
+      if (!result.messageId) return failedDelivery(input.to, 'brevo', 'provider_error');
+      return { sent: true, to: input.to, provider: 'brevo', messageId: result.messageId };
+    } catch (error) {
+      return failedDelivery(input.to, 'brevo', isTimeout(error) ? 'timeout' : 'provider_error');
     }
-
-    console.info('Email skipped because no email provider is configured.', {
-      to: input.to,
-      subject: input.subject,
-      text: input.text,
-    });
-    return { sent: false, to: input.to, provider: 'resend', reason: 'missing_provider_config' };
   }
 
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${resendApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ from, ...input }),
+  const resendApiKey = setting('RESEND_API_KEY');
+
+  // HTTPS works on Render Free, where outbound SMTP ports are blocked.
+  if (resendApiKey) {
+    const from = setting('VIBECHECK_EMAIL_FROM') ||
+      (process.env.NODE_ENV !== 'production' ? 'VibeCheck <onboarding@resend.dev>' : '');
+    const sender = from.match(/<?([^<>\s]+@[^<>\s]+)>?$/)?.[1];
+    if (!sender || /@your-domain\.com$/i.test(sender) ||
+      (process.env.NODE_ENV === 'production' && /@resend\.dev$/i.test(sender))) {
+      return failedDelivery(input.to, 'resend', 'invalid_sender');
+    }
+
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ from, ...input, reply_to: setting('EMAIL_REPLY_TO') || undefined }),
+        signal: AbortSignal.timeout(EMAIL_TIMEOUT_MS),
+        cache: 'no-store',
+      });
+
+      if (!res.ok) {
+        return failedDelivery(input.to, 'resend', 'provider_error', res.status);
+      }
+      const result = await res.json() as { id?: string };
+      if (!result.id) return failedDelivery(input.to, 'resend', 'provider_error');
+      return { sent: true, to: input.to, provider: 'resend', messageId: result.id };
+    } catch (error) {
+      return failedDelivery(input.to, 'resend', isTimeout(error) ? 'timeout' : 'provider_error');
+    }
+  }
+
+  // Explicit credentials only; SMTP is suitable for local or SMTP-capable hosts.
+  const gmailUser = setting('GMAIL_USER');
+  const gmailAppPassword = setting('GMAIL_APP_PASSWORD').replace(/\s+/g, '');
+  if (!gmailUser || !gmailAppPassword) {
+    return failedDelivery(input.to, 'none', 'missing_provider_config');
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    connectionTimeout: EMAIL_TIMEOUT_MS,
+    greetingTimeout: EMAIL_TIMEOUT_MS,
+    socketTimeout: EMAIL_TIMEOUT_MS,
+    auth: { user: gmailUser, pass: gmailAppPassword },
   });
 
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`Resend email failed: ${res.status} ${detail}`);
+  try {
+    const result = await transporter.sendMail({
+      from: { name: setting('EMAIL_FROM_NAME') || 'VibeCheck', address: gmailUser },
+      to: input.to,
+      replyTo: setting('EMAIL_REPLY_TO') || gmailUser,
+      subject: input.subject,
+      text: input.text,
+      html: input.html,
+    });
+    const accepted = result.accepted?.some((address) =>
+      address.toLowerCase() === input.to.toLowerCase()
+    );
+    if (!accepted) return failedDelivery(input.to, 'gmail', 'provider_error');
+    return { sent: true, to: input.to, provider: 'gmail', messageId: result.messageId };
+  } catch (error) {
+    return failedDelivery(input.to, 'gmail', isTimeout(error) ? 'timeout' : 'provider_error');
+  } finally {
+    transporter.close();
   }
-
-  return { sent: true, to: input.to, provider: 'resend' };
 }
 
 export async function sendAdminOtpEmail({ to, otp }: AdminOtpEmailInput) {
@@ -138,7 +202,7 @@ export async function sendAdminOtpEmail({ to, otp }: AdminOtpEmailInput) {
     </div>
   `;
 
-  return sendResendEmail({ to, subject, text, html });
+  return sendEmail({ to, subject, text, html });
 }
 
 export async function sendCreatorOrderEmail({
@@ -173,7 +237,7 @@ export async function sendCreatorOrderEmail({
     </div>
   `;
 
-  return sendResendEmail({ to, subject, text, html });
+  return sendEmail({ to, subject, text, html });
 }
 
 export async function sendAdminPaymentReviewEmail({
@@ -212,7 +276,7 @@ export async function sendAdminPaymentReviewEmail({
     </div>
   `;
 
-  return sendResendEmail({ to, subject, text, html });
+  return sendEmail({ to, subject, text, html });
 }
 
 export async function sendCreatorPaymentVerifiedEmail({
@@ -241,5 +305,5 @@ export async function sendCreatorPaymentVerifiedEmail({
     </div>
   `;
 
-  return sendResendEmail({ to, subject, text, html });
+  return sendEmail({ to, subject, text, html });
 }

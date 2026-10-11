@@ -70,8 +70,6 @@ type OtpResponse = {
   error?: string;
 };
 
-const ADMIN_EMAIL = 'agarwalmohak6@gmail.com';
-
 function formatDate(value: string | null | undefined) {
   if (!value) return 'Not set';
   try {
@@ -93,11 +91,11 @@ function getBaseUrl() {
   return window.location.origin;
 }
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ configuredAdminEmail }: { configuredAdminEmail: string }) {
   const [otp, setOtp] = useState('');
   const [otpRequested, setOtpRequested] = useState(false);
   const [manualUtr, setManualUtr] = useState('');
-  const [adminEmail, setAdminEmail] = useState('');
+  const [adminEmail, setAdminEmail] = useState(configuredAdminEmail);
   const [payments, setPayments] = useState<ManualPaymentSubmission[]>([]);
   const [cards, setCards] = useState<AdminCard[]>([]);
   const [status, setStatus] = useState<'checking' | 'login' | 'ready'>('checking');
@@ -115,7 +113,7 @@ export default function AdminDashboard() {
 
     if (res.status === 401) {
       setStatus('login');
-      setAdminEmail('');
+      setAdminEmail(configuredAdminEmail);
       setPayments([]);
       setCards([]);
       return;
@@ -125,7 +123,7 @@ export default function AdminDashboard() {
       throw new Error(data.error || 'Could not load admin payments.');
     }
 
-    setAdminEmail(data.admin_email || ADMIN_EMAIL);
+    setAdminEmail(data.admin_email || configuredAdminEmail);
     setPayments(data.payments || []);
     setStatus('ready');
   };
@@ -138,7 +136,7 @@ export default function AdminDashboard() {
 
       if (res.status === 401) {
         setStatus('login');
-        setAdminEmail('');
+        setAdminEmail(configuredAdminEmail);
         setPayments([]);
         setCards([]);
         return;
@@ -148,7 +146,7 @@ export default function AdminDashboard() {
         throw new Error(data.error || 'Could not load admin cards.');
       }
 
-      setAdminEmail(data.admin_email || ADMIN_EMAIL);
+      setAdminEmail(data.admin_email || configuredAdminEmail);
       setCards(data.cards || []);
       setStatus('ready');
     } finally {
@@ -182,19 +180,19 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/request-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: ADMIN_EMAIL }),
+        body: JSON.stringify({}),
       });
       const data = await res.json() as OtpResponse;
 
-      if (!res.ok) {
+      if (!res.ok || !data.success || !data.email_sent) {
         setError(data.error || 'Could not send OTP.');
         return;
       }
 
       setOtpRequested(true);
-      setNotice(data.email_sent === false
-        ? `Local OTP generated for ${data.email || ADMIN_EMAIL}. Check the dev server logs.`
-        : `OTP sent to ${data.email || ADMIN_EMAIL}.`);
+      setOtp('');
+      setAdminEmail(data.email || configuredAdminEmail);
+      setNotice(`OTP sent to ${data.email || configuredAdminEmail}. Check your inbox and spam folder.`);
     } catch {
       setError('Network issue while sending OTP.');
     } finally {
@@ -367,12 +365,12 @@ export default function AdminDashboard() {
               <p className="font-mono text-xs font-black uppercase tracking-[0.24em] text-cyan-300">Owner OTP only</p>
               <h2 className="mt-3 font-[var(--font-outfit)] text-4xl font-black text-white">VibeCheck Ops Login</h2>
               <p className="mt-2 text-sm font-bold text-slate-300">
-                No password field. No shared admin secret. A fresh OTP is always sent to {ADMIN_EMAIL}.
+                Request a fresh one-time code at your configured owner email to sign in.
               </p>
 
               <div className="mt-6 rounded-2xl border border-slate-800 bg-white/[0.035] p-4">
                 <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">OTP destination</p>
-                <p className="mt-1 break-all font-mono text-sm font-black text-cyan-100">{ADMIN_EMAIL}</p>
+                <p className="mt-1 break-all font-mono text-sm font-black text-cyan-100">{adminEmail}</p>
               </div>
 
               <button

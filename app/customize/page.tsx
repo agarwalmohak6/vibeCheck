@@ -551,15 +551,17 @@ function CustomizePageContent() {
         });
         const orderEmail = data.notifications?.email;
         const orderWhatsapp = data.notifications?.whatsapp;
-        if (orderEmail?.sent || orderWhatsapp?.sent) {
+        if (orderEmail?.sent) {
           setNotice({
             tone: 'success',
-            message: 'Tracking link sent. Keep this page open for payment verification.',
+            message: 'Tracking link emailed. Check your inbox or spam folder and keep this page open for payment verification.',
           });
-        } else if (orderEmail || orderWhatsapp) {
+        } else {
           setNotice({
             tone: 'info',
-            message: 'Tracking link is saved. Local email/WhatsApp delivery is skipped until provider keys are configured.',
+            message: orderWhatsapp?.sent
+              ? 'Your order is saved. Email delivery failed, but your tracking link was sent on WhatsApp.'
+              : 'Your order is saved, but we could not email your tracking link. Save the private tracking link below before leaving this page.',
           });
         }
         setPaymentStep(true);
@@ -624,6 +626,13 @@ function CustomizePageContent() {
           <div className="mx-auto inline-flex w-fit items-center gap-2 rounded-full border border-pink-200/70 bg-white/75 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-pink-500 shadow-lg shadow-pink-100">
             Final unlock step
           </div>
+
+          <a
+            href={`/card/${createdCardId}?ct=${encodeURIComponent(creatorToken || '')}`}
+            className="mx-auto text-sm font-bold text-pink-700 underline underline-offset-4"
+          >
+            Open your private order tracking link — keep it for later
+          </a>
 
           <QRCheckout
             cardId={createdCardId}

@@ -12,6 +12,7 @@ import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
+export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,20 +36,23 @@ export async function POST(req: NextRequest) {
     }
 
     const otp = generateAdminOtp();
-    console.info(`[ADMIN OTP] Generated OTP for ${email}: ${otp}`);
-
-    let emailSent = false;
-    try {
-      const emailResult = await sendAdminOtpEmail({ to: email, otp });
-      emailSent = emailResult.sent;
-    } catch (mailError) {
-      console.error('Admin OTP email delivery failed:', mailError);
+    const emailResult = await sendAdminOtpEmail({ to: email, otp });
+    if (!emailResult.sent) {
+      const configurationError = emailResult.reason === 'missing_provider_config' ||
+        emailResult.reason === 'invalid_sender';
+      return NextResponse.json({
+        success: false,
+        email_sent: false,
+        error: configurationError
+          ? 'Admin email is not configured correctly. Set BREVO_API_KEY and a verified BREVO_SENDER_EMAIL on the API server, or configure your Resend sender.'
+          : 'The email provider could not send your OTP. Please try again shortly. If this continues on Render, use an HTTPS email provider instead of Gmail SMTP.',
+      }, { status: configurationError ? 503 : 502 });
     }
 
     const response = NextResponse.json({
       success: true,
       email,
-      email_sent: emailSent,
+      email_sent: true,
     });
     setAdminOtpCookie(response, createAdminOtpToken(email, otp));
     return response;
