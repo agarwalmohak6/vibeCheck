@@ -1,80 +1,17 @@
 import { MOOD_STORIES } from './moodStories';
-// lib/themes.ts
 export type ThemeId = 'midnight_romance' | 'kdrama_romance' | 'soft_coquette' | 'desi_festive' | 'proposal_glow';
-
 export interface Theme {
-  id: ThemeId;
-  label: string;
-  emoji: string;
-  description: string;
-  coverImage: string;
-  preview: {
-    bg: string;
-    accent: string;
-    accent2: string;
-    text: string;
-  };
+  id: ThemeId; label: string; emoji: string; description: string; coverImage: string;
+  preview: { bg: string; accent: string; accent2: string; text: string };
 }
-
+const creamPreview = { bg: '#fff2e9', accent: '#c75765', accent2: '#b88943', text: '#714337' };
+// Keep existing IDs so previously purchased cards and saved drafts still work.
 export const THEMES: Theme[] = [
-  {
-    id: 'proposal_glow', label: 'The Next Chapter', emoji: '🤍',
-    description: 'Warm ivory, rose, and champagne. A love letter to your future together.',
-    coverImage: '/themes/proposal_glow.svg',
-    preview: { bg: '#fff9f0', accent: '#9b4654', accent2: '#aa7738', text: '#3e2929' },
-  },
-  {
-    id: 'midnight_romance',
-    label: 'Midnight Romance',
-    emoji: '🌙',
-    description: 'After-dark colour, soft neon, and movie-night atmosphere',
-    coverImage: '/themes/proposal_universal_cover.png',
-    preview: {
-      bg: '#0B0F19',
-      accent: '#FF2E93',
-      accent2: '#a855f7',
-      text: '#f8f0ff',
-    },
-  },
-  {
-    id: 'kdrama_romance',
-    label: 'First Blush',
-    emoji: '☔',
-    description: 'Pink, lavender, and the butterflies before an honest confession',
-    coverImage: '/themes/kdrama_romance.png',
-    preview: {
-      bg: '#FAFAFD',
-      accent: '#FF85A1',
-      accent2: '#7D82B8',
-      text: '#413C58',
-    },
-  },
-  {
-    id: 'soft_coquette',
-    label: 'Soft Sorry',
-    emoji: '🎀',
-    description: 'Soft pink, pearl, teddy, and handwritten apology energy',
-    coverImage: '/themes/soft_coquette.png',
-    preview: {
-      bg: '#fff0f5',
-      accent: '#e91e8c',
-      accent2: '#d4a017',
-      text: '#3d1a2e',
-    },
-  },
-  {
-    id: 'desi_festive',
-    label: 'Birthday Gold',
-    emoji: '✨',
-    description: 'Cream, gold, cake, and polished birthday celebration',
-    coverImage: '/themes/desi_festive.png',
-    preview: {
-      bg: '#FFF8EA',
-      accent: '#D97706',
-      accent2: '#E91E8C',
-      text: '#432818',
-    },
-  },
+  { id: 'proposal_glow', label: 'The Next Chapter', emoji: '🤍', description: 'Cream stationery, rose ink, and a promise of tomorrow.', coverImage: '/themes/proposal_glow.svg', preview: creamPreview },
+  { id: 'midnight_romance', label: 'Peach Evening', emoji: '🌙', description: 'Peach, cream, and a little golden glow for a cosy evening.', coverImage: '/themes/movie_cream.svg', preview: { ...creamPreview, bg: '#fff0e2' } },
+  { id: 'kdrama_romance', label: 'Blush & Butterflies', emoji: '💗', description: 'Blush pink, warm cream, and a little courage.', coverImage: '/themes/blush_cream.svg', preview: { ...creamPreview, bg: '#fff0ed' } },
+  { id: 'soft_coquette', label: 'Soft Sorry', emoji: '🌿', description: 'A gentle apology on warm cream stationery.', coverImage: '/themes/sorry_cream.svg', preview: creamPreview },
+  { id: 'desi_festive', label: 'Birthday Gold', emoji: '✨', description: 'Cream, peach, and gold for their favourite day.', coverImage: '/themes/birthday_cream.svg', preview: { ...creamPreview, bg: '#fff6e9' } },
 ];
 
 export type TemplateId = 'shoot_shot' | 'maan_jao' | 'birthday_roast' | 'bestie_check' | 'netflix_chill';
@@ -95,7 +32,7 @@ export interface StoryQuestion {
 export const TEMPLATE_TYPES = (Object.keys(MOOD_STORIES) as TemplateId[]).map((id) => {
   const { narrative: _narrative, ...template } = MOOD_STORIES[id];
   void _narrative;
-  return { id, ...template, hasRunaway: false, gifSearchTerms: [template.label] };
+  return { id, ...template, hasRunaway: ['shoot_shot', 'bestie_check', 'netflix_chill'].includes(id), gifSearchTerms: [template.label] };
 });
 
 export const PRIMARY_TEMPLATE_IDS: TemplateId[] = ['bestie_check', 'shoot_shot', 'maan_jao', 'birthday_roast', 'netflix_chill'];

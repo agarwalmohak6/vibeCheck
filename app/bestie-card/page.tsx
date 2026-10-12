@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     url: "/bestie-card",
     images: [
       {
-        url: absoluteUrl("/themes/bestie_cover.png"),
+        url: absoluteUrl("/themes/blush_cream.svg"),
         width: 1024,
         height: 1024,
         alt: "VibeCheck bestie card cover",
@@ -31,7 +31,7 @@ export default function BestieCardPage() {
       eyebrow="Private best friend card"
       title="Make a bestie card for the person who gets every inside joke."
       description="VibeCheck lets you create a private digital bestie card with your message, a bright cover, music, tiny questions, and one-device access."
-      image="/themes/bestie_cover.png"
+      image="/themes/blush_cream.svg"
       imageAlt="Bestie greeting card cover"
       ctaHref="/customize?type=bestie_check&new=1"
       ctaLabel="Create a bestie card"

@@ -16,25 +16,25 @@ export const metadata = {
 export default function ShippingPolicyPage() {
   return (
     <>
-      <main className="mx-auto min-h-screen max-w-4xl space-y-8 bg-neutral-950 px-6 py-16 font-sans text-neutral-200">
-        <div className="border-b border-white/10 pb-6">
+      <main className="mx-auto min-h-screen max-w-4xl space-y-8 bg-[var(--bg)] px-6 py-16 font-sans text-[var(--text2)]">
+        <div className="border-b border-[var(--border)] pb-6">
           <Link
             href="/"
-            className="text-xs font-bold uppercase tracking-widest text-pink-400 hover:underline"
+            className="text-xs font-bold uppercase tracking-widest text-[var(--accent)] hover:underline"
           >
             ← Back to Home
           </Link>
-          <h1 className="mt-4 text-3xl font-black text-white md:text-4xl">
+          <h1 className="mt-4 text-3xl font-black text-[var(--text)] md:text-4xl">
             Digital Delivery Policy
           </h1>
-          <p className="mt-2 text-xs text-neutral-400">
+          <p className="mt-2 text-xs text-[var(--text2)]">
             Effective date: {POLICY_EFFECTIVE_DATE}
           </p>
         </div>
 
-        <section className="space-y-5 text-sm leading-relaxed text-neutral-300">
+        <section className="space-y-5 text-sm leading-relaxed text-[var(--text2)]">
           <div>
-            <h2 className="text-lg font-bold text-white">
+            <h2 className="text-lg font-bold text-[var(--text)]">
               1. No Physical Shipping
             </h2>
             <p className="mt-2">
@@ -45,7 +45,7 @@ export default function ShippingPolicyPage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-bold text-white">
+            <h2 className="text-lg font-bold text-[var(--text)]">
               2. Delivery Method and Timeline
             </h2>
             <p className="mt-2">
@@ -57,7 +57,7 @@ export default function ShippingPolicyPage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-bold text-white">
+            <h2 className="text-lg font-bold text-[var(--text)]">
               3. Access Duration
             </h2>
             <p className="mt-2">
@@ -68,7 +68,7 @@ export default function ShippingPolicyPage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-bold text-white">
+            <h2 className="text-lg font-bold text-[var(--text)]">
               4. Delivery Problems
             </h2>
             <p className="mt-2">
@@ -76,20 +76,20 @@ export default function ShippingPolicyPage() {
               minutes, email{" "}
               <a
                 href={`mailto:${BUSINESS_EMAIL}`}
-                className="text-pink-400 hover:underline"
+                className="text-[var(--accent)] hover:underline"
               >
                 {BUSINESS_EMAIL}
               </a>{" "}
               or call{" "}
               <a
                 href={`tel:${BUSINESS_PHONE_HREF}`}
-                className="text-pink-400 hover:underline"
+                className="text-[var(--accent)] hover:underline"
               >
                 {BUSINESS_PHONE_DISPLAY}
               </a>
               . Include the payment reference and card ID. Eligible
               non-delivery cases are handled under our{" "}
-              <Link href="/refund-policy" className="text-pink-400 hover:underline">
+              <Link href="/refund-policy" className="text-[var(--accent)] hover:underline">
                 Cancellation & Refund Policy
               </Link>
               .

@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     url: "/sorry-card",
     images: [
       {
-        url: absoluteUrl("/themes/sorry_universal_cover.png"),
+        url: absoluteUrl("/themes/sorry_cream.svg"),
         width: 1024,
         height: 1024,
         alt: "VibeCheck sorry card cover",
@@ -31,7 +31,7 @@ export default function SorryCardPage() {
       eyebrow="Private apology card"
       title="Make a sorry card that feels honest, private, and worth opening."
       description="VibeCheck helps you send a private apology card online when a plain sorry message feels too small. Add your words, a soft cover, a song, a few tiny questions, and one private link."
-      image="/themes/sorry_universal_cover.png"
+      image="/themes/sorry_cream.svg"
       imageAlt="Apology note with flowers, tea, and an envelope"
       ctaHref="/customize?type=maan_jao&new=1"
       ctaLabel="Create a sorry card"

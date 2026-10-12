@@ -309,37 +309,37 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
   const conversionRate = cards.length ? Math.round((paidCards / cards.length) * 100) : 0;
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#05070d] text-slate-100">
+    <main className="min-h-screen overflow-hidden bg-[var(--bg)] text-[var(--text2)]">
       <div className="pointer-events-none fixed inset-0">
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(56,189,248,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(56,189,248,0.045)_1px,transparent_1px)] bg-[size:38px_38px]" />
-        <div className="absolute -left-24 top-[-12%] h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
-        <div className="absolute right-[-8%] top-10 h-96 w-96 rounded-full bg-fuchsia-500/14 blur-3xl" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(184,137,67,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(184,137,67,0.045)_1px,transparent_1px)] bg-[size:38px_38px]" />
+        <div className="absolute -left-24 top-[-12%] h-96 w-96 rounded-full bg-[#efb3aa]/20 blur-3xl" />
+        <div className="absolute right-[-8%] top-10 h-96 w-96 rounded-full bg-[#efb3aa]/20 blur-3xl" />
         <div className="absolute bottom-[-14%] left-[35%] h-96 w-96 rounded-full bg-emerald-400/12 blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(14,165,233,0.16),transparent_30%),radial-gradient(circle_at_80%_40%,rgba(168,85,247,0.12),transparent_28%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(233,173,145,0.16),transparent_30%),radial-gradient(circle_at_80%_40%,rgba(239,179,170,0.12),transparent_28%)]" />
       </div>
 
       <section className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-8 sm:px-8">
-        <header className="mb-8 flex flex-col gap-4 rounded-[1.5rem] border border-cyan-400/20 bg-slate-950/78 p-5 shadow-2xl shadow-cyan-950/40 backdrop-blur md:flex-row md:items-center md:justify-between">
+        <header className="mb-8 flex flex-col gap-4 rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl shadow-[#bd8461]/10 backdrop-blur md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="font-mono text-xs font-black uppercase tracking-[0.28em] text-cyan-300">VibeCheck admin service</p>
-            <h1 className="mt-2 font-[var(--font-outfit)] text-4xl font-black leading-none text-white sm:text-5xl">
+            <p className="font-mono text-xs font-black uppercase tracking-[0.28em] text-[var(--accent)]">VibeCheck admin service</p>
+            <h1 className="mt-2 font-[var(--font-outfit)] text-4xl font-black leading-none text-[var(--text)] sm:text-5xl">
               Payment Ops Dashboard
             </h1>
-            <p className="mt-2 max-w-2xl text-sm font-bold text-slate-300">
+            <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--text2)]">
               OTP-gated control room for UPI verification, test-mode skips, card inventory, and delivery links.
             </p>
           </div>
 
           {status === 'ready' && (
             <div className="flex flex-wrap items-center gap-3">
-              <div className="rounded-2xl border border-cyan-400/20 bg-white/[0.04] px-4 py-3 font-mono text-sm font-black text-cyan-100 shadow-lg shadow-cyan-950/30">
-                <span className="block text-[10px] uppercase tracking-[0.2em] text-slate-500">Signed in</span>
+              <div className="rounded-2xl border border-[var(--border)] bg-white/[0.04] px-4 py-3 font-mono text-sm font-black text-[var(--accent)] shadow-lg shadow-[#bd8461]/10">
+                <span className="block text-[10px] uppercase tracking-[0.2em] text-[var(--text2)]">Signed in</span>
                 {adminEmail}
               </div>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-black text-slate-200 shadow-lg shadow-slate-950 transition hover:-translate-y-0.5 hover:border-cyan-400/40"
+                className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-black text-[var(--text2)] shadow-lg shadow-[#bd8461]/10 transition hover:-translate-y-0.5 hover:border-[var(--border)]"
               >
                 Logout
               </button>
@@ -349,9 +349,9 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
 
         {status === 'checking' && (
           <div className="grid flex-1 place-items-center">
-            <div className="rounded-[1.5rem] border border-cyan-400/20 bg-slate-950/80 p-8 text-center shadow-2xl shadow-cyan-950/40">
-              <p className="font-mono text-sm font-black uppercase tracking-[0.22em] text-cyan-300">Checking admin session</p>
-              <p className="mt-3 text-slate-400">One moment...</p>
+            <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-8 text-center shadow-2xl shadow-[#bd8461]/10">
+              <p className="font-mono text-sm font-black uppercase tracking-[0.22em] text-[var(--accent)]">Checking admin session</p>
+              <p className="mt-3 text-[var(--text2)]">One moment...</p>
             </div>
           </div>
         )}
@@ -360,29 +360,29 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
           <div className="grid flex-1 place-items-center">
             <form
               onSubmit={handleLogin}
-              className="w-full max-w-xl rounded-[1.75rem] border border-cyan-400/20 bg-slate-950/86 p-6 shadow-2xl shadow-cyan-950/40 backdrop-blur"
+              className="w-full max-w-xl rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl shadow-[#bd8461]/10 backdrop-blur"
             >
-              <p className="font-mono text-xs font-black uppercase tracking-[0.24em] text-cyan-300">Owner OTP only</p>
-              <h2 className="mt-3 font-[var(--font-outfit)] text-4xl font-black text-white">VibeCheck Ops Login</h2>
-              <p className="mt-2 text-sm font-bold text-slate-300">
+              <p className="font-mono text-xs font-black uppercase tracking-[0.24em] text-[var(--accent)]">Owner OTP only</p>
+              <h2 className="mt-3 font-[var(--font-outfit)] text-4xl font-black text-[var(--text)]">VibeCheck Ops Login</h2>
+              <p className="mt-2 text-sm font-bold text-[var(--text2)]">
                 Request a fresh one-time code at your configured owner email to sign in.
               </p>
 
-              <div className="mt-6 rounded-2xl border border-slate-800 bg-white/[0.035] p-4">
-                <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">OTP destination</p>
-                <p className="mt-1 break-all font-mono text-sm font-black text-cyan-100">{adminEmail}</p>
+              <div className="mt-6 rounded-2xl border border-[var(--border)] bg-white/[0.035] p-4">
+                <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text2)]">OTP destination</p>
+                <p className="mt-1 break-all font-mono text-sm font-black text-[var(--accent)]">{adminEmail}</p>
               </div>
 
               <button
                 type="button"
                 onClick={() => void requestOtp()}
                 disabled={loading}
-                className="mt-4 w-full rounded-2xl border border-cyan-400/30 bg-cyan-400/10 px-5 py-4 font-mono text-sm font-black uppercase tracking-[0.14em] text-cyan-100 shadow-xl shadow-cyan-950/30 transition hover:-translate-y-0.5 hover:bg-cyan-400/15 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-4 w-full rounded-2xl border border-[var(--border)] bg-[#efb3aa]/20 px-5 py-4 font-mono text-sm font-black uppercase tracking-[0.14em] text-[var(--accent)] shadow-xl shadow-[#bd8461]/10 transition hover:-translate-y-0.5 hover:bg-[#efb3aa]/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading ? 'Sending OTP...' : otpRequested ? 'Resend OTP' : 'Send OTP'}
               </button>
 
-              <label className="mt-4 block font-mono text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+              <label className="mt-4 block font-mono text-xs font-black uppercase tracking-[0.18em] text-[var(--text2)]">
                 6-digit OTP
               </label>
               <input
@@ -392,19 +392,19 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 placeholder="000000"
-                className="mt-2 w-full rounded-2xl border border-slate-700 bg-black/40 px-4 py-4 text-center font-mono text-3xl font-black tracking-[0.35em] text-white outline-none transition placeholder:text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-500/20"
+                className="mt-2 w-full rounded-2xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-4 text-center font-mono text-3xl font-black tracking-[0.35em] text-[var(--text)] outline-none transition placeholder:text-[var(--text2)] focus:border-[var(--border)] focus:ring-4 focus:ring-[#efb3aa]/20"
               />
 
               <button
                 type="submit"
                 disabled={loading || !otpRequested || otp.length !== 6}
-                className="mt-6 w-full rounded-2xl bg-linear-to-r from-cyan-400 via-sky-500 to-fuchsia-500 px-5 py-4 font-mono text-sm font-black uppercase tracking-[0.16em] text-slate-950 shadow-xl shadow-cyan-950/50 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-6 w-full rounded-2xl bg-linear-to-r from-[#f3b4a0] via-[#efb3aa] to-[#ebae91] px-5 py-4 font-mono text-sm font-black uppercase tracking-[0.16em] text-[var(--text2)] shadow-xl shadow-[#bd8461]/10 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? 'Verifying OTP...' : 'Enter dashboard'}
               </button>
 
               {(notice || error) && (
-                <p className={`mt-4 text-sm font-bold ${error ? 'text-rose-300' : 'text-emerald-300'}`}>
+                <p className={`mt-4 text-sm font-bold ${error ? 'text-rose-700' : 'text-emerald-700'}`}>
                   {error || notice}
                 </p>
               )}
@@ -415,10 +415,10 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
         {status === 'ready' && (
           <div className="grid gap-5 lg:grid-cols-[0.78fr_1.22fr]">
             <aside className="space-y-5">
-              <div className="rounded-[1.5rem] border border-cyan-400/20 bg-slate-950/82 p-5 shadow-2xl shadow-cyan-950/35 backdrop-blur">
-                <p className="font-mono text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Quick approve</p>
-                <h2 className="mt-2 font-[var(--font-outfit)] text-3xl font-black text-white">Verify a UTR</h2>
-                <p className="mt-2 text-sm font-bold text-slate-400">
+              <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl shadow-[#bd8461]/10 backdrop-blur">
+                <p className="font-mono text-xs font-black uppercase tracking-[0.22em] text-[var(--accent)]">Quick approve</p>
+                <h2 className="mt-2 font-[var(--font-outfit)] text-3xl font-black text-[var(--text)]">Verify a UTR</h2>
+                <p className="mt-2 text-sm font-bold text-[var(--text2)]">
                   Paste a submitted UTR. If it exists, the card unlocks immediately.
                 </p>
                 <div className="mt-4 flex gap-2">
@@ -426,76 +426,76 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
                     value={manualUtr}
                     onChange={(event) => setManualUtr(event.target.value)}
                     placeholder="UTR / ref no."
-                    className="min-w-0 flex-1 rounded-2xl border border-slate-700 bg-black/40 px-4 py-3 font-mono text-sm font-black uppercase text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-500/20"
+                    className="min-w-0 flex-1 rounded-2xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-3 font-mono text-sm font-black uppercase text-[var(--text)] outline-none transition placeholder:text-[var(--text2)] focus:border-[var(--border)] focus:ring-4 focus:ring-[#efb3aa]/20"
                   />
                   <button
                     type="button"
                     onClick={() => verifyUtr(manualUtr)}
                     disabled={Boolean(verifyingRef)}
-                    className="rounded-2xl bg-linear-to-r from-emerald-300 via-cyan-300 to-sky-400 px-4 py-3 font-mono text-sm font-black text-slate-950 shadow-lg shadow-cyan-950/40 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-2xl bg-linear-to-r from-[#f3b4a0] via-[#efb3aa] to-[#ebae91] px-4 py-3 font-mono text-sm font-black text-[var(--text2)] shadow-lg shadow-[#bd8461]/10 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Approve
                   </button>
                 </div>
                 {(notice || error) && (
-                  <p className={`mt-4 text-sm font-bold ${error ? 'text-rose-300' : 'text-emerald-300'}`}>
+                  <p className={`mt-4 text-sm font-bold ${error ? 'text-rose-700' : 'text-emerald-700'}`}>
                     {error || notice}
                   </p>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-[1.25rem] border border-amber-300/20 bg-amber-300/[0.07] p-4 shadow-xl shadow-slate-950/30">
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">Pending UTR</p>
-                  <p className="mt-1 text-4xl font-black text-amber-200">{pendingCount}</p>
+                <div className="rounded-[1.25rem] border border-amber-300/20 bg-amber-300/[0.07] p-4 shadow-xl shadow-[#bd8461]/10">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-amber-800">Pending UTR</p>
+                  <p className="mt-1 text-4xl font-black text-amber-800">{pendingCount}</p>
                 </div>
-                <div className="rounded-[1.25rem] border border-emerald-300/20 bg-emerald-300/[0.07] p-4 shadow-xl shadow-slate-950/30">
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-emerald-200">Paid UTR</p>
-                  <p className="mt-1 text-4xl font-black text-emerald-200">{paidCount}</p>
+                <div className="rounded-[1.25rem] border border-emerald-300/20 bg-emerald-300/[0.07] p-4 shadow-xl shadow-[#bd8461]/10">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">Paid UTR</p>
+                  <p className="mt-1 text-4xl font-black text-emerald-700">{paidCount}</p>
                 </div>
-                <div className="rounded-[1.25rem] border border-cyan-300/20 bg-cyan-300/[0.07] p-4 shadow-xl shadow-slate-950/30">
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Cards</p>
-                  <p className="mt-1 text-4xl font-black text-cyan-200">{cards.length}</p>
+                <div className="rounded-[1.25rem] border border-[var(--border)] bg-[#efb3aa]/20 p-4 shadow-xl shadow-[#bd8461]/10">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[var(--accent)]">Cards</p>
+                  <p className="mt-1 text-4xl font-black text-[var(--accent)]">{cards.length}</p>
                 </div>
-                <div className="rounded-[1.25rem] border border-fuchsia-300/20 bg-fuchsia-300/[0.07] p-4 shadow-xl shadow-slate-950/30">
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-fuchsia-200">Conversion</p>
-                  <p className="mt-1 text-4xl font-black text-fuchsia-200">{conversionRate}%</p>
+                <div className="rounded-[1.25rem] border border-[var(--border)] bg-[#efb3aa]/20 p-4 shadow-xl shadow-[#bd8461]/10">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-[var(--accent)]">Conversion</p>
+                  <p className="mt-1 text-4xl font-black text-[var(--accent)]">{conversionRate}%</p>
                 </div>
               </div>
 
-              <div className="rounded-[1.5rem] border border-rose-400/20 bg-rose-500/[0.07] p-5 shadow-xl shadow-slate-950/30">
-                <p className="font-mono text-xs font-black uppercase tracking-[0.22em] text-rose-300">Danger zone</p>
-                <h2 className="mt-2 font-[var(--font-outfit)] text-3xl font-black text-white">Clear test data</h2>
-                <p className="mt-2 text-sm font-bold text-rose-100/75">
+              <div className="rounded-[1.5rem] border border-rose-400/20 bg-rose-500/[0.07] p-5 shadow-xl shadow-[#bd8461]/10">
+                <p className="font-mono text-xs font-black uppercase tracking-[0.22em] text-rose-700">Danger zone</p>
+                <h2 className="mt-2 font-[var(--font-outfit)] text-3xl font-black text-[var(--text)]">Clear test data</h2>
+                <p className="mt-2 text-sm font-bold text-rose-700">
                   Deletes cards and payment rows. Use only when you intentionally want a clean testing slate.
                 </p>
                 <input
                   value={cleanupConfirm}
                   onChange={(event) => setCleanupConfirm(event.target.value)}
                   placeholder="Type CLEAR_TEST_DATA"
-                  className="mt-4 w-full rounded-2xl border border-rose-300/20 bg-black/40 px-4 py-3 font-mono text-sm font-black text-white outline-none transition placeholder:text-slate-600 focus:border-rose-300 focus:ring-4 focus:ring-rose-500/20"
+                  className="mt-4 w-full rounded-2xl border border-rose-300/20 bg-[var(--surface2)] px-4 py-3 font-mono text-sm font-black text-[var(--text)] outline-none transition placeholder:text-[var(--text2)] focus:border-rose-300 focus:ring-4 focus:ring-rose-500/20"
                 />
                 <button
                   type="button"
                   onClick={handleCleanup}
                   disabled={cleanupLoading || cleanupConfirm !== 'CLEAR_TEST_DATA'}
-                  className="mt-3 w-full rounded-2xl border border-rose-300/30 bg-rose-400/15 px-4 py-3 font-mono text-sm font-black text-rose-100 shadow-lg shadow-slate-950 transition hover:-translate-y-0.5 hover:bg-rose-400/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-3 w-full rounded-2xl border border-rose-300/30 bg-rose-400/15 px-4 py-3 font-mono text-sm font-black text-rose-700 shadow-lg shadow-[#bd8461]/10 transition hover:-translate-y-0.5 hover:bg-rose-400/20 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {cleanupLoading ? 'Clearing...' : 'Clear cards and payments'}
                 </button>
               </div>
             </aside>
 
-            <section className="rounded-[1.5rem] border border-cyan-400/20 bg-slate-950/82 p-4 shadow-2xl shadow-cyan-950/35 backdrop-blur sm:p-5">
+            <section className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-2xl shadow-[#bd8461]/10 backdrop-blur sm:p-5">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="font-mono text-xs font-black uppercase tracking-[0.22em] text-cyan-300">Recent direct UPI</p>
-                  <h2 className="mt-2 font-[var(--font-outfit)] text-3xl font-black text-white">Submitted references</h2>
+                  <p className="font-mono text-xs font-black uppercase tracking-[0.22em] text-[var(--accent)]">Recent direct UPI</p>
+                  <h2 className="mt-2 font-[var(--font-outfit)] text-3xl font-black text-[var(--text)]">Submitted references</h2>
                 </div>
                 <button
                   type="button"
                   onClick={() => loadAdminData().catch((err: Error) => setError(err.message))}
-                  className="rounded-2xl border border-cyan-400/20 bg-white/[0.04] px-4 py-3 font-mono text-sm font-black text-cyan-100 shadow-lg shadow-slate-950 transition hover:-translate-y-0.5 hover:border-cyan-300/40"
+                  className="rounded-2xl border border-[var(--border)] bg-white/[0.04] px-4 py-3 font-mono text-sm font-black text-[var(--accent)] shadow-lg shadow-[#bd8461]/10 transition hover:-translate-y-0.5 hover:border-[var(--border)]"
                 >
                   Refresh
                 </button>
@@ -503,9 +503,9 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
 
               <div className="max-h-[68vh] space-y-3 overflow-y-auto pr-1">
                 {payments.length === 0 && (
-                  <div className="rounded-[1.25rem] border border-dashed border-cyan-400/20 bg-white/[0.035] p-8 text-center">
-                    <p className="text-lg font-black text-white">No UTR submissions yet.</p>
-                    <p className="mt-2 text-sm font-bold text-slate-400">
+                  <div className="rounded-[1.25rem] border border-dashed border-[var(--border)] bg-white/[0.035] p-8 text-center">
+                    <p className="text-lg font-black text-[var(--text)]">No UTR submissions yet.</p>
+                    <p className="mt-2 text-sm font-bold text-[var(--text2)]">
                       New references will appear here after users submit them from the payment screen.
                     </p>
                   </div>
@@ -520,31 +520,31 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
                   return (
                     <article
                       key={payment.id}
-                      className="rounded-[1.25rem] border border-slate-800 bg-white/[0.045] p-4 shadow-xl shadow-slate-950/30"
+                      className="rounded-[1.25rem] border border-[var(--border)] bg-white/[0.045] p-4 shadow-xl shadow-[#bd8461]/10"
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className={`rounded-full px-3 py-1 font-mono text-[11px] font-black uppercase tracking-[0.12em] ${
                               isPaid
-                                ? 'bg-emerald-300/12 text-emerald-200'
-                                : 'bg-amber-300/12 text-amber-200'
+                                ? 'bg-emerald-300/12 text-emerald-700'
+                                : 'bg-amber-300/12 text-amber-800'
                             }`}>
                               {isPaid ? 'Paid' : payment.status}
                             </span>
-                            <span className="rounded-full bg-cyan-300/10 px-3 py-1 font-mono text-[11px] font-black uppercase tracking-[0.12em] text-cyan-200">
+                            <span className="rounded-full bg-[#efb3aa]/20 px-3 py-1 font-mono text-[11px] font-black uppercase tracking-[0.12em] text-[var(--accent)]">
                               {payment.card?.template_type || 'Card'}
                             </span>
                           </div>
-                          <h3 className="mt-3 truncate text-xl font-black text-white">{title}</h3>
-                          <p className="mt-1 break-all font-mono text-sm font-black text-cyan-200">
+                          <h3 className="mt-3 truncate text-xl font-black text-[var(--text)]">{title}</h3>
+                          <p className="mt-1 break-all font-mono text-sm font-black text-[var(--accent)]">
                             {payment.payment_reference || 'Missing reference'}
                           </p>
-                          <p className="mt-2 text-xs font-bold text-slate-400">
+                          <p className="mt-2 text-xs font-bold text-[var(--text2)]">
                             Submitted {formatDate(payment.created_at)}
                             {payment.verified_at ? ` - Verified ${formatDate(payment.verified_at)}` : ''}
                           </p>
-                          <p className="mt-1 break-all font-mono text-[11px] font-bold text-slate-500">Card ID: {payment.card_id}</p>
+                          <p className="mt-1 break-all font-mono text-[11px] font-bold text-[var(--text2)]">Card ID: {payment.card_id}</p>
                         </div>
 
                         {!isPaid && (
@@ -552,7 +552,7 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
                             type="button"
                             onClick={() => verifyUtr(payment.payment_reference)}
                             disabled={verifyingRef === payment.payment_reference}
-                            className="rounded-2xl bg-linear-to-r from-emerald-300 via-cyan-300 to-sky-400 px-4 py-3 font-mono text-sm font-black text-slate-950 shadow-lg shadow-cyan-950/40 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="rounded-2xl bg-linear-to-r from-[#f3b4a0] via-[#efb3aa] to-[#ebae91] px-4 py-3 font-mono text-sm font-black text-[var(--text2)] shadow-lg shadow-[#bd8461]/10 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             {verifyingRef === payment.payment_reference ? 'Approving...' : 'Approve'}
                           </button>
@@ -564,19 +564,19 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
               </div>
             </section>
 
-            <section className="rounded-[1.5rem] border border-fuchsia-400/20 bg-slate-950/82 p-4 shadow-2xl shadow-fuchsia-950/25 backdrop-blur sm:p-5 lg:col-start-2">
+            <section className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-2xl shadow-[#bd8461]/10 backdrop-blur sm:p-5 lg:col-start-2">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="font-mono text-xs font-black uppercase tracking-[0.22em] text-fuchsia-300">Admin inventory</p>
-                  <h2 className="mt-2 font-[var(--font-outfit)] text-3xl font-black text-white">All cards</h2>
-                  <p className="mt-1 text-xs font-bold text-slate-400">
+                  <p className="font-mono text-xs font-black uppercase tracking-[0.22em] text-[var(--accent)]">Admin inventory</p>
+                  <h2 className="mt-2 font-[var(--font-outfit)] text-3xl font-black text-[var(--text)]">All cards</h2>
+                  <p className="mt-1 text-xs font-bold text-[var(--text2)]">
                     Admin-only list. Private creator views never receive this global inventory.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => loadCards().catch((err: Error) => setError(err.message))}
-                  className="rounded-2xl border border-fuchsia-400/20 bg-white/[0.04] px-4 py-3 font-mono text-sm font-black text-fuchsia-100 shadow-lg shadow-slate-950 transition hover:-translate-y-0.5 hover:border-fuchsia-300/40"
+                  className="rounded-2xl border border-[var(--border)] bg-white/[0.04] px-4 py-3 font-mono text-sm font-black text-[var(--accent)] shadow-lg shadow-[#bd8461]/10 transition hover:-translate-y-0.5 hover:border-[var(--border)]"
                 >
                   {cardsLoading ? 'Loading...' : 'Refresh cards'}
                 </button>
@@ -584,9 +584,9 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
 
               <div className="max-h-[68vh] space-y-3 overflow-y-auto pr-1">
                 {cards.length === 0 && (
-                  <div className="rounded-[1.25rem] border border-dashed border-fuchsia-400/20 bg-white/[0.035] p-8 text-center">
-                    <p className="text-lg font-black text-white">No cards found.</p>
-                    <p className="mt-2 text-sm font-bold text-slate-400">
+                  <div className="rounded-[1.25rem] border border-dashed border-[var(--border)] bg-white/[0.035] p-8 text-center">
+                    <p className="text-lg font-black text-[var(--text)]">No cards found.</p>
+                    <p className="mt-2 text-sm font-bold text-[var(--text2)]">
                       Cards created from the builder will show here for admin management.
                     </p>
                   </div>
@@ -601,50 +601,50 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
                   return (
                     <article
                       key={card.id}
-                      className="rounded-[1.25rem] border border-slate-800 bg-white/[0.045] p-4 shadow-xl shadow-slate-950/30"
+                      className="rounded-[1.25rem] border border-[var(--border)] bg-white/[0.045] p-4 shadow-xl shadow-[#bd8461]/10"
                     >
                       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className={`rounded-full px-3 py-1 font-mono text-[11px] font-black uppercase tracking-[0.12em] ${
-                              card.is_paid ? 'bg-emerald-300/12 text-emerald-200' : 'bg-amber-300/12 text-amber-200'
+                              card.is_paid ? 'bg-emerald-300/12 text-emerald-700' : 'bg-amber-300/12 text-amber-800'
                             }`}>
                               {card.is_paid ? 'Paid' : card.payment_status}
                             </span>
-                            <span className="rounded-full bg-cyan-300/10 px-3 py-1 font-mono text-[11px] font-black uppercase tracking-[0.12em] text-cyan-200">
+                            <span className="rounded-full bg-[#efb3aa]/20 px-3 py-1 font-mono text-[11px] font-black uppercase tracking-[0.12em] text-[var(--accent)]">
                               {card.template_type}
                             </span>
-                            <span className="rounded-full bg-fuchsia-300/10 px-3 py-1 font-mono text-[11px] font-black uppercase tracking-[0.12em] text-fuchsia-200">
+                            <span className="rounded-full bg-[#efb3aa]/20 px-3 py-1 font-mono text-[11px] font-black uppercase tracking-[0.12em] text-[var(--accent)]">
                               {card.tier_selected}
                             </span>
                           </div>
-                          <h3 className="mt-3 truncate text-xl font-black text-white">
+                          <h3 className="mt-3 truncate text-xl font-black text-[var(--text)]">
                             {card.creator_name} to {card.recipient_name}
                           </h3>
-                          <p className="mt-1 text-xs font-bold text-slate-400">
+                          <p className="mt-1 text-xs font-bold text-[var(--text2)]">
                             Created {formatDate(card.created_at)} - Expires {formatDate(card.expires_at)}
                           </p>
-                          <p className="mt-1 break-all font-mono text-[11px] font-bold text-slate-500">
+                          <p className="mt-1 break-all font-mono text-[11px] font-bold text-[var(--text2)]">
                             Card ID: {card.id}
                           </p>
-                          <p className="mt-1 break-all font-mono text-[11px] font-bold text-slate-500">
+                          <p className="mt-1 break-all font-mono text-[11px] font-bold text-[var(--text2)]">
                             Account: {card.account_id || 'Unclaimed / guest'}
                           </p>
                           {card.payment_reference && (
-                            <p className="mt-1 break-all font-mono text-[11px] font-black text-cyan-200">
+                            <p className="mt-1 break-all font-mono text-[11px] font-black text-[var(--accent)]">
                               UTR: {card.payment_reference}
                             </p>
                           )}
                         </div>
 
                         <div className="grid gap-2 sm:grid-cols-3 xl:w-[430px]">
-                          <a href={recipientUrl} className="rounded-2xl border border-cyan-400/20 bg-cyan-300/10 px-4 py-3 text-center font-mono text-xs font-black text-cyan-100 transition hover:border-cyan-300/50">
+                          <a href={recipientUrl} className="rounded-2xl border border-[var(--border)] bg-[#efb3aa]/20 px-4 py-3 text-center font-mono text-xs font-black text-[var(--accent)] transition hover:border-[var(--border)]">
                             Recipient
                           </a>
-                          <a href={creatorUrl} className="rounded-2xl border border-slate-700 bg-white/[0.045] px-4 py-3 text-center font-mono text-xs font-black text-slate-200 transition hover:border-slate-500">
+                          <a href={creatorUrl} className="rounded-2xl border border-[var(--border)] bg-white/[0.045] px-4 py-3 text-center font-mono text-xs font-black text-[var(--text2)] transition hover:border-[var(--border)]">
                             Creator
                           </a>
-                          <a href={roomUrl} className="rounded-2xl bg-linear-to-r from-fuchsia-300 via-cyan-300 to-emerald-300 px-4 py-3 text-center font-mono text-xs font-black text-slate-950 transition hover:-translate-y-0.5">
+                          <a href={roomUrl} className="rounded-2xl bg-linear-to-r from-[#f3b4a0] via-[#efb3aa] to-[#ebae91] px-4 py-3 text-center font-mono text-xs font-black text-[var(--text2)] transition hover:-translate-y-0.5">
                             Room
                           </a>
                         </div>

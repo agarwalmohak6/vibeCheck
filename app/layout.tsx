@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./romance.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import SeoStructuredData from "@/components/SeoStructuredData";
 import {
@@ -10,13 +11,15 @@ import {
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/site";
-import { Inter, Outfit, Caveat_Brush, Dancing_Script, Cormorant_Garamond, Cinzel_Decorative } from 'next/font/google';
+import { Quicksand, Pacifico, Outfit, Caveat_Brush, Dancing_Script, Cormorant_Garamond, Cinzel_Decorative } from 'next/font/google';
 
-const inter = Inter({
+const quicksand = Quicksand({
   subsets: ['latin'],
-  variable: '--font-body',
+  variable: '--font-quicksand',
   display: 'swap',
 });
+
+const pacifico = Pacifico({ weight: '400', subsets: ['latin'], variable: '--font-romance-heading', display: 'swap' });
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -120,7 +123,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-theme="soft_coquette"
-      className={`${inter.variable} ${outfit.variable} ${caveatBrush.variable} ${dancingScript.variable} ${cormorantGaramond.variable} ${cinzelDecorative.variable}`}
+      className={`${quicksand.variable} ${pacifico.variable} ${outfit.variable} ${caveatBrush.variable} ${dancingScript.variable} ${cormorantGaramond.variable} ${cinzelDecorative.variable}`}
     >
       <body data-scroll-behavior="smooth">
         <SeoStructuredData />

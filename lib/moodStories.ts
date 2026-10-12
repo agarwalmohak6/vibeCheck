@@ -57,7 +57,7 @@ export const MOOD_STORIES: Record<TemplateId, MoodStory> = {
   maan_jao: {
     label: 'A real apology 🌿', emoji: '🌿', description: 'Take responsibility. Make space. Start an honest conversation.',
     builderHint: 'A gentle starting point. If you can, name what happened and one change you will follow through on.',
-    recommendedTheme: 'soft_coquette', defaultCoverImage: '/themes/soft_coquette.png', defaultYesText: 'I am open to talking 🌿', defaultNoText: 'I need some space',
+    recommendedTheme: 'soft_coquette', defaultCoverImage: '/themes/sorry_cream.svg', defaultYesText: 'I am open to talking 🌿', defaultNoText: 'I need some space',
     messagePresets: [
       { style: '🌿 Honest & accountable', title: 'You deserve a real apology', body: 'I am sorry for hurting you. You deserved more care from me.\nI do not want to explain away the impact or ask you to make me feel better about it. I want to take responsibility.\nIf you want to tell me how this felt, I will listen without arguing with your experience. And if you need space, I will respect that too.\nA message cannot put everything right. What I do next matters more, and I want to put in that work.\nYou do not owe me a quick reply or forgiveness. I just wanted to start with an honest sorry. 🌿' },
       { style: '🤍 Soft & sincere', title: 'No excuses. Just an honest sorry.', body: 'I care about you, and I am sorry I caused you hurt.\nYou should not have to make your feelings smaller to make this easier for me.\nI want to understand, take responsibility, and do better in ways you can actually see.\nIf a conversation would help, I am here to listen. If space would help, I will respect it.\nTake the time you need. 🤍' },
@@ -78,7 +78,7 @@ export const MOOD_STORIES: Record<TemplateId, MoodStory> = {
   birthday_roast: {
     label: 'Your birthday era 🎂', emoji: '🎂', description: 'A little hype, a lot of love, and a wish worth keeping.',
     builderHint: 'Ready for their birthday. Make it extra personal with a favourite memory or an affectionate inside joke.',
-    recommendedTheme: 'desi_festive', defaultCoverImage: '/themes/desi_festive.png', defaultYesText: 'Birthday love received 🎂', defaultNoText: 'Saving this for later',
+    recommendedTheme: 'desi_festive', defaultCoverImage: '/themes/birthday_cream.svg', defaultYesText: 'Birthday love received 🎂', defaultNoText: 'Saving this for later',
     messagePresets: [
       { style: '🎂 All the love', title: 'The world got a little better the day you arrived', body: 'Happy birthday to someone I am really glad exists. 🎂\nToday is a good excuse to say what can get lost in an ordinary week: you matter, you are loved, and there is so much about you worth celebrating.\nI hope this next year brings you laughter that catches you off guard, people who show up, and little moments that feel completely your own.\nYou do not have to have it all figured out to deserve a beautiful year.\nMake a wish. Have the cake. Let yourself be celebrated. This day is yours. ✨' },
       { style: '🥳 Gentle roast, big love', title: 'Another year older. Still our favourite plot twist.', body: 'Happy birthday! Your annual reminder that being this iconic is apparently a full-time job. 🥳\nA little wiser? Possibly. Better at replying on time? No promises.\nJokes aside, I am so glad you are in my life. You bring something nobody else does, and I hope you know how loved you are.\nHere is to excellent cake, questionable dance moves, and a year with plenty to smile about.\nThe candles can count. We do not have to. 🎂' },
@@ -99,7 +99,7 @@ export const MOOD_STORIES: Record<TemplateId, MoodStory> = {
   bestie_check: {
     label: 'A little more than a crush 💗', emoji: '💗', description: 'From almost saying it to finally saying it. Soft, brave, and honest.',
     builderHint: 'A romantic confession with room for an honest answer. Add a small detail you love about them.',
-    recommendedTheme: 'kdrama_romance', defaultCoverImage: '/themes/kdrama_romance.png', defaultYesText: 'I feel it too 💗', defaultNoText: 'I need a little time',
+    recommendedTheme: 'kdrama_romance', defaultCoverImage: '/themes/blush_cream.svg', defaultYesText: 'I feel it too 💗', defaultNoText: 'I need a little time',
     messagePresets: [
       { style: '💗 Soft & brave', title: 'I think you should know', body: 'I have been trying to find a casual way to say this. Turns out, the honest way is better.\nI like you. More than I have quite managed to say out loud. 💗\nI look forward to talking to you. You cross my mind in the middle of ordinary days. And I would like to find out what this could be, if you feel something too.\nYou do not have to answer right away, or feel the same way.\nI just did not want to keep hiding a real feeling inside another casual hello. ✨' },
       { style: '🙈 A little playful', title: 'This is me officially losing the plot', body: 'Small update: my attempt to act completely normal around you has not gone to plan. 🙈\nSomewhere between wanting to talk to you and smiling at my phone, I caught feelings.\nSo here is the brave bit: I like you, and I would love to see where this could go.\nIf you feel it too, tell me. If you do not, you can tell me that too.\nEither way, at least my very subtle hints can finally retire. 💗' },
@@ -120,7 +120,7 @@ export const MOOD_STORIES: Record<TemplateId, MoodStory> = {
   netflix_chill: {
     label: 'Just us & a movie 🍿', emoji: '🍿', description: 'A cosy invitation where the company is the best part.',
     builderHint: 'A relaxed movie-night invite. Add a film, place, or date if you already have one in mind.',
-    recommendedTheme: 'midnight_romance', defaultCoverImage: '/themes/netflix_chill_cover.png', defaultYesText: 'Let’s make a plan 🍿', defaultNoText: 'Another time?',
+    recommendedTheme: 'midnight_romance', defaultCoverImage: '/themes/movie_cream.svg', defaultYesText: 'Let’s make a plan 🍿', defaultNoText: 'Another time?',
     messagePresets: [
       { style: '🍿 Cosy & casual', title: 'The film is negotiable. The company is the point.', body: 'Here is a small plan I would really like: a good movie, something to snack on, and a little time with you. 🍿\nWe can spend too long choosing what to watch, pause for commentary, and decide halfway through that the snacks were the real event.\nNo elaborate evening required. I just think an ordinary night would be better with you in it.\nUp for a movie night? We can pick a day that works for both of us. 🎬' },
       { style: '🎬 Trailer voice', title: 'Coming soon: a very good evening', body: 'Starring: you, me, and a film we may or may not finish. 🎬\nFeaturing: snacks, strong opinions about the plot, and the occasional pause to explain why that character absolutely should not go in there.\nNo dress code. No grand plan. Just a little time together.\nWant to choose a film and make an evening of it? 🍿' },

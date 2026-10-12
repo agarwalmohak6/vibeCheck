@@ -925,7 +925,7 @@ function CustomizePageContent() {
                 whileTap={{ scale: 0.96 }}
                 type="button"
                 onClick={() => setShowGiphy(true)}
-                className="w-full py-3 rounded-xl text-sm font-medium bg-neutral-900/40 border-2 border-dashed border-white/15 hover:border-white/25 text-neutral-200 hover:text-white cursor-pointer"
+                className="w-full py-3 rounded-xl text-sm font-medium bg-[var(--surface2)] border-2 border-dashed border-[var(--border)] hover:border-[var(--accent)] text-[var(--text2)] hover:text-[var(--accent)] cursor-pointer"
               >
                 Search GIFs
               </motion.button>
@@ -1323,7 +1323,7 @@ function CustomizePageContent() {
 
 export default function CustomizePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white" style={{ background: 'var(--bg)' }}>Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-[var(--text)]" style={{ background: 'var(--bg)' }}>Loading...</div>}>
       <CustomizePageContent />
     </Suspense>
   );

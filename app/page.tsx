@@ -10,23 +10,23 @@ import { TIERS } from "@/lib/themes";
 const HERO_CLIPS = [
   {
     title: "Confession",
-    image: "/themes/proposal_universal_cover.png",
-    tone: "Say it like a private drop, not a risky paragraph.",
+    image: "/themes/blush_cream.svg",
+    tone: "A little courage, wrapped in a little love.",
   },
   {
     title: "Sorry",
-    image: "/themes/sorry_universal_cover.png",
+    image: "/themes/sorry_cream.svg",
     tone: "Own the mistake with a reveal that feels thoughtful.",
   },
   {
     title: "Birthday",
-    image: "/themes/birthday_universal_cover.png",
+    image: "/themes/birthday_cream.svg",
     tone: "Make the wish feel like a tiny event.",
   },
 ];
 
 const FLOW_STEPS = [
-  ["01", "Choose the mood", "Pick confession, sorry, birthday, bestie, or movie night."],
+  ["01", "Choose the mood", "Pick a confession, proposal, apology, birthday, or movie night."],
   ["02", "Add the truth", "Write the note, add photos, music, lock, and your order contact."],
   ["03", "Share one link", "Pay by UPI, get your recipient link, and track the order privately."],
 ];
@@ -97,14 +97,14 @@ export default function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             className="vc-eyebrow"
           >
-            Private drops for Indian chaos
+            A little courage. A lot of heart.
           </motion.span>
           <motion.h1
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.06 }}
           >
-            Don&apos;t send a paragraph. Send a moment.
+            Something just for them.
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 18 }}
@@ -166,7 +166,7 @@ export default function LandingPage() {
         <div>
           <span className="vc-eyebrow">Simple pricing</span>
           <h2>One private link. One clear order ID.</h2>
-          <p>Built for ad traffic: fast to understand, fast to create, easy to track after payment.</p>
+          <p>A personal note, your favourite photos, and a little music. Made for one person, ready to keep.</p>
         </div>
         <div className="vc-lite-price-grid">
           {TIERS.map((tier) => (

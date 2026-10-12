@@ -5,10 +5,13 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { TEMPLATE_TYPES, type StoryQuestion } from "@/lib/themes";
 import { getMoodStory } from "@/lib/moodStories";
-import { SCRATCH_REVEAL_PERCENT, scratchCoverage } from "@/lib/revealEffects";
+import { SCRATCH_REVEAL_PERCENT, scratchCoverage, scratchPoint } from "@/lib/revealEffects";
+import FitStage from "@/components/FitStage";
+import FollowUpReplies from "@/components/FollowUpReplies";
+import { paginateLetter } from "@/lib/letterPages";
 import MoodTypewriter from "@/components/MoodTypewriter";
 import EnvelopeReveal from "@/components/EnvelopeReveal";
-import RunawayButton from "@/components/RunawayButton";
+import RomanceButtons from "@/components/RomanceButtons";
 import VinylDisk from "@/components/VinylDisk";
 import SecretCodeGate from "@/components/SecretCodeGate";
 import HeartCanvas from "@/components/HeartCanvas";
@@ -24,6 +27,7 @@ import type { PublicCard } from "@/types/vibecheck";
 interface RecipientViewProps {
   card: PublicCard;
   initialRoomMode?: boolean;
+  isCreator?: boolean;
 }
 
 function buildCoverImages(uploadedCovers?: string[], primaryCover?: string): string[] {
@@ -37,14 +41,15 @@ function buildCoverImages(uploadedCovers?: string[], primaryCover?: string): str
     },
   );
 
-  return unique.slice(0, 4);
+  return unique.slice(0, 8);
 }
 
-export default function RecipientView({ card, initialRoomMode = false }: RecipientViewProps) {
+export default function RecipientView({ card, initialRoomMode = false, isCreator = false }: RecipientViewProps) {
   const [envelopeOpened, setEnvelopeOpened] = useState(initialRoomMode);
   const [secretUnlocked, setSecretUnlocked] = useState(
-    initialRoomMode || !card.card_data.has_secret_code,
+    !card.card_data.has_secret_code,
   );
+  const [roomOpen, setRoomOpen] = useState(initialRoomMode);
   const language: RecipientLocale = "en";
   const templateMeta = TEMPLATE_TYPES.find((t) => t.id === card.template_type);
   const hasRunaway = templateMeta?.hasRunaway || false;
@@ -93,34 +98,13 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
       }),
     });
 
-    // Trigger music using the gestured audio hook exposed globally
-    setTimeout(() => {
-      if (typeof window !== "undefined") {
-        const win = window as Window &
-          typeof globalThis & { __startMusic?: () => void };
-        if (win.__startMusic) {
-          win.__startMusic();
-        }
-      }
-    }, 100);
   };
 
-  const handleUnlock = () => {
-    setSecretUnlocked(true);
-    setTimeout(() => {
-      if (typeof window !== "undefined") {
-        const win = window as Window &
-          typeof globalThis & { __startMusic?: () => void };
-        if (win.__startMusic) {
-          win.__startMusic();
-        }
-      }
-    }, 100);
-  };
+  const handleUnlock = () => { setSecretUnlocked(true); };
 
   const handleYes = () => {
     setYesClicked(true);
-    const colors = ["#FACC15", "#FF2E93", "#a855f7", "#00FF66", "#ffffff"];
+    const colors = ["#e8ba72", "#d87982", "#f3b4a0", "#f6d7b3", "#fffaf0"];
     // Massive blast from bottom
     [0, 200, 400, 600, 800].forEach((d) =>
       setTimeout(
@@ -171,12 +155,12 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
       data-template={card.template_type}
       lang="en-IN"
       data-locale={language}
-      data-room-mode="false"
+      data-room-mode={roomOpen ? "true" : "false"}
     >
       {/* Floating hearts canvas background for Soft Coquette theme */}
       {card.theme_selected === "soft_coquette" && <HeartCanvas />}
 
-      {/* Neon Celebration Morph on Success */}
+      {/* Warm celebration on success */}
       <AnimatePresence>
         {yesClicked && (
           <motion.div
@@ -215,16 +199,7 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
         />
       )}
 
-      {/* Music player (using trackId or fallback musicUrl) */}
-      {envelopeOpened &&
-        secretUnlocked &&
-        (card.music_track_id || card.card_data.music_url) && (
-          <VinylDisk
-            trackId={card.music_track_id || undefined}
-            musicUrl={card.card_data.music_url || undefined}
-            musicLabel={card.card_data.music_label || undefined}
-          />
-        )}
+      <VinylDisk trackId={card.music_track_id || undefined} musicUrl={card.card_data.music_url || undefined} musicLabel={card.card_data.music_label || undefined} />
 
       {/* Card content */}
       <AnimatePresence>
@@ -232,9 +207,14 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
           <motion.main
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            data-room-mode="false"
+            data-room-mode={roomOpen ? "true" : "false"}
           >
-            {!yesClicked ? (
+            {roomOpen ? (
+              <section className="vc-romance-room">
+                <button type="button" className="vc-romance-back" onClick={() => setRoomOpen(false)}>← Back to your card</button>
+                <FollowUpReplies card={card} isCreator={isCreator} locale={language} />
+              </section>
+            ) : !yesClicked ? (
               <RecipientRevealDrive
                 cardId={card.id}
                 coverImages={coverImages}
@@ -256,7 +236,9 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
                 onDodge={handleDodge}
               />
             ) : (
-              <RecipientFinalReveal
+              <FitStage><RecipientFinalReveal
+                onReplay={() => setYesClicked(false)}
+                onReply={() => setRoomOpen(true)}
                 coverImages={coverImages}
                 displayMessageTitle={displayMessageTitle}
                 displayMainBody={displayMainBody}
@@ -265,7 +247,7 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
                 successEmoji={getMoodStory(card.template_type).emoji}
                 successHeading={revealStory.ending}
                 successSubtext="Your note and these little moments are here to revisit."
-              />
+              /></FitStage>
             )}
 
             {/* Footer */}
@@ -463,7 +445,7 @@ function KoikoiStageShell({
       exit={{ opacity: 0, y: -18, scale: 0.985 }}
       transition={{ duration: 0.52, ease: [0.16, 1, 0.3, 1] }}
     >
-      {children}
+      <FitStage>{children}</FitStage>
     </motion.section>
   );
 }
@@ -524,6 +506,8 @@ function KoikoiLetterStage({
 }) {
   const [opened, setOpened] = useState(false);
   const noteBody = body || getMoodStory(templateType).messagePresets[0].body;
+  const pages = useMemo(() => paginateLetter(noteBody), [noteBody]);
+  const [page, setPage] = useState(0);
 
   return (
     <KoikoiStageShell className="vc-koikoi-stage--letter">
@@ -537,7 +521,8 @@ function KoikoiLetterStage({
         <article className="vc-koikoi-letter" data-template={templateType}>
           <p>Dear {recipientName},</p>
           <h2>{title}</h2>
-          <MoodTypewriter key={noteBody} text={noteBody} templateType={templateType} />
+          <MoodTypewriter key={`${page}-${noteBody}`} text={pages[page]} templateType={templateType} />
+          {pages.length > 1 && <nav className="vc-letter-pages" aria-label="Letter pages"><button type="button" disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Previous</button><span>{page + 1} / {pages.length}</span><button type="button" disabled={page === pages.length - 1} onClick={() => setPage(p => p + 1)}>Next →</button></nav>}
           <strong>— {creatorName}</strong>
           <button type="button" onClick={onNext}>
             A few little moments <span aria-hidden>→</span>
@@ -596,12 +581,10 @@ function KoikoiCardsStage({
 
 function KoikoiQuestionStage({
   cardId,
-  templateType,
   revealStory,
   storyQuestions,
   hasRunaway,
   ctaPrompt,
-  noButtonWarning,
   yesText,
   noText,
   onYes,
@@ -619,7 +602,7 @@ function KoikoiQuestionStage({
   onYes: () => void;
   onDodge: (label: string, dodgeCount: number) => void;
 }) {
-  const prompts = storyQuestions?.slice(0, 3) || [];
+  const prompts = storyQuestions || [];
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [response, setResponse] = useState("");
 
@@ -650,15 +633,9 @@ function KoikoiQuestionStage({
         {hasRunaway ? (
           <div className="vc-koikoi-runaway">
             <p>{ctaPrompt}</p>
-            <small>{noButtonWarning}</small>
-            <RunawayButton
-              onYes={onYes}
-              memeMode={templateType === "shoot_shot"}
-              templateType={templateType}
-              yesText={yesText}
-              noText={noText}
-              onDodge={onDodge}
-            />
+
+            <RomanceButtons onYes={onYes} yesText={yesText} noText={noText} onDodge={onDodge} onLater={() => setResponse("Take your time. This little moment will be here when you are ready.")} />
+            {response && <p role="status">{response}</p>}
           </div>
         ) : (
           <div className="vc-story-response">
@@ -728,7 +705,7 @@ function PhotoClipAccordion({
   captions: string[];
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const images = coverImages.slice(0, Math.min(coverImages.length, 4));
+  const images = coverImages.slice(0, 8);
 
   useEffect(() => {
     if (images.length <= 1) return;
@@ -746,7 +723,7 @@ function PhotoClipAccordion({
         <div className="vc-photo-clip-light__empty">
           <span aria-hidden>{templateEmoji}</span>
           <strong>No uploaded photos in this card</strong>
-          <p>Creator ne photos add nahi kiye, so this reveal stays text-only.</p>
+          <p>Every word is still here, just for you.</p>
         </div>
       </div>
     );
@@ -880,7 +857,7 @@ function ScratchLoveNote({
       const gradient = ctx.createLinearGradient(0, 0, rect.width, rect.height);
       gradient.addColorStop(0, "#efbdc2");
       gradient.addColorStop(0.48, "#f5dfbb");
-      gradient.addColorStop(1, "#c8b5e6");
+      gradient.addColorStop(1, "#edb395");
       ctx.globalCompositeOperation = "source-over";
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, rect.width, rect.height);
@@ -938,7 +915,7 @@ function ScratchLoveNote({
     const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    const point = scratchPoint(event.clientX, event.clientY, rect, canvas.clientWidth, canvas.clientHeight);
     const radius = event.pointerType === "mouse" ? 26 : 32;
     const previous = lastPointRef.current || point;
     ctx.globalCompositeOperation = "destination-out";
@@ -1032,6 +1009,8 @@ function ScratchLoveNote({
 }
 
 function RecipientFinalReveal({
+  onReplay,
+  onReply,
   coverImages,
   displayMessageTitle,
   displayMainBody,
@@ -1041,6 +1020,8 @@ function RecipientFinalReveal({
   successHeading,
   successSubtext,
 }: {
+  onReplay: () => void;
+  onReply: () => void;
   coverImages: string[];
   displayMessageTitle: string;
   displayMainBody: string;
@@ -1052,11 +1033,8 @@ function RecipientFinalReveal({
 }) {
   const heroImage = coverImages[0];
   const supportingImages = coverImages.slice(1, 4);
-  const bodyLines = displayMainBody
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .slice(0, 4);
+  const pages = useMemo(() => paginateLetter(displayMainBody), [displayMainBody]);
+  const [page, setPage] = useState(0);
 
   return (
     <motion.section
@@ -1090,14 +1068,14 @@ function RecipientFinalReveal({
       <div className="vc-final-reveal__copy">
         <p>{successEmoji} final reveal</p>
         <h1>{successHeading}</h1>
-        <strong>{recipientName}, yeh moment {creatorName} tak pahunch gaya.</strong>
+        <strong>{recipientName}, a little moment from {creatorName}, yours to keep.</strong>
         <div className="vc-final-reveal__note">
           <span>{displayMessageTitle}</span>
-          {bodyLines.map((line, index) => (
-            <p key={`${line}-${index}`}>{line}</p>
-          ))}
+          <p style={{ whiteSpace: "pre-wrap" }}>{pages[page]}</p>
+          {pages.length > 1 && <nav className="vc-letter-pages" aria-label="Saved letter pages"><button type="button" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>←</button><span>{page + 1} / {pages.length}</span><button type="button" onClick={() => setPage(p => Math.min(pages.length - 1, p + 1))} disabled={page === pages.length - 1}>→</button></nav>}
         </div>
         <small>{successSubtext}</small>
+        <div className="vc-romance-final-actions"><button type="button" onClick={onReply}>Send a reply ♡</button><button type="button" onClick={onReplay}>See the moments again</button></div>
       </div>
     </motion.section>
   );

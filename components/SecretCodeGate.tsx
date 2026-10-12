@@ -55,7 +55,7 @@ export default function SecretCodeGate({ cardId, unlockQuestion, onUnlock }: Sec
       className="fixed inset-0 z-50 flex items-center justify-center"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      style={{ background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(12px)' }}
+      style={{ background: 'rgba(255,242,233,0.96)', backdropFilter: 'blur(12px)' }}
     >
       <motion.div
         className="flex flex-col items-center gap-6 p-8 rounded-3xl max-w-sm w-full mx-4"
