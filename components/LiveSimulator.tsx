@@ -39,7 +39,7 @@ export default function LiveSimulator() {
     setTimeout(() => {
       setEnvelopeOpen(true);
       setIsOpening(false);
-      const colors = ["#FACC15", "#FF2E93", "#a855f7", "#00FF66", "#ffffff"];
+      const colors = ["#e8ba72", "#d87982", "#f3b4a0", "#f6d7b3", "#fffaf0"];
       confetti({ particleCount: 80, spread: 100, origin: { y: 0.5 }, colors });
     }, 600);
   };
@@ -132,7 +132,7 @@ export default function LiveSimulator() {
             <span className="text-[9px] font-bold">12:00</span>
             <div
               className="w-14 h-3.5 rounded-b-xl mx-auto absolute left-1/2 -translate-x-1/2 top-0"
-              style={{ background: "rgba(11,15,25,0.88)" }}
+              style={{ background: "rgba(255,242,233,0.96)" }}
             />
             <div className="flex gap-1 text-[9px]">📶 🔋</div>
           </div>

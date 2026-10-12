@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     url: "/birthday-card",
     images: [
       {
-        url: absoluteUrl("/themes/birthday_universal_cover.png"),
+        url: absoluteUrl("/themes/birthday_cream.svg"),
         width: 1024,
         height: 1024,
         alt: "VibeCheck happy birthday card cover",
@@ -31,7 +31,7 @@ export default function BirthdayCardPage() {
       eyebrow="Private birthday card"
       title="Make a happy birthday card that feels like more than a story post."
       description="Build a private digital birthday card with a polished reveal, birthday visuals, a song, personal wishes, and tiny questions that make the recipient smile before they reply."
-      image="/themes/birthday_universal_cover.png"
+      image="/themes/birthday_cream.svg"
       imageAlt="Birthday cake with candles, balloons, and gifts"
       ctaHref="/customize?type=birthday_roast&new=1"
       ctaLabel="Create a birthday card"

@@ -22,3 +22,8 @@ export function typingDelay(character: string): number {
   if (/\p{Extended_Pictographic}/u.test(character)) return 160;
   return 22;
 }
+
+/** Convert viewport pointer positions to the canvas's unscaled CSS coordinates. */
+export function scratchPoint(clientX: number, clientY: number, rect: { left: number; top: number; width: number; height: number }, width: number, height: number) {
+  return { x: (clientX - rect.left) * width / Math.max(1, rect.width), y: (clientY - rect.top) * height / Math.max(1, rect.height) };
+}

@@ -1,0 +1,2 @@
+export const MAX_IMAGE_DATA_URL_LENGTH = 400_000;
+export const MAX_COMPRESSED_IMAGE_BYTES = 250 * 1024;

@@ -5,12 +5,13 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
 import { PRIMARY_TEMPLATE_TYPES, TEMPLATE_TYPES, TIERS, ThemeId } from '@/lib/themes';
-import GiphyModal from '@/components/GiphyModal';
+import SceneLoading from '@/components/SceneLoading';
+import { getMoodStory } from '@/lib/moodStories';
 import SuccessHub from '@/components/SuccessHub';
 import MusicSelector from '@/components/MusicSelector';
 import QRCheckout from '@/components/QRCheckout';
 import PaymentTestModeToggle from '@/components/PaymentTestModeToggle';
-import { compressImage } from '@/lib/imageCompressor';
+import { compressImage, prepareCardImages } from '@/lib/imageCompressor';
 import { DEFAULT_UPI_VPA } from '@/lib/upi';
 import HeartCanvas from '@/components/HeartCanvas';
 import AmbientBackground from '@/components/AmbientBackground';
@@ -185,7 +186,6 @@ function CustomizePageContent() {
     musicLabel: '',
   });
 
-  const [showGiphy, setShowGiphy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [createdCardId, setCreatedCardId] = useState<string | null>(null);
@@ -229,9 +229,7 @@ function CustomizePageContent() {
   const submitCreatorName = formatPersonName(form.creatorName);
   const uploadedImages = form.coverImageUrls.filter((source) => source.trim());
   const primaryUploadedImage = uploadedImages[0] || '';
-  const gifSearchTerms = selectedTemplate.gifSearchTerms?.length
-    ? selectedTemplate.gifSearchTerms
-    : [`${stripEmojiLabel(selectedTemplate.label)} reaction`];
+
   const rememberCheckout = (
     cardId: string,
     token: string | null | undefined,
@@ -496,10 +494,12 @@ function CustomizePageContent() {
   };
 
   const handleSubmit = async () => {
-    if (!validateBeforeCreate()) return;
+    if (loading || isCompressing || !validateBeforeCreate()) return;
     setLoading(true);
     setNotice(null);
     try {
+      const safeImages = await prepareCardImages(uploadedImages);
+      setForm(prev => ({ ...prev, coverImageUrls: safeImages, coverImageUrl: safeImages[0] || '', gifUrl: '' }));
       const res = await fetch('/api/cards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -513,9 +513,9 @@ function CustomizePageContent() {
           card_data: {
             message_title: form.messageTitle.trim(),
             main_body: form.mainBody.trim(),
-            gif_url: form.gifUrl,
-            cover_image_url: primaryUploadedImage,
-            cover_image_urls: uploadedImages,
+            gif_url: '',
+            cover_image_url: safeImages[0] || '',
+            cover_image_urls: safeImages,
             creator_email: form.creatorEmail.trim().toLowerCase(),
             creator_whatsapp: form.creatorWhatsapp.trim(),
             unlock_code: form.hasSecretCode ? form.unlockCode : '',
@@ -653,12 +653,7 @@ function CustomizePageContent() {
             onPaid={() => markCheckoutPaid(createdCardId, creatorToken)}
           />
 
-          {loading && (
-            <div className="mx-auto mt-1 flex w-fit flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-5 py-3 backdrop-blur">
-              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }} className="text-xl">🌀</motion.div>
-              <p className="text-xs font-bold text-neutral-200">Waiting for payment confirmation...</p>
-            </div>
-          )}
+          {loading && <SceneLoading mood={form.templateType} scene="payment" compact />}
         </div>
       </main>
     );
@@ -857,7 +852,7 @@ function CustomizePageContent() {
                 <>
                   <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="text-xl">🌀</motion.span>
                   <strong>Preparing photos...</strong>
-                  <small>Compressing locally for faster loading</small>
+                  <SceneLoading mood={form.templateType} scene="photos" compact />
                 </>
               ) : uploadedImages.length >= MAX_UPLOAD_IMAGES ? (
                 <>
@@ -899,38 +894,7 @@ function CustomizePageContent() {
             )}
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold mb-2" style={{ color: 'var(--text2)' }}>Add a reveal cameo GIF</label>
-            {form.gifUrl ? (
-              <div className="vc-gif-cameo-picker">
-                <div className="vc-gif-cameo-picker__thumb">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={form.gifUrl} alt="Selected reveal GIF" />
-                </div>
-                <div>
-                  <strong>Shown while the envelope opens</strong>
-                  <span>It spins in for a second, then disappears before the card starts.</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => set('gifUrl', '')}
-                  className="vc-gif-cameo-picker__remove"
-                  aria-label="Remove reveal GIF"
-                >
-                  ✕
-                </button>
-              </div>
-            ) : (
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                type="button"
-                onClick={() => setShowGiphy(true)}
-                className="w-full py-3 rounded-xl text-sm font-medium bg-neutral-900/40 border-2 border-dashed border-white/15 hover:border-white/25 text-neutral-200 hover:text-white cursor-pointer"
-              >
-                Search GIFs
-              </motion.button>
-            )}
-          </div>
+          <div className="vc-auto-scene-preview"><span aria-hidden="true">{getMoodStory(form.templateType).narrative.emojis.join(' ')}</span><p>Opening animations and little surprises match your mood automatically.</p></div>
         </div>
       );
 
@@ -1053,7 +1017,7 @@ function CustomizePageContent() {
           <motion.button
             type="button"
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={loading || isCompressing}
             whileHover={{ scale: 1.02, boxShadow: '0 20px 60px var(--glow)' }}
             whileTap={{ scale: 0.96 }}
             className="w-full py-4 rounded-2xl text-lg font-black text-white mt-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1062,7 +1026,7 @@ function CustomizePageContent() {
               boxShadow: '0 8px 30px var(--glow)',
             }}
           >
-            {loading ? 'Generating link...' : `Looks good - send it for ₹${selectedTier.price}`}
+            {loading ? 'Preparing your card…' : `Looks good - send it for ₹${selectedTier.price}`}
           </motion.button>
           <p className="text-xs text-center font-medium leading-relaxed" style={{ color: 'var(--text2)' }}>
             Secure direct UPI · QR/deep links accepted · admin verified by UTR
@@ -1144,7 +1108,8 @@ function CustomizePageContent() {
               style={{ background: 'linear-gradient(90deg, var(--accent), var(--accent2))' }} />
           </div>
 
-          <div className="vc-builder-panel relative overflow-hidden">
+          <div className="vc-builder-panel relative overflow-hidden" aria-busy={loading}>
+            {loading && <div className="vc-scene-loading-overlay"><SceneLoading mood={form.templateType} scene="creating" /></div>}
             <AnimatePresence mode="wait">
               <motion.div
                 key={step}
@@ -1230,12 +1195,7 @@ function CustomizePageContent() {
                   </div>
                 </div>
 
-                {form.gifUrl && (
-                  <div className="vc-preview-cameo-chip">
-                    <span>✨</span>
-                    <strong>Reveal GIF cameo selected</strong>
-                  </div>
-                )}
+                <div className="vc-preview-cameo-chip"><span>{selectedTemplate.emoji}</span><strong>Opening effects match this mood</strong></div>
 
                 {/* Uploaded gallery preview */}
                 {primaryUploadedImage ? (
@@ -1308,22 +1268,14 @@ function CustomizePageContent() {
 
       </div>
 
-      {showGiphy && (
-        <GiphyModal
-          onSelect={url => { set('gifUrl', url); setShowGiphy(false); }}
-          onClose={() => setShowGiphy(false)}
-          initialQuery={gifSearchTerms[0]}
-          suggestedQueries={gifSearchTerms}
-          cardLabel={stripEmojiLabel(selectedTemplate.label)}
-        />
-      )}
+
     </main>
   );
 }
 
 export default function CustomizePage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white" style={{ background: 'var(--bg)' }}>Loading...</div>}>
+    <Suspense fallback={<main className="vc-loading-page"><SceneLoading scene="preview" /></main>}>
       <CustomizePageContent />
     </Suspense>
   );

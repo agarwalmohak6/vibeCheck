@@ -1,88 +1,51 @@
-/**
- * Browser-side canvas image compressor.
- * Compresses an input File/Blob to image/webp format,
- * limiting maximum dimension to 1080px and hard-capping size at 250KB.
- */
-export async function compressImage(file: File): Promise<{ blob: Blob; dataUrl: string }> {
-  // Ensure we are running in the browser
-  if (typeof window === 'undefined') {
-    throw new Error('compressImage is browser-only');
-  }
+import { MAX_COMPRESSED_IMAGE_BYTES, MAX_IMAGE_DATA_URL_LENGTH } from './imageLimits';
 
+function readDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-
-        // Max dimension 1080px
-        const MAX_DIM = 1080;
-        if (width > MAX_DIM || height > MAX_DIM) {
-          if (width > height) {
-            height = Math.round((height * MAX_DIM) / width);
-            width = MAX_DIM;
-          } else {
-            width = Math.round((width * MAX_DIM) / height);
-            height = MAX_DIM;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Failed to get 2D canvas context'));
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Compress step-by-step to meet the 250KB limit (256000 bytes)
-        const KB_LIMIT = 250 * 1024;
-        const quality = 0.82;
-
-        const attemptCompression = (q: number) => {
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                reject(new Error('Canvas toBlob failed'));
-                return;
-              }
-
-              if (blob.size > KB_LIMIT && q > 0.1) {
-                // Reduce quality and retry
-                const newQuality = q - 0.15;
-                attemptCompression(newQuality);
-              } else {
-                // Success or reached minimum quality
-                const readerUrl = new FileReader();
-                readerUrl.onloadend = () => {
-                  resolve({
-                    blob,
-                    dataUrl: readerUrl.result as string,
-                  });
-                };
-                readerUrl.onerror = () => {
-                  reject(new Error('FileReader failed to read compressed blob'));
-                };
-                readerUrl.readAsDataURL(blob);
-              }
-            },
-            'image/webp',
-            q
-          );
-        };
-
-        attemptCompression(quality);
-      };
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = () => reject(new Error('Failed to read file'));
-    reader.readAsDataURL(file);
+    reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Could not read photo'));
+    reader.onerror = () => reject(new Error('Could not read photo'));
+    reader.readAsDataURL(blob);
   });
+}
+
+/** Enforce both the encoded API limit and byte limit, including PNG fallbacks. */
+export async function compressImage(file: Blob): Promise<{ blob: Blob; dataUrl: string }> {
+  if (typeof window === 'undefined') throw new Error('compressImage is browser-only');
+  const source = await readDataUrl(file);
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Could not load photo'));
+    img.src = source;
+  });
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  if (!context || !image.width || !image.height) throw new Error('Could not prepare photo');
+  let scale = Math.min(1, 1080 / Math.max(image.width, image.height));
+  for (let resize = 0; resize < 12; resize++) {
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    for (const quality of [.82, .67, .52, .37, .22, .1]) {
+      const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(result => result ? resolve(result) : reject(new Error('Could not compress photo')), 'image/webp', quality));
+      if (blob.size > MAX_COMPRESSED_IMAGE_BYTES) continue;
+      const dataUrl = await readDataUrl(blob);
+      if (dataUrl.length <= MAX_IMAGE_DATA_URL_LENGTH) return { blob, dataUrl };
+    }
+    scale *= .75;
+  }
+  throw new Error('This photo could not be resized safely. Please choose another image.');
+}
+
+/** Also repair oversized photos restored from older drafts before card creation. */
+export async function prepareCardImages(images: string[]): Promise<string[]> {
+  const prepared: string[] = [];
+  for (const source of images) {
+    if (source.length <= MAX_IMAGE_DATA_URL_LENGTH) { prepared.push(source); continue; }
+    if (!source.startsWith('data:image/')) throw new Error('One photo link is too long. Please upload that photo again.');
+    const response = await fetch(source);
+    prepared.push((await compressImage(await response.blob())).dataUrl);
+  }
+  return prepared;
 }

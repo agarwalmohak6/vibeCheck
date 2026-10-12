@@ -82,11 +82,11 @@ export default function PaymentReferenceForm({
       className={`w-full rounded-2xl border p-3 text-left ${
         isDark
           ? 'border-white/10 bg-white/[0.04]'
-          : 'border-pink-200/80 bg-white/65 shadow-lg shadow-pink-200/30'
+          : 'border-[#e7ccaf]/80 bg-white/65 shadow-lg shadow-[#eedaca]/30'
       } ${className}`}
     >
       <div className="mb-2 space-y-1">
-        <p className={`text-[10px] font-black uppercase tracking-[0.18em] ${isDark ? 'text-pink-200' : 'text-pink-500'}`}>
+        <p className={`text-[10px] font-black uppercase tracking-[0.18em] ${isDark ? 'text-pink-200' : 'text-[#b65361]'}`}>
           Paid already?
         </p>
         <p className={`text-[11px] leading-relaxed ${isDark ? 'text-neutral-400' : 'text-[#7b4b70]'}`}>
@@ -108,13 +108,13 @@ export default function PaymentReferenceForm({
           className={`min-w-0 flex-1 rounded-xl border px-3 py-2 text-xs font-bold outline-none transition focus:ring-2 ${
             isDark
               ? 'border-white/10 bg-black/20 text-white placeholder:text-neutral-500 focus:ring-pink-400/40'
-              : 'border-pink-200 bg-white/85 text-[#3f1e33] placeholder:text-[#b78daa] focus:ring-pink-300/50'
+              : 'border-[#e7ccaf] bg-white/85 text-[#3f1e33] placeholder:text-[#b78daa] focus:ring-pink-300/50'
           }`}
         />
         <button
           type="submit"
           disabled={status === 'submitting'}
-          className="shrink-0 rounded-xl bg-linear-to-r from-pink-500 to-amber-500 px-3 py-2 text-xs font-black text-white shadow-lg shadow-pink-500/20 transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
+          className="shrink-0 rounded-xl bg-linear-to-r from-[#d5786d] to-[#c75765] px-3 py-2 text-xs font-black text-white shadow-lg shadow-pink-500/20 transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {status === 'submitting' ? 'Saving...' : 'Submit'}
         </button>

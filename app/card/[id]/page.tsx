@@ -46,5 +46,5 @@ export default async function CardPage({
     ? roomParam.includes('chat')
     : roomParam === 'chat';
 
-  return <RecipientView card={card} initialRoomMode={initialRoomMode} />;
+  return <RecipientView card={card} initialRoomMode={initialRoomMode} isCreator={typeof query.ct === 'string'} />;
 }
