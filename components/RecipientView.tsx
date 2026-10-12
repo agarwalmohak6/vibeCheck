@@ -3,7 +3,10 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { TEMPLATE_TYPES, type MessagePreset, type StoryQuestion } from "@/lib/themes";
+import { TEMPLATE_TYPES, type StoryQuestion } from "@/lib/themes";
+import { getMoodStory } from "@/lib/moodStories";
+import { SCRATCH_REVEAL_PERCENT, scratchCoverage } from "@/lib/revealEffects";
+import MoodTypewriter from "@/components/MoodTypewriter";
 import EnvelopeReveal from "@/components/EnvelopeReveal";
 import RunawayButton from "@/components/RunawayButton";
 import VinylDisk from "@/components/VinylDisk";
@@ -14,8 +17,6 @@ import confetti from "canvas-confetti";
 import {
   RECIPIENT_COPY,
   formatPersonName,
-  getLocalizedActionLabels,
-  getTemplateLocaleCopy,
   type RecipientLocale,
 } from "@/lib/recipientI18n";
 import type { PublicCard } from "@/types/vibecheck";
@@ -24,165 +25,6 @@ interface RecipientViewProps {
   card: PublicCard;
   initialRoomMode?: boolean;
 }
-
-type HinglishTemplateCopy = {
-  label: string;
-  defaultYesText: string;
-  defaultNoText: string;
-  storyQuestions: StoryQuestion[];
-  messagePresets: Array<Pick<MessagePreset, "title" | "body">>;
-};
-
-const HINGLISH_RECIPIENT_COPY = {
-  ...RECIPIENT_COPY.en,
-  privateCard: "Private VibeCheck",
-  languageLabel: "Hinglish-only card",
-  ctaPrompt: "Final answer ka time.",
-  noButtonWarning: "No button thoda drama karega, bas cute wala.",
-  successHeading: "Answer send ho gaya.",
-  successSubtext: "Moment lock ho gaya. Creator ko signal mil jayega, aur yeh memory safe rahegi.",
-  story: {
-    ...RECIPIENT_COPY.en.story,
-    compactEyebrow: "5-step reveal",
-    eyebrow: "Answer se pehle thoda build-up",
-    title: (recipientName: string) => `${recipientName} ko moment feel karne do first.`,
-    completeTitle: "Story warm ho gayi.",
-    completeBody: "Ab woh answer jo actually matter karta hai.",
-  },
-} satisfies typeof RECIPIENT_COPY.en;
-
-const HINGLISH_TEMPLATE_COPY: Record<string, HinglishTemplateCopy> = {
-  shoot_shot: {
-    label: "Dil wali baat 💍",
-    defaultYesText: "Haan, obviously 💖",
-    defaultNoText: "Thoda ruk jao",
-    storyQuestions: [
-      { id: "noticed", eyebrow: "First feel", question: "Yeh sirf tumhare liye bana hua laga?", options: ["Haan, bilkul", "I am listening"] },
-      { id: "signal", eyebrow: "Signal", question: "Answer se pehle unhe kya pata hona chahiye?", options: ["Cute effort", "Brave move", "Unexpected tha"] },
-      { id: "pace", eyebrow: "Pace", question: "Isko kaise move karna chahiye?", options: ["Slow and real", "Pehle baat", "I am ready"] },
-      { id: "feeling", eyebrow: "Feeling", question: "Abhi kya win kar raha hai?", options: ["Butterflies", "Soft smile", "Curiosity"] },
-      { id: "answer", eyebrow: "Final check", question: "Answer dene ke mood mein ho?", options: ["Haan, show me", "One more second"] },
-    ],
-    messagePresets: [
-      {
-        title: "Yeh personal hai",
-        body: "Normal text se zyada special banana tha.\nStory se zyada honest.\nAur thoda unforgettable.\nToh yeh raha, sirf tumhare liye.",
-      },
-      {
-        title: "Mujhe yeh properly bolna tha",
-        body: "Main normal message bhejne ki koshish karta raha, but enough nahi laga.\nTum mere liye ek quick text se kaafi zyada matter karti ho.\nIsliye maine yeh banaya.",
-      },
-      {
-        title: "No games, bas sach",
-        body: "Main kaafi time se yeh bolna chahta tha.\nTum sab kuch better feel kara deti ho.\nKya tum humein ek real chance dogi?",
-      },
-    ],
-  },
-  maan_jao: {
-    label: "Maan jao card 🥺",
-    defaultYesText: "Theek hai, maaf",
-    defaultNoText: "Abhi nahi",
-    storyQuestions: [
-      { id: "readiness", eyebrow: "Start se pehle", question: "Unki baat sunne ka thoda sa mood hai?", options: ["Theek hai, sunungi", "Carefully"] },
-      { id: "hurt", eyebrow: "Honest part", question: "Apology ne samjha ki hurt kahan hua?", options: ["Mostly yes", "Aur care chahiye"] },
-      { id: "effort", eyebrow: "Effort", question: "Normal sorry text se zyada thoughtful laga?", options: ["Definitely", "Thoda sa"] },
-      { id: "next_step", eyebrow: "Next", question: "Cheezein light karne ke liye kya help karega?", options: ["Real talk", "Better actions", "Thoda time"] },
-      { id: "answer", eyebrow: "Final check", question: "Ab reply karna hai?", options: ["I can reply", "Let me decide"] },
-    ],
-    messagePresets: [
-      {
-        title: "Mujhse galti hui",
-        body: "Mujhse galti hui, aur main isko excuses se cover nahi karunga.\nMeri baat se tumhe hurt hua, aur tum deserve nahi karti thi.\nMain baar-baar soch raha hoon ki mujhe better words choose karne chahiye the.\nI am sorry, truly. Ek chance aur?",
-      },
-      {
-        title: "No excuses here",
-        body: "No excuses, bas apni galti own kar raha hoon.\nSorry sab erase nahi karta, but mujhe samajh aa raha hai ki tumhe kaisa laga.\nCan we hit reset?",
-      },
-      {
-        title: "Okay, maine mess kiya",
-        body: "Okay, maine actual mess kiya.\nIspe joke nahi banaunga.\nBas itna kehna hai: I am sorry, I mean it, aur mujhe hamari easy wali vibe miss ho rahi hai.",
-      },
-    ],
-  },
-  birthday_roast: {
-    label: "Birthday scene 🎂",
-    defaultYesText: "Aww, thanks",
-    defaultNoText: "Still annoying",
-    storyQuestions: [
-      { id: "birthday_mood", eyebrow: "Birthday mood", question: "Real birthday moment jaisa feel ho raha hai?", options: ["Haan cute", "Very extra"] },
-      { id: "memory", eyebrow: "Memory check", question: "Tumhare baare mein kya yaad rahe?", options: ["The chaos", "The love", "The cake"] },
-      { id: "wish", eyebrow: "Wish", question: "Is year ka mood kya claim kar rahe ho?", options: ["Soft wins", "Big glow-up", "Peace and cake"] },
-      { id: "reaction", eyebrow: "Reaction", question: "Smile kitni aa rahi hai?", options: ["Bahut", "Hide kar rahi hoon", "Caught me"] },
-      { id: "answer", eyebrow: "Final check", question: "Birthday love accept karein?", options: ["Obviously", "Make me blush"] },
-    ],
-    messagePresets: [
-      {
-        title: "Still iconic",
-        body: "Ek aur year down, aur somehow tum abhi bhi itni iconic ho.\nBirthday tumhari tarah extra ho: cake first, adulting later.\nMore stories, more chaos, aur tumhe celebrate karne ki more reasons.",
-      },
-      {
-        title: "Exactly tum jaisi",
-        body: "Aaj bas yeh kehna hai ki tum loved ho, not for what you do, but exactly for who you are.\nAnother year of being unapologetically you.\nHappy birthday.",
-      },
-      {
-        title: "Jokes aside",
-        body: "Jokes aside for one second, tum genuinely is world ki good things mein se ho.\nAaj tumhe celebrate karne ka day hai.\nHappy birthday. I hope this year gives you everything you deserve.",
-      },
-    ],
-  },
-  bestie_check: {
-    label: "Dil ki baat 💗",
-    defaultYesText: "Mujhe bhi feel hota hai 💗",
-    defaultNoText: "Thoda sochne do",
-    storyQuestions: [
-      { id: "vibe", eyebrow: "Vibe check", question: "Yeh person officially tumhara chaos partner hai?", options: ["Unfortunately yes", "Certified"] },
-      { id: "memory", eyebrow: "Receipts", question: "Yeh bond dangerous kyun hai?", options: ["Inside jokes", "Late calls", "Bad ideas"] },
-      { id: "softness", eyebrow: "Soft corner", question: "Kitna sentimental allowed hai?", options: ["Thoda", "Fully emotional"] },
-      { id: "reply_style", eyebrow: "Reply energy", question: "Reply ka vibe kya hona chahiye?", options: ["Sweet", "Roast them", "Both"] },
-      { id: "answer", eyebrow: "Final check", question: "Ready ho admit karne ke liye?", options: ["Fine, yes", "Never escaping"] },
-    ],
-    messagePresets: [
-      {
-        title: "Mujhe yeh properly bolna tha",
-        body: "Perfect tareeka nahi pata, toh honest version bol raha hoon.\nTum mere liye usually jitna bolta hoon, usse kaafi zyada matter karti ho.\nNormal text ke peeche hide nahi karna tha, isliye yeh banaya.",
-      },
-      {
-        title: "Tiny confession",
-        body: "Yeh main approx thirty seconds ke liye brave hoke bol raha hoon.\nI like you. A lot.\nPlease kindness ke saath reply karna, aur thoda honesty bhi.",
-      },
-      {
-        title: "No mixed signals",
-        body: "Jab tum life mein hoti ho, everything better feel hota hai.\nMain pretend nahi karna chahta ki yeh mere liye casual hai.\nWould you give this a real chance?",
-      },
-    ],
-  },
-  netflix_chill: {
-    label: "Movie night 🍿",
-    defaultYesText: "Snacks meri taraf 🍿",
-    defaultNoText: "Main so rahi hoon",
-    storyQuestions: [
-      { id: "plan", eyebrow: "Plan", question: "Slow movie night ka mood hai?", options: ["Very good", "Snacks pe depend"] },
-      { id: "snacks", eyebrow: "Snacks first", question: "Non-negotiable kya hai?", options: ["Popcorn", "Dessert", "Cold drinks"] },
-      { id: "genre", eyebrow: "Movie rule", question: "Kya pick nahi karna chahiye?", options: ["Horror", "Boring drama", "Anything sad"] },
-      { id: "company", eyebrow: "Real reason", question: "Movie ke liye ya company ke liye?", options: ["Company", "Both obviously"] },
-      { id: "answer", eyebrow: "Final check", question: "Invite accept karein?", options: ["I am in", "Convince me"] },
-    ],
-    messagePresets: [
-      {
-        title: "Weekend free hai?",
-        body: "Maine schedule on purpose clear kiya.\nSnacks bhi stocked hain.\nCome watch something with me?",
-      },
-      {
-        title: "Honestly bolun?",
-        body: "Yeh half Netflix invite hai, half confession.\nMujhe tumhare around rehna zyada pasand hai than I should admit.\nWatch something with me?",
-      },
-      {
-        title: "Couch, blanket, vibes?",
-        body: "Week heavy tha.\nDono ko slow night chahiye.\nCome over, food and playlist meri responsibility.",
-      },
-    ],
-  },
-};
 
 function buildCoverImages(uploadedCovers?: string[], primaryCover?: string): string[] {
   const seen = new Set<string>();
@@ -206,59 +48,20 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
   const language: RecipientLocale = "en";
   const templateMeta = TEMPLATE_TYPES.find((t) => t.id === card.template_type);
   const hasRunaway = templateMeta?.hasRunaway || false;
-  const hinglishTemplate = HINGLISH_TEMPLATE_COPY[card.template_type];
-  const localizedTemplate = getTemplateLocaleCopy(card.template_type, language);
-  const localizedActionLabels = getLocalizedActionLabels(card.template_type, language);
-  const recipientCopy = HINGLISH_RECIPIENT_COPY;
+  const recipientCopy = RECIPIENT_COPY.en;
   const creatorName = formatPersonName(card.creator_name, "Someone");
   const recipientName = formatPersonName(card.recipient_name, "you");
-  const templateLabel =
-    hinglishTemplate?.label || localizedTemplate?.label || templateMeta?.label || "Private card";
-  const rawMessageTitle = card.card_data.message_title?.trim() || "";
-  const rawMainBody = card.card_data.main_body?.trim() || "";
-  const titlePresetIndex =
-    !rawMessageTitle || /^A message from\s+/i.test(rawMessageTitle)
-      ? 0
-      : templateMeta?.messagePresets?.findIndex(
-          (preset) => preset.title.trim() === rawMessageTitle,
-        ) ?? -1;
-  const bodyPresetIndex =
-    !rawMainBody || rawMainBody === "Tap YES to accept!"
-      ? 0
-      : templateMeta?.messagePresets?.findIndex(
-          (preset) => preset.body.trim() === rawMainBody,
-        ) ?? -1;
-  const displayMessageTitle =
-    titlePresetIndex >= 0
-      ? hinglishTemplate?.messagePresets?.[titlePresetIndex]?.title ||
-        localizedTemplate?.messagePresets?.[titlePresetIndex]?.title ||
-        templateMeta?.messagePresets?.[titlePresetIndex]?.title ||
-        templateMeta?.label.replace(/\s[^\s]*$/, "") ||
-        rawMessageTitle
-      : rawMessageTitle;
-  const displayMainBody =
-    bodyPresetIndex >= 0
-      ? hinglishTemplate?.messagePresets?.[bodyPresetIndex]?.body ||
-        localizedTemplate?.messagePresets?.[bodyPresetIndex]?.body ||
-        templateMeta?.messagePresets?.[bodyPresetIndex]?.body ||
-        templateMeta?.builderHint ||
-        rawMainBody
-      : rawMainBody;
-  const cardYesText = card.card_data.yes_btn_text?.trim();
-  const cardNoText = card.card_data.no_btn_text?.trim();
-  const displayYesText =
-    localizedActionLabels &&
-    (!cardYesText || cardYesText === templateMeta?.defaultYesText)
-      ? hinglishTemplate?.defaultYesText || localizedActionLabels.yesText
-      : card.card_data.yes_btn_text;
-  const displayNoText =
-    localizedActionLabels &&
-    (!cardNoText || cardNoText === templateMeta?.defaultNoText)
-      ? hinglishTemplate?.defaultNoText || localizedActionLabels.noText
-      : card.card_data.no_btn_text;
+  const templateLabel = templateMeta?.label || "A private note";
+  const preset = getMoodStory(card.template_type).messagePresets[0];
+  const rawTitle = card.card_data.message_title?.trim();
+  const rawBody = card.card_data.main_body?.trim();
+  const displayMessageTitle = !rawTitle || /^A message from\s+/i.test(rawTitle) ? preset.title : rawTitle;
+  const displayMainBody = !rawBody || rawBody === "Tap YES to accept!" ? preset.body : rawBody;
+  const displayYesText = card.card_data.yes_btn_text?.trim() || templateMeta?.defaultYesText;
+  const displayNoText = card.card_data.no_btn_text?.trim() || templateMeta?.defaultNoText;
   const revealStory = useMemo(
-    () => getRevealStory(card.template_type, creatorName, recipientName, templateLabel),
-    [card.template_type, creatorName, recipientName, templateLabel],
+    () => getRevealStory(card.template_type, creatorName, recipientName),
+    [card.template_type, creatorName, recipientName],
   );
   const coverImages = useMemo(
     () => buildCoverImages(card.card_data.cover_image_urls, card.card_data.cover_image_url),
@@ -266,7 +69,7 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
   );
   const storyQuestions = card.card_data.story_questions?.length
     ? card.card_data.story_questions
-    : hinglishTemplate?.storyQuestions || templateMeta?.storyQuestions;
+    : templateMeta?.storyQuestions;
 
   const [yesClicked, setYesClicked] = useState(false);
 
@@ -364,7 +167,7 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
         color: "var(--text)",
         fontFamily: "var(--font-body)",
       }}
-      data-theme={card.theme_selected}
+      data-theme={card.template_type === "shoot_shot" && card.theme_selected === "midnight_romance" ? "proposal_glow" : card.theme_selected}
       data-template={card.template_type}
       lang="en-IN"
       data-locale={language}
@@ -459,9 +262,9 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
                 displayMainBody={displayMainBody}
                 recipientName={recipientName}
                 creatorName={creatorName}
-                successEmoji={recipientCopy.successEmoji}
-                successHeading={recipientCopy.successHeading}
-                successSubtext={recipientCopy.successSubtext}
+                successEmoji={getMoodStory(card.template_type).emoji}
+                successHeading={revealStory.ending}
+                successSubtext="Your note and these little moments are here to revisit."
               />
             )}
 
@@ -494,22 +297,7 @@ export default function RecipientView({ card, initialRoomMode = false }: Recipie
   );
 }
 
-type RevealStory = {
-  eyebrow: string;
-  headline: string;
-  intro: string;
-  signal: string;
-  proof: string;
-  messageCue: string;
-  answerCue: string;
-  beats: string[];
-  scribbles: string[];
-  lineup: Array<{
-    number: string;
-    title: string;
-    body: string;
-  }>;
-};
+type RevealStory = ReturnType<typeof getMoodStory>["narrative"];
 
 type RecipientRevealDriveProps = {
   cardId: string;
@@ -532,96 +320,9 @@ type RecipientRevealDriveProps = {
   onDodge: (label: string, dodgeCount: number) => void;
 };
 
-const REVEAL_STORIES: Record<string, Omit<RevealStory, "headline" | "intro">> = {
-  shoot_shot: {
-    eyebrow: "Dil wali baat",
-    signal: "Signal tab loud ho gaya jab casual rehna almost impossible ho gaya.",
-    proof: "Har chhoti receipt same baat bol rahi hai: yeh dry text ke liye nahi bana.",
-    messageCue: "Real words scribble ke neeche hain. Slow scroll karo, feeling load hone do.",
-    answerCue: "Last checkpoint. Pressure nahi, bas honest answer ka moment hai.",
-    beats: ["private launch", "heart rate up", "soft proof", "answer pending"],
-    scribbles: ["not casual", "sirf tum", "properly bolo", "one real chance"],
-    lineup: [
-      { number: "01", title: "Scene set karo", body: "Link forwarded nahi, made-for-you feel hona chahiye." },
-      { number: "02", title: "Receipts dikhao", body: "Main words se pehle tiny signals stack hote hain." },
-      { number: "03", title: "Ask reveal karo", body: "Message handwritten confession ki tarah land karta hai." },
-      { number: "04", title: "Answer lo", body: "Soft final checkpoint, phir real choice." },
-    ],
-  },
-  maan_jao: {
-    eyebrow: "Maan jao sequence",
-    signal: "Yeh forwarded sorry nahi hai. Yeh naam ke saath ek proper repair attempt hai.",
-    proof: "Effort hi point hai: slow, clean, aur itna honest ki thoda ruk ke feel ho.",
-    messageCue: "Apology layers mein reveal hogi, kyunki rush karne se whole vibe kharab hoti.",
-    answerCue: "Final checkpoint. Reply tabhi jab tumhe fair lage.",
-    beats: ["own it", "no excuses", "gentle proof", "reply jab ready"],
-    scribbles: ["galti meri", "no excuses", "sun lo na", "soft reset"],
-    lineup: [
-      { number: "01", title: "Cleanly own karo", body: "Dramatic intro nahi, copied caption nahi. Bas ownership." },
-      { number: "02", title: "Personal banao", body: "Page slow hota hai taaki apology specific feel kare." },
-      { number: "03", title: "Note reveal karo", body: "Real words soft scratch aur scribble layer se aate hain." },
-      { number: "04", title: "Control do", body: "Next step woh tab decide karein jab ready ho." },
-    ],
-  },
-  birthday_roast: {
-    eyebrow: "Birthday ignition",
-    signal: "Day ko proper entrance milni chahiye. Lazy story post ya copied caption nahi.",
-    proof: "Tiny birthday arena, main-character energy aur private chaos ke liye built.",
-    messageCue: "Wish scribbles ke neeche wrapped hai. Reveal ko drama karne do.",
-    answerCue: "Last checkpoint. Birthday love accept karo aur moment lock karo.",
-    beats: ["main character", "receipts loaded", "cake-level effort", "birthday reply"],
-    scribbles: ["still iconic", "cake first", "main character", "wish pending"],
-    lineup: [
-      { number: "01", title: "Stage light karo", body: "Birthday moment ko proper first scene milta hai." },
-      { number: "02", title: "Proof drop karo", body: "Thoda chaos, thoda love, full main-character energy." },
-      { number: "03", title: "Wish reveal karo", body: "Note dramatic handwritten reveal ke saath enters." },
-      { number: "04", title: "Love accept", body: "Birthday love accept hota hai aur moment save." },
-    ],
-  },
-  bestie_check: {
-    eyebrow: "Soft launch vibes",
-    signal: "Yeh woh part hai jahan normal text awkward act karna start kar deta.",
-    proof: "Inside jokes, soft corners, aur tiny receipts finally line up ho rahe hain.",
-    messageCue: "Honest part scribble layer ke neeche hai. Isko proper entrance chahiye.",
-    answerCue: "Last checkpoint. Reply energy choose karo, phir final answer.",
-    beats: ["vibe locked", "receipts stacked", "soft corner", "reply energy"],
-    scribbles: ["bol do", "normal text nahi", "soft launch", "you matter"],
-    lineup: [
-      { number: "01", title: "Vibe catch karo", body: "Opening bolta hai yeh normal disposable message nahi." },
-      { number: "02", title: "Receipts stack", body: "Little details feeling ko earned bana dete hain." },
-      { number: "03", title: "Thing bolo", body: "Honest note ek saath dump nahi hota, reveal hota hai." },
-      { number: "04", title: "Energy match", body: "Reply mood choose hota hai before final answer." },
-    ],
-  },
-  netflix_chill: {
-    eyebrow: "Cinematic invite",
-    signal: "Plan simple hai, but reveal boring allowed nahi hai.",
-    proof: "Snacks, timing, aur suspicious amount of effort already queued hai.",
-    messageCue: "Invite scribble layer ke neeche hai. Thoda suspense deserve karta hai.",
-    answerCue: "Last checkpoint. Credits roll hone se pehle answer pick karo.",
-    beats: ["press play", "snacks queued", "blanket reserved", "answer scene"],
-    scribbles: ["movie night", "press play", "snacks ready", "company matters"],
-    lineup: [
-      { number: "01", title: "Press play", body: "Invite tiny trailer ki tarah open hota hai." },
-      { number: "02", title: "Details queue", body: "Snacks, timing, aur real reason frame mein aate hain." },
-      { number: "03", title: "Plan reveal", body: "Note woh scene ban ke aata hai jiska wait tha." },
-      { number: "04", title: "Ending choose", body: "Credits se pehle answer pick hota hai." },
-    ],
-  },
-};
-
-function getRevealStory(
-  templateType: string,
-  creatorName: string,
-  recipientName: string,
-  templateLabel: string,
-): RevealStory {
-  const base = REVEAL_STORIES[templateType] || REVEAL_STORIES.bestie_check;
-  return {
-    ...base,
-    headline: `${recipientName}, ${creatorName} ne yeh sirf tumhare liye banaya`,
-    intro: `${templateLabel} hai, but boring text nahi: scroll karo, decode karo, phir dil se answer.`,
-  };
+function getRevealStory(templateType: string, creatorName: string, recipientName: string): RevealStory {
+  const story = getMoodStory(templateType).narrative;
+  return { ...story, intro: `${recipientName}, this is from ${creatorName}, just for you. ${story.intro}` };
 }
 
 function RecipientRevealDrive({
@@ -645,13 +346,15 @@ function RecipientRevealDrive({
   onDodge,
 }: RecipientRevealDriveProps) {
   const [stage, setStage] = useState<RevealStage>("gate");
+  const finaleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (finaleTimer.current) clearTimeout(finaleTimer.current); }, []);
   const previewLine = displayMainBody
     .split(/\s+/)
     .slice(0, 16)
     .join(" ");
   const goToFinale = () => {
     setStage("finale");
-    window.setTimeout(onYes, 2300);
+    finaleTimer.current = setTimeout(onYes, 2300);
   };
 
   return (
@@ -705,8 +408,8 @@ function RecipientRevealDrive({
           <KoikoiStageShell key="scratch" className="vc-koikoi-stage--scratch">
             <ScratchLoveNote
               templateType={templateType}
-              title={displayMessageTitle}
-              body={displayMainBody}
+              title={revealStory.scratchTitle}
+              body={revealStory.scratchBody}
               recipientName={recipientName}
               onNext={() => setStage("question")}
             />
@@ -733,6 +436,7 @@ function RecipientRevealDrive({
         {stage === "finale" && (
           <KoikoiFinaleStage
             key="finale"
+            templateType={templateType}
             creatorName={creatorName}
             recipientName={recipientName}
           />
@@ -765,8 +469,6 @@ function KoikoiStageShell({
 }
 
 function KoikoiGateStage({
-  creatorName,
-  recipientName,
   templateEmoji,
   templateLabel,
   revealStory,
@@ -786,8 +488,8 @@ function KoikoiGateStage({
       </div>
       <article className="vc-koikoi-card vc-koikoi-card--center">
         <p>{templateLabel}</p>
-        <h1>A private drop just landed</h1>
-        <span>{recipientName} ke liye {creatorName} ne sirf message nahi, pura reveal build kiya hai.</span>
+        <h1>{revealStory.headline}</h1>
+        <span>{revealStory.intro}</span>
         <div className="vc-koikoi-lineup">
           {revealStory.lineup.map((step) => (
             <div key={step.number}>
@@ -797,7 +499,7 @@ function KoikoiGateStage({
           ))}
         </div>
         <button type="button" onClick={onNext}>
-          Open the drop
+          Open your note
           <span aria-hidden>💝</span>
         </button>
       </article>
@@ -821,45 +523,25 @@ function KoikoiLetterStage({
   onNext: () => void;
 }) {
   const [opened, setOpened] = useState(false);
-  const [typedBody, setTypedBody] = useState("");
-  const noteBody = body || "You mean more than a normal text can say.";
-
-  useEffect(() => {
-    if (!opened) return;
-
-    let index = 0;
-    const intervalId = window.setInterval(() => {
-      index += 1;
-      setTypedBody(noteBody.slice(0, index));
-      if (index >= noteBody.length) window.clearInterval(intervalId);
-    }, 28);
-
-    return () => window.clearInterval(intervalId);
-  }, [opened, noteBody]);
+  const noteBody = body || getMoodStory(templateType).messagePresets[0].body;
 
   return (
     <KoikoiStageShell className="vc-koikoi-stage--letter">
       {!opened ? (
         <button type="button" className="vc-koikoi-envelope" onClick={() => setOpened(true)}>
           <span aria-hidden>💌</span>
-          <strong>Seal kholo</strong>
-          <em>{creatorName} ka honest part yahin se start hota hai.</em>
+          <strong>A little letter for you</strong>
+          <em>From {creatorName}, with a little courage and a lot of care.</em>
         </button>
       ) : (
         <article className="vc-koikoi-letter" data-template={templateType}>
           <p>Dear {recipientName},</p>
           <h2>{title}</h2>
-          <span>
-            {typedBody}
-            {typedBody.length < noteBody.length && <i aria-hidden />}
-          </span>
-          <strong>- {creatorName}</strong>
-          {typedBody.length >= noteBody.length && (
-            <button type="button" onClick={onNext}>
-              Photo strip dekho
-              <span aria-hidden>→</span>
-            </button>
-          )}
+          <MoodTypewriter key={noteBody} text={noteBody} templateType={templateType} />
+          <strong>— {creatorName}</strong>
+          <button type="button" onClick={onNext}>
+            A few little moments <span aria-hidden>→</span>
+          </button>
         </article>
       )}
     </KoikoiStageShell>
@@ -888,9 +570,9 @@ function KoikoiCardsStage({
   return (
     <KoikoiStageShell className="vc-koikoi-stage--cards">
       <div className="vc-koikoi-cards-copy">
-        <p>photo clip light</p>
-        <h2>Receipts on, drama low.</h2>
-        <span>Images ek-ek karke open hongi, like a tiny private gallery made for this mood.</span>
+        <p>{revealStory.eyebrow}</p>
+        <h2>{revealStory.lineup[1].title}</h2>
+        <span>{revealStory.proof}</span>
       </div>
       <PhotoClipAccordion
         coverImages={coverImages}
@@ -905,7 +587,7 @@ function KoikoiCardsStage({
         ]}
       />
       <button type="button" className="vc-koikoi-next" onClick={onNext}>
-        Scratch note unlock karo
+        One more thing for you
         <span aria-hidden>✨</span>
       </button>
     </KoikoiStageShell>
@@ -938,6 +620,8 @@ function KoikoiQuestionStage({
   onDodge: (label: string, dodgeCount: number) => void;
 }) {
   const prompts = storyQuestions?.slice(0, 3) || [];
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [response, setResponse] = useState("");
 
   return (
     <KoikoiStageShell className="vc-koikoi-stage--question">
@@ -946,27 +630,21 @@ function KoikoiQuestionStage({
         <h2>{revealStory.answerCue}</h2>
         <div className="vc-koikoi-prompt-stack">
           {prompts.map((question, index) => (
-            <button
-              key={question.id}
-              type="button"
-              onClick={() => {
-                void fetch(`/api/cards/${cardId}/events`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    event_type: "story_answered",
-                    metadata: {
-                      step: index + 1,
-                      question: question.question,
-                      answer: question.options[0],
-                    },
-                  }),
-                });
-              }}
-            >
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              {question.question}
-            </button>
+            <fieldset key={question.id} className="vc-story-choice">
+              <legend>{question.question}</legend>
+              <div>
+                {question.options.map(option => (
+                  <button key={option} type="button" aria-pressed={answers[question.id] === option}
+                    onClick={() => {
+                      setAnswers(current => ({ ...current, [question.id]: option }));
+                      void fetch(`/api/cards/${cardId}/events`, {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ event_type: "story_answered", metadata: { step: index + 1, question: question.question, answer: option } }),
+                      }).catch(() => {});
+                    }}>{option}</button>
+                ))}
+              </div>
+            </fieldset>
           ))}
         </div>
         {hasRunaway ? (
@@ -983,9 +661,17 @@ function KoikoiQuestionStage({
             />
           </div>
         ) : (
-          <button type="button" onClick={onYes}>
-            {yesText || "Send answer"}
-          </button>
+          <div className="vc-story-response">
+            <button type="button" onClick={onYes}>{yesText || "Send answer"}</button>
+            {noText && <button type="button" className="vc-story-response__secondary" onClick={() => {
+              setResponse("Your pace matters. You can come back to this whenever you are ready.");
+              void fetch(`/api/cards/${cardId}/events`, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ event_type: "story_answered", metadata: { question: revealStory.answerCue, answer: noText } }),
+              }).catch(() => {});
+            }}>{noText}</button>}
+            {response && <p role="status">{response}</p>}
+          </div>
         )}
       </article>
     </KoikoiStageShell>
@@ -993,9 +679,11 @@ function KoikoiQuestionStage({
 }
 
 function KoikoiFinaleStage({
+  templateType,
   creatorName,
   recipientName,
 }: {
+  templateType: string;
   creatorName: string;
   recipientName: string;
 }) {
@@ -1015,14 +703,14 @@ function KoikoiFinaleStage({
               } as React.CSSProperties
             }
           >
-            {["💖", "✨", "🎀", "🫶", "💌", "⭐"][index % 6]}
+            {getMoodStory(templateType).narrative.emojis[index % 3]}
           </span>
         ))}
       </div>
       <article className="vc-koikoi-card vc-koikoi-card--center">
-        <p>moment locked</p>
+        <p>{getMoodStory(templateType).narrative.ending}</p>
         <h1>{recipientName} + {creatorName}</h1>
-        <span>Answer send ho raha hai. Cute scene officially complete.</span>
+        <span>A little moment between the two of you.</span>
       </article>
     </KoikoiStageShell>
   );
@@ -1125,10 +813,7 @@ function PhotoClipAccordion({
 }
 
 function CuteGestureLayer({ templateType }: { templateType: string }) {
-  const stickers =
-    templateType === "maan_jao"
-      ? ["🧸", "🥺", "🫶", "🎀", "💌", "✨"]
-      : ["🧸", "💗", "🫶", "✨", "🌸", "💫"];
+  const stickers = getMoodStory(templateType).narrative.emojis;
 
   return (
     <div className="vc-cute-gesture-layer" aria-hidden>
@@ -1157,7 +842,9 @@ function ScratchLoveNote({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const noteRef = useRef<HTMLDivElement | null>(null);
   const drawingRef = useRef(false);
-  const scratchCountRef = useRef(0);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const sampleCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const lastMeasureRef = useRef(0);
   const [scratched, setScratched] = useState(0);
 
   useEffect(() => {
@@ -1166,10 +853,17 @@ function ScratchLoveNote({
     if (!canvas || !note) return;
 
     const drawOverlay = () => {
-      const rect = note.getBoundingClientRect();
+      const rect = { width: note.clientWidth, height: note.clientHeight };
       const ratio = window.devicePixelRatio || 1;
-      canvas.width = Math.max(1, Math.floor(rect.width * ratio));
-      canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+      const width = Math.max(1, Math.floor(rect.width * ratio));
+      const height = Math.max(1, Math.floor(rect.height * ratio));
+      if (canvas.width === width && canvas.height === height && canvas.dataset.ready) return;
+      const previous = document.createElement("canvas");
+      previous.width = canvas.width;
+      previous.height = canvas.height;
+      if (canvas.dataset.ready) previous.getContext("2d")?.drawImage(canvas, 0, 0);
+      canvas.width = width;
+      canvas.height = height;
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
 
@@ -1177,10 +871,16 @@ function ScratchLoveNote({
       if (!ctx) return;
 
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      if (canvas.dataset.ready) {
+        ctx.drawImage(previous, 0, 0, rect.width, rect.height);
+        lastPointRef.current = null;
+        return;
+      }
+      canvas.dataset.ready = "true";
       const gradient = ctx.createLinearGradient(0, 0, rect.width, rect.height);
-      gradient.addColorStop(0, "rgba(255, 133, 161, 0.96)");
-      gradient.addColorStop(0.48, "rgba(255, 214, 165, 0.98)");
-      gradient.addColorStop(1, "rgba(166, 137, 255, 0.92)");
+      gradient.addColorStop(0, "#efbdc2");
+      gradient.addColorStop(0.48, "#f5dfbb");
+      gradient.addColorStop(1, "#c8b5e6");
       ctx.globalCompositeOperation = "source-over";
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, rect.width, rect.height);
@@ -1198,12 +898,11 @@ function ScratchLoveNote({
       ctx.font = "900 13px Inter, system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("SCRATCH KARO", rect.width / 2, rect.height / 2 - 10);
+      ctx.fillText("A LITTLE SOMETHING UNDERNEATH", rect.width / 2, rect.height / 2 - 10, Math.max(1, rect.width - 24));
       ctx.font = "800 11px Inter, system-ui, sans-serif";
       ctx.fillStyle = "rgba(61, 26, 46, 0.48)";
-      ctx.fillText("cursor ya finger se love note reveal karo", rect.width / 2, rect.height / 2 + 18);
-      scratchCountRef.current = 0;
-      setScratched(0);
+      ctx.fillText(`Use your finger or cursor to reveal ${SCRATCH_REVEAL_PERCENT}%`, rect.width / 2, rect.height / 2 + 18, Math.max(1, rect.width - 24));
+
     };
 
     drawOverlay();
@@ -1218,35 +917,49 @@ function ScratchLoveNote({
     return () => observer.disconnect();
   }, [title, body]);
 
-  const scratchAt = (event: React.PointerEvent<HTMLCanvasElement>) => {
+  const measureCoverage = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const sample = sampleCanvasRef.current || document.createElement("canvas");
+    sampleCanvasRef.current = sample;
+    sample.width = 100;
+    sample.height = 100;
+    const ctx = sample.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+    ctx.drawImage(canvas, 0, 0, 100, 100);
+    const coverage = scratchCoverage(ctx.getImageData(0, 0, 100, 100).data);
+    setScratched(current => Math.max(current, coverage));
+    lastMeasureRef.current = performance.now();
+  };
 
+  const scratchAt = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas || scratched >= SCRATCH_REVEAL_PERCENT) return;
     const rect = canvas.getBoundingClientRect();
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const brushSize = event.pointerType === "mouse" ? 34 : 42;
-
+    const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    const radius = event.pointerType === "mouse" ? 26 : 32;
+    const previous = lastPointRef.current || point;
     ctx.globalCompositeOperation = "destination-out";
+    ctx.lineWidth = radius * 2;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
     ctx.beginPath();
-    ctx.arc(x, y, brushSize, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(previous.x, previous.y);
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
     ctx.beginPath();
-    ctx.arc(x + 18, y - 10, brushSize * 0.46, 0, Math.PI * 2);
+    ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
     ctx.fill();
-
-    scratchCountRef.current += 1;
-    setScratched(Math.min(100, Math.round(scratchCountRef.current * 4.4)));
+    lastPointRef.current = point;
+    if (performance.now() - lastMeasureRef.current >= 60) measureCoverage();
   };
 
   const bodyLines = body
     .split(/\n+/)
     .map((line) => line.trim())
-    .filter(Boolean)
-    .slice(0, 5);
+    .filter(Boolean);
 
   return (
     <motion.article
@@ -1259,13 +972,13 @@ function ScratchLoveNote({
     >
       <div className="vc-scratch-note__copy">
         <p>scratch note</p>
-        <h2>Secret layer hai.</h2>
-        <span>{recipientName}, bas 10% scratch karo. Neeche asli note glow karega.</span>
+        <h2>One little thing, tucked away.</h2>
+        <span>{recipientName}, scratch about {SCRATCH_REVEAL_PERCENT}% to uncover your note.</span>
       </div>
 
       <div className="vc-scratch-note__card" ref={noteRef}>
-        <div className="vc-scratch-note__content">
-          <span>love note unlocked</span>
+        <div className="vc-scratch-note__content" aria-hidden={scratched < SCRATCH_REVEAL_PERCENT}>
+          <span>A note just for you</span>
           <h3>{title}</h3>
           {bodyLines.map((line, index) => (
             <p key={`${line}-${index}`}>{line}</p>
@@ -1273,10 +986,11 @@ function ScratchLoveNote({
         </div>
         <canvas
           ref={canvasRef}
-          className={`vc-scratch-note__canvas ${scratched >= 10 ? "is-cleared" : ""}`}
-          aria-label="Scratch to reveal the love note"
+          className={`vc-scratch-note__canvas ${scratched >= SCRATCH_REVEAL_PERCENT ? "is-cleared" : ""}`}
+          aria-label="Scratch to reveal the note"
           onPointerDown={(event) => {
             drawingRef.current = true;
+            lastPointRef.current = null;
             event.currentTarget.setPointerCapture(event.pointerId);
             scratchAt(event);
           }}
@@ -1285,25 +999,32 @@ function ScratchLoveNote({
           }}
           onPointerUp={(event) => {
             drawingRef.current = false;
-            event.currentTarget.releasePointerCapture(event.pointerId);
+            lastPointRef.current = null;
+            measureCoverage();
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
           }}
           onPointerCancel={() => {
             drawingRef.current = false;
+            lastPointRef.current = null;
+            measureCoverage();
           }}
         />
-        <div className="vc-scratch-note__meter" aria-hidden>
-          <span style={{ width: `${scratched}%` }} />
+        <div className="vc-scratch-note__meter" role="progressbar" aria-label="Note reveal progress" aria-valuemin={0} aria-valuemax={SCRATCH_REVEAL_PERCENT} aria-valuenow={Math.min(scratched, SCRATCH_REVEAL_PERCENT)}>
+          <span style={{ width: `${Math.min(100, scratched / SCRATCH_REVEAL_PERCENT * 100)}%` }} />
         </div>
       </div>
+      {scratched < SCRATCH_REVEAL_PERCENT && (
+        <button type="button" className="vc-scratch-accessible" onClick={() => setScratched(SCRATCH_REVEAL_PERCENT)}>Reveal without scratching</button>
+      )}
       {onNext && (
         <button
           type="button"
           className="vc-koikoi-next vc-scratch-note__next"
           onClick={onNext}
-          disabled={scratched < 10}
+          disabled={scratched < SCRATCH_REVEAL_PERCENT}
         >
-          {scratched < 10 ? "Scratch 10% reveal" : "Go to final answer"}
-          <span aria-hidden>{scratched < 10 ? "👆" : "💖"}</span>
+          {scratched < SCRATCH_REVEAL_PERCENT ? `Keep scratching · ${scratched}/${SCRATCH_REVEAL_PERCENT}%` : "Go to final answer"}
+          <span aria-hidden>{scratched < SCRATCH_REVEAL_PERCENT ? "👆" : "💖"}</span>
         </button>
       )}
     </motion.article>

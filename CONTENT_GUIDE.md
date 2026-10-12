@@ -1,131 +1,84 @@
 # VibeCheck Content Guide
 
-Last updated: 2026-07-09
+Updated: 2026-10-12
 
-This is the common handoff file for product positioning, card storylines, and copy locations. It is meant for a content writer to understand the product quickly before refreshing the live text in code.
+VibeCheck turns a personal message into a private card: an envelope, a letter, a photo gallery, a hidden note, and a reply. All five occasions are available in the builder. Each starts with complete, ready-to-send copy and offers three writing styles.
 
-## Product
+## Voice
 
-VibeCheck is a paid, private, interactive greeting-card mini site. A sender picks a moment, adds names, a cover image, music, a message, optional privacy lock, and playful answer buttons, then pays once and shares one link.
+Write as one person speaking to another. Warm, contemporary, direct, lightly playful where appropriate. Use concrete everyday details without inventing a shared history, a booked date, or a specific mistake. Keep slang light enough for the message to age well. Emoji should support the emotion, not replace the sentence.
 
-The product should feel more premium than a WhatsApp text, more personal than a story post, and easier than hiring someone to design a mini page.
+Default copy must make sense without editing. Encourage a personal detail, but never leave a placeholder in a message a sender could accidentally send. Keep apologies accountable and answers voluntary. No guilt, countdowns, or promises of instant forgiveness.
 
-## Business Goal
+## Story outlines
 
-The fastest earning path is to keep the offer simple:
+### Proposal — The next chapter
 
-- Three high-intent cards: Sorry, Happy Birthday, and Bestie.
-- One-time payment.
-- Low entry price.
-- Shareable private link.
-- Strong emotional payoff inside the first screen.
+Theme: warm ivory stationery, rose ink, champagne detail, intertwined rings. Marriage is explicit; this is distinct from the confession mood.
 
-## Brand Voice
+1. **Opening:** One question. All my heart.
+2. **Letter:** Ordinary moments lead to the future the sender wants to build. Close with “Will you marry me?”
+3. **Photos:** A little of us — moments worth carrying forward.
+4. **Hidden note:** Forever means choosing to build a life together, again and again.
+5. **Answer:** Make room to take it in, talk, or answer. A positive answer opens the next-chapter ending.
 
-Use language that feels warm, modern, personal, and easy to send. Avoid generic greeting-card copy. The sender should feel like the card was made for one person, not forwarded to many people.
+Styles: everyday forever; a little cinematic; simple and certain. Emoji: 🤍 ✨ 💍.
 
-Good copy traits:
+### Apology — A real apology
 
-- Short and specific.
-- Emotionally clear.
-- A little playful, but not unserious.
-- Premium without sounding corporate.
-- Easy for Indian social contexts, but not overly slang-heavy.
+Theme: soft pink, quiet spacing, handwritten warmth.
 
-## Primary Cards
+1. **Opening:** I owe you more care.
+2. **Letter:** Own the hurt without an excuse. Offer to listen. Respect space. Make clear that actions must follow.
+3. **Photos:** These moments matter; they do not erase what needs to change.
+4. **Hidden note:** There is no deadline on being okay.
+5. **Answer:** Ask what would help and respect the recipient’s pace. Agreement means openness to talking, never automatic forgiveness.
 
-### Sorry Card
+Styles: honest and accountable; soft and sincere; short and direct. Emoji: 🌿 🤍 🕊️.
 
-Purpose: Help someone apologize without sounding lazy or performative.
+### Birthday — Your birthday era
 
-Theme direction: Soft pink, pearl, teddy, handwritten note, gentle apology.
+Theme: cream, gold, cake, and a little sparkle.
 
-Default button direction:
+1. **Opening:** Today, you get the spotlight.
+2. **Letter:** Celebrate their existence and wish them a good year without age, gender, or achievement assumptions.
+3. **Photos:** The good bits — moments to keep and reasons to look forward.
+4. **Hidden note:** More days that feel like you, good people, and tiny reasons to smile.
+5. **Answer:** Let them choose their birthday energy and collect the love.
 
-- Positive: Forgiven
-- Playful no: No way
+Styles: all the love; gentle roast with a sincere finish; a softer, brighter year. Emoji: 🎂 🥳 ✨.
 
-Current preset angles:
+### Confession — A little more than a crush
 
-- Sincere: own the mistake and ask for one chance.
-- Thoughtful: no excuses, show care, ask to reset.
-- Light but real: casual apology that still takes responsibility.
+Theme: First Blush, pink and lavender. The legacy identifier `bestie_check` is retained for saved links; the current product is a romantic confession.
 
-### Happy Birthday
+1. **Opening:** Okay. Here is the honest version.
+2. **Letter:** Move from deleted messages and hints to a clear “I like you.” Invite possibility without expecting matching feelings.
+3. **Photos:** Little moments can take up a surprising amount of room in a heart.
+4. **Hidden note:** This is an invitation, not an expectation.
+5. **Answer:** Would you like to see where this goes? Leave room for time and an honest answer.
 
-Purpose: Give someone a polished birthday card that feels more special than a story post.
+Styles: soft and brave; a little playful; just the truth. Emoji: 💗 🙈 ✨.
 
-Theme direction: Cream, gold, cake, party hats, teddy, celebration details.
+### Movie night — Just us & a movie
 
-Default button direction:
+Theme: Midnight Romance, after-dark colour and a cosy film-night mood.
 
-- Positive: Aww, thanks
-- Playful no: Still an idiot
+1. **Opening:** A small plan. Very good company.
+2. **Letter:** Invite an easy evening together. Leave the film and timing open unless the sender adds details.
+3. **Photos:** Good company makes a simple plan special.
+4. **Hidden note:** The company matters more than remembering the plot.
+5. **Answer:** Choose film and snack preferences, then make a plan or suggest another time.
 
-Current preset angles:
+Styles: cosy and casual; trailer voice; quiet and sweet. Emoji: 🍿 🎬 🌙.
 
-- Playful: another year older, still iconic.
-- Warm: loved for exactly who they are.
-- Soft finish: jokes aside, they are a gift.
+## Sources and behaviour
 
-### Bestie Card
+- `lib/moodStories.ts`: all mood metadata, 15 letter presets, questions, opening copy, hidden notes, endings, and emoji sets.
+- `lib/themes.ts`: palettes and the builder’s template list.
+- `components/EnvelopeReveal.tsx`, `LiveSimulator.tsx`, and `RecipientView.tsx`: consume shared mood copy. Saved custom letters are preserved.
+- `components/MoodTypewriter.tsx`: grapheme-safe typing, punctuation pauses, progressive mood emoji, instant reading, and reduced-motion support.
+- `lib/revealEffects.ts`: scratch coverage and typing helpers. The reveal unlocks at 35% actual cleared area, with an accessible non-gesture alternative.
+- `components/MusicSelector.tsx` and `VinylDisk.tsx`: separate selection and playback controls, compact saved state, and a mobile-safe player.
 
-Purpose: Make friendship affection easy to send without becoming too heavy.
-
-Theme direction: Pink-lavender, drinks, sparkle, casual celebration, shared chaos.
-
-Default button direction:
-
-- Positive: Love you bestie
-- Playful no: Eww, cringe
-
-Current preset angles:
-
-- Sincere: thank them for being one of the best people in life.
-- Funny: chaos partner and emotional support human.
-- Soft: forever-person friendship energy.
-
-## Secondary Cards
-
-These are currently de-emphasized for focus and monetization:
-
-- Love Letter: cinematic confession.
-- Movie Night: cozy private invite.
-
-They can come back later once the first three moments convert.
-
-## Theme Directions
-
-Current theme names live in `lib/themes.ts`:
-
-- Soft Sorry: warm pink, pearl, handwritten apology energy.
-- Birthday Gold: cream, gold, and celebration polish.
-- Bestie Bloom: airy lavender-pink for friendship.
-- Midnight Romance: dark cinematic finish for later cards.
-
-## Live Copy Source Map
-
-Use these files when changing app copy:
-
-- `lib/strings.ts`: landing page copy, simulator copy, recipient page shared copy.
-- `lib/themes.ts`: card names, card descriptions, button defaults, story presets, runaway button lines, theme labels.
-- `app/customize/page.tsx`: builder step headings, field labels, helper text, preview fallback behavior.
-- `components/LiveSimulator.tsx`: landing page simulator sample flow and visual demo copy.
-- `components/RecipientView.tsx`: recipient-side reveal, unlock, buttons, and reply flow.
-- `components/SuccessHub.tsx`: post-payment receipt, recovery, and sharing copy.
-
-## Content Writer Brief
-
-When refreshing the copy, prioritize these outcomes:
-
-- The sender should immediately understand what they are buying.
-- Each card should feel giftable within 10 seconds.
-- The first preview screen should feel complete even before customization.
-- Sorry should feel gentle and trustworthy.
-- Birthday should feel bright and premium.
-- Bestie should feel easy, funny, and shareable.
-- Avoid too many card types until the core three are clearly strong.
-
-## Future Cleanup
-
-The copy is mostly centralized in `lib/strings.ts` and `lib/themes.ts`, but some builder labels still live in `app/customize/page.tsx`. A later cleanup can move all builder strings into one exported content module so writers only edit one source file.
+Keep builder previews and delivered cards consistent. Do not add an independent table of English or Hinglish defaults in a component. Other localized copy must be explicitly selected, not silently substituted for the sender’s words.

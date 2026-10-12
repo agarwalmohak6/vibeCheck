@@ -1,5 +1,6 @@
+import { MOOD_STORIES } from './moodStories';
 // lib/themes.ts
-export type ThemeId = 'midnight_romance' | 'kdrama_romance' | 'soft_coquette' | 'desi_festive';
+export type ThemeId = 'midnight_romance' | 'kdrama_romance' | 'soft_coquette' | 'desi_festive' | 'proposal_glow';
 
 export interface Theme {
   id: ThemeId;
@@ -17,10 +18,16 @@ export interface Theme {
 
 export const THEMES: Theme[] = [
   {
+    id: 'proposal_glow', label: 'The Next Chapter', emoji: '🤍',
+    description: 'Warm ivory, rose, and champagne. A love letter to your future together.',
+    coverImage: '/themes/proposal_glow.svg',
+    preview: { bg: '#fff9f0', accent: '#9b4654', accent2: '#aa7738', text: '#3e2929' },
+  },
+  {
     id: 'midnight_romance',
     label: 'Midnight Romance',
     emoji: '🌙',
-    description: 'Dark, cinematic, and high-conversion',
+    description: 'After-dark colour, soft neon, and movie-night atmosphere',
     coverImage: '/themes/proposal_universal_cover.png',
     preview: {
       bg: '#0B0F19',
@@ -31,9 +38,9 @@ export const THEMES: Theme[] = [
   },
   {
     id: 'kdrama_romance',
-    label: 'Bestie Bloom',
+    label: 'First Blush',
     emoji: '☔',
-    description: 'Pink-lavender, drinks, sparkle, and shared-chaos energy',
+    description: 'Pink, lavender, and the butterflies before an honest confession',
     coverImage: '/themes/kdrama_romance.png',
     preview: {
       bg: '#FAFAFD',
@@ -85,209 +92,13 @@ export interface StoryQuestion {
   options: string[];
 }
 
-export const TEMPLATE_TYPES: {
-  id: TemplateId;
-  label: string;
-  emoji: string;
-  description: string;
-  builderHint: string;
-  hasRunaway: boolean;
-  defaultCoverImage: string;
-  recommendedTheme: ThemeId;
-  defaultYesText: string;
-  defaultNoText: string;
-  gifSearchTerms: string[];
-  storyQuestions: StoryQuestion[];
-  messagePresets: MessagePreset[];
-}[] = [
-  {
-    id: 'shoot_shot',
-    label: 'Ask the big question 💍',
-    emoji: '💍',
-    description: 'A private, beautiful way to make the big ask',
-    builderHint: 'Best when the message needs to feel brave, private, and memorable.',
-    hasRunaway: true,
-    defaultCoverImage: '/themes/proposal_universal_cover.png',
-    recommendedTheme: 'midnight_romance',
-    defaultYesText: 'YES 💖',
-    defaultNoText: 'No 💔',
-    gifSearchTerms: ['romantic love letter', 'cute confession', 'soft hearts'],
-    storyQuestions: [
-      { id: 'noticed', eyebrow: 'First glance', question: 'Did this feel like it was made only for you?', options: ['Yes, very', 'I am listening'] },
-      { id: 'signal', eyebrow: 'The signal', question: 'What should they know before you answer?', options: ['This is brave', 'This is sweet', 'This surprised me'] },
-      { id: 'pace', eyebrow: 'Your pace', question: 'How fast should this move?', options: ['Slow and real', 'Let us talk', 'I am ready'] },
-      { id: 'feeling', eyebrow: 'The feeling', question: 'What emotion is winning right now?', options: ['Butterflies', 'Curiosity', 'Soft smile'] },
-      { id: 'reply', eyebrow: 'Final check', question: 'Ready to give them an answer?', options: ['Yes, show me', 'One more second'] },
-    ],
-    messagePresets: [
-      {
-        style: '🎬 Filmy',
-        title: 'This one is personal',
-        body: 'I wanted this to feel more special than a text.\nMore honest than a story.\nAnd a lot harder to forget.\nSo here it is — just for you.',
-      },
-      {
-        style: '💀 Honest',
-        title: "I have to say this properly",
-        body: "I keep trying to send a normal message and it never feels enough.\nYou matter to me more than a quick text can say.\nSo I made this instead.",
-      },
-      {
-        style: '❤️ Direct',
-        title: 'No games, just this',
-        body: "I've been trying to say this for a while.\nYou make everything better.\nWould you give us a real chance?",
-      },
-    ],
-  },
-  {
-    id: 'maan_jao',
-    label: 'Sorry Card 🥺',
-    emoji: '🥺',
-    description: 'For when "sorry" over text just does not cut it.',
-    builderHint: 'Best for apologizing without sounding lazy, copied, or performative.',
-    hasRunaway: true,
-    defaultCoverImage: '/themes/sorry_universal_cover.png',
-    recommendedTheme: 'soft_coquette',
-    defaultYesText: 'Forgiven',
-    defaultNoText: 'No way',
-    gifSearchTerms: ['cute sorry teddy', 'apology please forgive me', 'sad puppy sorry'],
-    storyQuestions: [
-      { id: 'readiness', eyebrow: 'Before we begin', question: 'Are you ready to hear them out?', options: ['Okay, I will listen', 'Carefully'] },
-      { id: 'hurt', eyebrow: 'The honest part', question: 'Did the apology understand what hurt?', options: ['Yes, mostly', 'It needs care'] },
-      { id: 'effort', eyebrow: 'The effort', question: 'Does this feel more thoughtful than a text?', options: ['Definitely', 'A little'] },
-      { id: 'next_step', eyebrow: 'What next', question: 'What would help things feel lighter?', options: ['A real talk', 'Better actions', 'Some time'] },
-      { id: 'answer', eyebrow: 'Final check', question: 'Do you want to respond now?', options: ['I can respond', 'Let me decide'] },
-    ],
-    messagePresets: [
-      {
-        style: 'Sincere',
-        title: 'I was wrong',
-        body: "I was wrong, and I'm not going to dress it up with excuses.\nWhat I said hurt you, and you did not deserve that.\nI keep replaying it and wishing I'd chosen better words.\nI'm sorry, truly. Give me one more chance to be the person you know I can be.",
-      },
-      {
-        style: 'Thoughtful',
-        title: 'No excuses here',
-        body: 'No excuses here, just me owning it.\nSorry does not erase what happened, but I want you to know I see how it landed on you, and that matters more to me than being right.\nCan we hit reset?',
-      },
-      {
-        style: 'Light but real',
-        title: 'Okay, I messed up',
-        body: "Okay, I messed up. Like, actually messed up.\nI'm not going to joke about it much.\nI just want you to know I'm sorry, I mean it, and I miss things being easy between us.",
-      },
-    ],
-  },
-  {
-    id: 'birthday_roast',
-    label: 'Happy Birthday 🎂',
-    emoji: '🎂',
-    description: 'A birthday card that actually feels like a gift.',
-    builderHint: 'Best for friends, siblings, and partners when a plain story post feels too lazy.',
-    hasRunaway: true,
-    defaultCoverImage: '/themes/birthday_universal_cover.png',
-    recommendedTheme: 'desi_festive',
-    defaultYesText: 'Aww, thanks',
-    defaultNoText: 'Still an idiot',
-    gifSearchTerms: ['happy birthday cake', 'birthday party celebration', 'birthday hat cute'],
-    storyQuestions: [
-      { id: 'birthday_mood', eyebrow: 'Birthday mood', question: 'Does this feel like a real birthday moment?', options: ['Yes, cute', 'Very extra'] },
-      { id: 'memory', eyebrow: 'Memory check', question: 'What part should they remember about you?', options: ['The chaos', 'The love', 'The cake'] },
-      { id: 'wish', eyebrow: 'Your wish', question: 'What kind of year are you claiming?', options: ['Soft wins', 'Big glow-up', 'Peace and cake'] },
-      { id: 'reaction', eyebrow: 'Reaction', question: 'How hard are you smiling right now?', options: ['A lot', 'Trying not to', 'Caught me'] },
-      { id: 'answer', eyebrow: 'Final check', question: 'Ready to accept the birthday love?', options: ['Yes, obviously', 'Make me blush'] },
-    ],
-    messagePresets: [
-      {
-        style: 'Playful',
-        title: 'Still iconic',
-        body: "Another year down, and somehow you're still this iconic.\nWishing you a birthday as extra as you are, cake first, adulting later.\nHere's to more stories, more chaos, and more reasons to celebrate you.",
-      },
-      {
-        style: 'Warm',
-        title: 'Exactly who you are',
-        body: "On your day, I just want you to know how loved you are, not for what you do, but exactly for who you are.\nHere's to another year of being unapologetically you.\nHappy birthday.",
-      },
-      {
-        style: 'Soft finish',
-        title: 'Jokes aside',
-        body: "Jokes aside for one second, you're a genuinely good thing in this world, and today's about celebrating that.\nHappy birthday.\nI hope this year gives you everything you deserve.",
-      },
-    ],
-  },
-  {
-    id: 'bestie_check',
-    label: 'Tell them how you feel 💗',
-    emoji: '✨',
-    description: 'Say the honest thing that never fits in a normal text.',
-    builderHint: 'Best for saying the honest thing without making it feel like a copied paragraph.',
-    hasRunaway: true,
-    defaultCoverImage: '/themes/bestie_cover.png',
-    recommendedTheme: 'kdrama_romance',
-    defaultYesText: 'I feel it too 💗',
-    defaultNoText: 'Let me think',
-    gifSearchTerms: ['best friends cheers', 'bestie drinks toast', 'girls night sparkle'],
-    storyQuestions: [
-      { id: 'vibe', eyebrow: 'Vibe check', question: 'Is this person officially your chaos partner?', options: ['Unfortunately yes', 'Certified'] },
-      { id: 'memory', eyebrow: 'Receipts', question: 'What makes this friendship dangerous?', options: ['Inside jokes', 'Late calls', 'Bad ideas'] },
-      { id: 'softness', eyebrow: 'Soft corner', question: 'How sentimental are we allowed to get?', options: ['A little', 'Fully emotional'] },
-      { id: 'reply_style', eyebrow: 'Reply energy', question: 'What reply energy fits best?', options: ['Sweet', 'Roast them', 'Both'] },
-      { id: 'answer', eyebrow: 'Final check', question: 'Ready to admit you love them?', options: ['Fine, yes', 'Never escaping'] },
-    ],
-    messagePresets: [
-      {
-        style: 'Sincere',
-        title: 'I need to say this properly',
-        body: "I don't know the perfect way to say this, so I'll say the honest version.\nYou matter to me more than I usually let on.\nI wanted you to know that, without hiding behind a normal text.",
-      },
-      {
-        style: 'Playful',
-        title: 'A tiny confession',
-        body: "This is me being brave for approximately thirty seconds.\nI like you. A lot.\nPlease respond with kindness—and maybe a little honesty.",
-      },
-      {
-        style: 'Soft',
-        title: 'No mixed signals',
-        body: "I like the way life feels when you're in it.\nI don't want to keep pretending this is casual for me.\nWould you give this a real chance?",
-      },
-    ],
-  },
-  {
-    id: 'netflix_chill',
-    label: 'Movie Night 🍿',
-    emoji: '🍿',
-    description: 'A cozy private invite with a cinematic reveal',
-    builderHint: 'Best for a casual plan that still needs a little drama.',
-    hasRunaway: true,
-    defaultCoverImage: '/themes/netflix_chill_cover.png',
-    recommendedTheme: 'midnight_romance',
-    defaultYesText: "I'll bring snacks! 🍿",
-    defaultNoText: "I'm busy sleeping 😴",
-    gifSearchTerms: ['movie night popcorn', 'netflix snacks cozy', 'watching movie together'],
-    storyQuestions: [
-      { id: 'plan', eyebrow: 'The plan', question: 'Does a slow movie night sound good?', options: ['Very good', 'Depends on snacks'] },
-      { id: 'snacks', eyebrow: 'Snacks first', question: 'What is non-negotiable?', options: ['Popcorn', 'Dessert', 'Cold drinks'] },
-      { id: 'genre', eyebrow: 'Movie rule', question: 'What should they not pick?', options: ['Horror', 'Boring drama', 'Anything sad'] },
-      { id: 'company', eyebrow: 'The real reason', question: 'Is this about the movie or the company?', options: ['The company', 'Both, obviously'] },
-      { id: 'answer', eyebrow: 'Final check', question: 'Ready to accept the invite?', options: ['I am in', 'Convince me'] },
-    ],
-    messagePresets: [
-      {
-        style: '😏 Lowkey flirty',
-        title: 'No plans this weekend?',
-        body: "I cleared my schedule on purpose.\nI also stocked snacks.\nCome watch something with me?",
-      },
-      {
-        style: '💬 Direct',
-        title: 'Let me be honest',
-        body: "This is half Netflix invite, half confession.\nI like being around you more than I should admit.\nWatch something with me?",
-      },
-      {
-        style: '🛋️ Cozy',
-        title: 'Couch, blanket, good vibes?',
-        body: "It's been a week.\nWe both need a slow night.\nCome over, I'll handle the food and the playlist.",
-      },
-    ],
-  },
-];
+export const TEMPLATE_TYPES = (Object.keys(MOOD_STORIES) as TemplateId[]).map((id) => {
+  const { narrative: _narrative, ...template } = MOOD_STORIES[id];
+  void _narrative;
+  return { id, ...template, hasRunaway: false, gifSearchTerms: [template.label] };
+});
 
-export const PRIMARY_TEMPLATE_IDS: TemplateId[] = ['bestie_check', 'shoot_shot', 'maan_jao'];
+export const PRIMARY_TEMPLATE_IDS: TemplateId[] = ['bestie_check', 'shoot_shot', 'maan_jao', 'birthday_roast', 'netflix_chill'];
 export const PRIMARY_TEMPLATE_TYPES = PRIMARY_TEMPLATE_IDS
   .map((id) => TEMPLATE_TYPES.find((template) => template.id === id))
   .filter((template): template is (typeof TEMPLATE_TYPES)[number] => Boolean(template));
