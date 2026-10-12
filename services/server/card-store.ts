@@ -4,6 +4,7 @@ import type { CreateCardInput } from '@/lib/contracts';
 import { computeExpiresAt } from '@/lib/utils';
 import type { Card } from '@/lib/supabase';
 import type { CardEventType, ChatMessageDTO, PublicCard, TrackerEvent } from '@/types/vibecheck';
+import { readStoredReplies, writeStoredReply } from './reply-store';
 import { captureServerEvent } from './analytics';
 import { createAccessToken, hashPasscode, verifyAccessToken, verifyPasscodeHash } from './security';
 import { disableSupabaseForRuntime, getSupabaseAdmin, isSupabaseConnectivityError } from './supabase-admin';
@@ -96,6 +97,8 @@ function toPublicCard(row: Card): PublicCard {
   const hasSecretCode = Boolean(row.card_data.has_secret_code || MOCK_SECRETS[row.id]);
   const safeData = { ...row.card_data };
   delete safeData.unlock_code;
+  delete safeData.reply_messages;
+  delete safeData.reply_version;
 
   return {
     ...row,
@@ -929,27 +932,20 @@ export async function getMessagesForCard(cardId: string) {
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   }
 
-  const { data, error } = await admin
-    .from('messages')
-    .select('*')
-    .eq('card_id', cardId)
-    .order('created_at', { ascending: true })
-    .limit(200);
-
-  if (error) throw error;
-  return (data || []) as ChatMessageDTO[];
+  return readStoredReplies(admin, cardId);
 }
 
 export async function sendCardMessage(
   cardId: string,
   sender: 'creator' | 'recipient',
   text: string,
-  creatorToken: string | null
+  creatorToken: string | null,
+  messageId?: string
 ) {
   if (sender === 'creator' && !verifyAccessToken(creatorToken, cardId, 'creator')) return null;
   const admin = getSupabaseAdmin();
   const message: ChatMessageDTO = {
-    id: randomUUID(),
+    id: messageId || randomUUID(),
     card_id: cardId,
     sender,
     text: text.trim(),
@@ -957,15 +953,9 @@ export async function sendCardMessage(
   };
 
   if (!admin) {
-    MOCK_CHATS.push(message);
+    if (!MOCK_CHATS.some(reply => reply.id === message.id)) MOCK_CHATS.push(message);
   } else {
-    const { data, error } = await admin.from('messages').insert({
-      card_id: cardId,
-      sender,
-      text: text.trim(),
-    }).select('*').single();
-    if (error) throw error;
-    return data as ChatMessageDTO;
+    return writeStoredReply(admin, message);
   }
 
   await captureServerEvent('message_sent', cardId, { sender });

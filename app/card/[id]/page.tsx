@@ -1,4 +1,5 @@
 import { getPublicCard } from '@/services/server/card-store';
+import { verifyAccessToken } from '@/services/server/security';
 import { isExpired } from '@/lib/utils';
 import RecipientView from '@/components/RecipientView';
 import ExpiredView from '@/components/ExpiredView';
@@ -46,5 +47,6 @@ export default async function CardPage({
     ? roomParam.includes('chat')
     : roomParam === 'chat';
 
-  return <RecipientView card={card} initialRoomMode={initialRoomMode} isCreator={typeof query.ct === 'string'} />;
+  const isCreator = typeof query.ct === 'string' && verifyAccessToken(query.ct, card.id, 'creator');
+  return <RecipientView card={card} initialRoomMode={initialRoomMode} isCreator={isCreator} />;
 }

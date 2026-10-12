@@ -16,11 +16,11 @@ export function splitGraphemes(text: string): string[] {
 }
 
 export function typingDelay(character: string): number {
-  if (/\n/.test(character)) return 240;
-  if (/[.!?]/.test(character)) return 210;
-  if (/[,;:]/.test(character)) return 110;
-  if (/\p{Extended_Pictographic}/u.test(character)) return 160;
-  return 22;
+  if (/\n/.test(character)) return 560;
+  if (/[.!?]/.test(character)) return 460;
+  if (/[,;:]/.test(character)) return 480;
+  if (/\p{Extended_Pictographic}/u.test(character)) return 380;
+  return 48;
 }
 
 /** Convert viewport pointer positions to the canvas's unscaled CSS coordinates. */

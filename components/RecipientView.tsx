@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { TEMPLATE_TYPES, type StoryQuestion } from "@/lib/themes";
@@ -8,7 +8,8 @@ import { getMoodStory } from "@/lib/moodStories";
 import { SCRATCH_REVEAL_PERCENT, scratchCoverage, scratchPoint } from "@/lib/revealEffects";
 import FitStage from "@/components/FitStage";
 import FollowUpReplies from "@/components/FollowUpReplies";
-import { paginateLetter } from "@/lib/letterPages";
+import { LETTER_OPEN_MS, PHOTO_HOLD_MS } from "@/lib/romanceMotion";
+import { paginateLetter, letterParagraphs } from "@/lib/letterPages";
 import MoodTypewriter from "@/components/MoodTypewriter";
 import EnvelopeReveal from "@/components/EnvelopeReveal";
 import RomanceButtons from "@/components/RomanceButtons";
@@ -45,9 +46,10 @@ function buildCoverImages(uploadedCovers?: string[], primaryCover?: string): str
 }
 
 export default function RecipientView({ card, initialRoomMode = false, isCreator = false }: RecipientViewProps) {
+  const shellRef = useRef<HTMLDivElement>(null);
   const [envelopeOpened, setEnvelopeOpened] = useState(initialRoomMode);
   const [secretUnlocked, setSecretUnlocked] = useState(
-    !card.card_data.has_secret_code,
+    isCreator || !card.card_data.has_secret_code,
   );
   const [roomOpen, setRoomOpen] = useState(initialRoomMode);
   const language: RecipientLocale = "en";
@@ -77,15 +79,27 @@ export default function RecipientView({ card, initialRoomMode = false, isCreator
     : templateMeta?.storyQuestions;
 
   const [yesClicked, setYesClicked] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const celebrationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (celebrationTimer.current) clearTimeout(celebrationTimer.current); confetti.reset(); }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const creatorToken = new URLSearchParams(window.location.search).get("ct");
-      if (creatorToken) {
+      if (creatorToken && isCreator) {
         localStorage.setItem(`creator_token_${card.id}`, creatorToken);
       }
     }
-  }, [card.id]);
+  }, [card.id, isCreator]);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const resize = () => shellRef.current?.style.setProperty('--recipient-height', `${viewport?.height || window.innerHeight}px`);
+    resize();
+    viewport?.addEventListener('resize', resize);
+    window.addEventListener('resize', resize);
+    return () => { viewport?.removeEventListener('resize', resize); window.removeEventListener('resize', resize); };
+  }, []);
 
   const handleEnvelopeOpen = () => {
     setEnvelopeOpened(true);
@@ -105,20 +119,10 @@ export default function RecipientView({ card, initialRoomMode = false, isCreator
   const handleYes = () => {
     setYesClicked(true);
     const colors = ["#e8ba72", "#d87982", "#f3b4a0", "#f6d7b3", "#fffaf0"];
-    // Massive blast from bottom
-    [0, 200, 400, 600, 800].forEach((d) =>
-      setTimeout(
-        () =>
-          confetti({
-            particleCount: 200,
-            spread: 180,
-            origin: { y: 1 },
-            startVelocity: 60,
-            colors,
-          }),
-        d,
-      ),
-    );
+    if (!reducedMotion) {
+      confetti({ particleCount: 65, spread: 95, origin: { y: .8 }, startVelocity: 22, gravity: .5, ticks: 240, colors, disableForReducedMotion: true });
+      celebrationTimer.current = setTimeout(() => confetti({ particleCount: 35, spread: 105, origin: { y: .75 }, startVelocity: 18, gravity: .5, ticks: 240, colors, disableForReducedMotion: true }), 800);
+    }
 
     // Automatically send an acceptance message to the database
     const positiveLabel = displayYesText || card.card_data.yes_btn_text || "YES 💖";
@@ -145,6 +149,7 @@ export default function RecipientView({ card, initialRoomMode = false, isCreator
 
   return (
     <div
+      ref={shellRef}
       className="vc-recipient-shell no-capture min-h-screen relative overflow-hidden flex flex-col"
       style={{
         background: "var(--bg)",
@@ -167,7 +172,7 @@ export default function RecipientView({ card, initialRoomMode = false, isCreator
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
-            className="fixed inset-0 pointer-events-none z-1"
+            className="vc-recipient-celebration"
             style={{
               background:
                 "radial-gradient(circle at center, color-mix(in srgb, var(--accent), transparent 58%) 0%, color-mix(in srgb, var(--accent2), transparent 68%) 42%, color-mix(in srgb, var(--bg), #000 8%) 100%)",
@@ -238,7 +243,7 @@ export default function RecipientView({ card, initialRoomMode = false, isCreator
             ) : (
               <FitStage><RecipientFinalReveal
                 onReplay={() => setYesClicked(false)}
-                onReply={() => setRoomOpen(true)}
+                onReply={() => { if (celebrationTimer.current) clearTimeout(celebrationTimer.current); confetti.reset(); setRoomOpen(true); }}
                 coverImages={coverImages}
                 displayMessageTitle={displayMessageTitle}
                 displayMainBody={displayMainBody}
@@ -246,7 +251,7 @@ export default function RecipientView({ card, initialRoomMode = false, isCreator
                 creatorName={creatorName}
                 successEmoji={getMoodStory(card.template_type).emoji}
                 successHeading={revealStory.ending}
-                successSubtext="Your note and these little moments are here to revisit."
+                successSubtext="Come back whenever you need a little smile. This moment is yours."
               /></FitStage>
             )}
 
@@ -328,16 +333,11 @@ function RecipientRevealDrive({
   onDodge,
 }: RecipientRevealDriveProps) {
   const [stage, setStage] = useState<RevealStage>("gate");
-  const finaleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (finaleTimer.current) clearTimeout(finaleTimer.current); }, []);
   const previewLine = displayMainBody
     .split(/\s+/)
     .slice(0, 16)
     .join(" ");
-  const goToFinale = () => {
-    setStage("finale");
-    finaleTimer.current = setTimeout(onYes, 2300);
-  };
+  const goToFinale = () => setStage("finale");
 
   return (
     <section
@@ -402,6 +402,8 @@ function RecipientRevealDrive({
           <KoikoiQuestionStage
             key="question"
             cardId={cardId}
+            creatorName={creatorName}
+            recipientName={recipientName}
             templateType={templateType}
             revealStory={revealStory}
             storyQuestions={storyQuestions}
@@ -421,6 +423,7 @@ function RecipientRevealDrive({
             templateType={templateType}
             creatorName={creatorName}
             recipientName={recipientName}
+            onNext={onYes}
           />
         )}
       </AnimatePresence>
@@ -443,7 +446,7 @@ function KoikoiStageShell({
       initial={{ opacity: 0, y: 28, scale: 0.985 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -18, scale: 0.985 }}
-      transition={{ duration: 0.52, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 1.05, ease: [0.16, 1, 0.3, 1] }}
     >
       <FitStage>{children}</FitStage>
     </motion.section>
@@ -451,8 +454,8 @@ function KoikoiStageShell({
 }
 
 function KoikoiGateStage({
+  creatorName,
   templateEmoji,
-  templateLabel,
   revealStory,
   onNext,
 }: {
@@ -469,17 +472,10 @@ function KoikoiGateStage({
         <span>{templateEmoji}</span>
       </div>
       <article className="vc-koikoi-card vc-koikoi-card--center">
-        <p>{templateLabel}</p>
+        <p>With love, from {creatorName}</p>
         <h1>{revealStory.headline}</h1>
         <span>{revealStory.intro}</span>
-        <div className="vc-koikoi-lineup">
-          {revealStory.lineup.map((step) => (
-            <div key={step.number}>
-              <b>{step.number}</b>
-              <strong>{step.title}</strong>
-            </div>
-          ))}
-        </div>
+        <p className="vc-koikoi-soft-note">Take your time. This little moment is yours.</p>
         <button type="button" onClick={onNext}>
           Open your note
           <span aria-hidden>💝</span>
@@ -505,6 +501,10 @@ function KoikoiLetterStage({
   onNext: () => void;
 }) {
   const [opened, setOpened] = useState(false);
+  const [unfolding, setUnfolding] = useState(false);
+  const unfoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reducedMotion = useReducedMotion();
+  useEffect(() => () => { if (unfoldTimer.current) clearTimeout(unfoldTimer.current); }, []);
   const noteBody = body || getMoodStory(templateType).messagePresets[0].body;
   const pages = useMemo(() => paginateLetter(noteBody), [noteBody]);
   const [page, setPage] = useState(0);
@@ -512,13 +512,13 @@ function KoikoiLetterStage({
   return (
     <KoikoiStageShell className="vc-koikoi-stage--letter">
       {!opened ? (
-        <button type="button" className="vc-koikoi-envelope" onClick={() => setOpened(true)}>
+        <button type="button" className={`vc-koikoi-envelope ${unfolding ? "is-unfolding" : ""}`} disabled={unfolding} onClick={() => { setUnfolding(true); unfoldTimer.current = setTimeout(() => setOpened(true), reducedMotion ? 100 : LETTER_OPEN_MS); }}>
           <span aria-hidden>💌</span>
           <strong>A little letter for you</strong>
           <em>From {creatorName}, with a little courage and a lot of care.</em>
         </button>
       ) : (
-        <article className="vc-koikoi-letter" data-template={templateType}>
+        <motion.article className="vc-koikoi-letter" data-template={templateType} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2 }}>
           <p>Dear {recipientName},</p>
           <h2>{title}</h2>
           <MoodTypewriter key={`${page}-${noteBody}`} text={pages[page]} templateType={templateType} />
@@ -527,7 +527,7 @@ function KoikoiLetterStage({
           <button type="button" onClick={onNext}>
             A few little moments <span aria-hidden>→</span>
           </button>
-        </article>
+        </motion.article>
       )}
     </KoikoiStageShell>
   );
@@ -580,117 +580,69 @@ function KoikoiCardsStage({
 }
 
 function KoikoiQuestionStage({
-  cardId,
-  revealStory,
-  storyQuestions,
-  hasRunaway,
-  ctaPrompt,
-  yesText,
-  noText,
-  onYes,
-  onDodge,
+  cardId, creatorName, recipientName, templateType, revealStory, storyQuestions, hasRunaway, yesText, noText, onYes, onDodge,
 }: {
-  cardId: string;
-  templateType: string;
-  revealStory: RevealStory;
-  storyQuestions?: StoryQuestion[];
-  hasRunaway: boolean;
-  ctaPrompt: string;
-  noButtonWarning: string;
-  yesText?: string;
-  noText?: string;
-  onYes: () => void;
-  onDodge: (label: string, dodgeCount: number) => void;
+  cardId: string; creatorName: string; recipientName: string; templateType: string;
+  revealStory: RevealStory; storyQuestions?: StoryQuestion[]; hasRunaway: boolean;
+  ctaPrompt: string; noButtonWarning: string; yesText?: string; noText?: string;
+  onYes: () => void; onDodge: (label: string, dodgeCount: number) => void;
 }) {
   const prompts = storyQuestions || [];
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [response, setResponse] = useState("");
-
-  return (
-    <KoikoiStageShell className="vc-koikoi-stage--question">
-      <article className="vc-koikoi-card vc-koikoi-card--question">
-        <p>final question</p>
-        <h2>{revealStory.answerCue}</h2>
-        <div className="vc-koikoi-prompt-stack">
-          {prompts.map((question, index) => (
-            <fieldset key={question.id} className="vc-story-choice">
-              <legend>{question.question}</legend>
-              <div>
-                {question.options.map(option => (
-                  <button key={option} type="button" aria-pressed={answers[question.id] === option}
-                    onClick={() => {
-                      setAnswers(current => ({ ...current, [question.id]: option }));
-                      void fetch(`/api/cards/${cardId}/events`, {
-                        method: "POST", headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ event_type: "story_answered", metadata: { step: index + 1, question: question.question, answer: option } }),
-                      }).catch(() => {});
-                    }}>{option}</button>
-                ))}
-              </div>
-            </fieldset>
-          ))}
+  const [detail, setDetail] = useState<number | null>(null);
+  const question = detail == null ? null : prompts[detail];
+  const saveAnswer = (questionText: string, answer: string, step?: number) => {
+    void fetch(`/api/cards/${cardId}/events`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event_type: "story_answered", metadata: { question: questionText, answer, ...(step == null ? {} : { step }) } }),
+    }).catch(() => {});
+  };
+  return <KoikoiStageShell className="vc-koikoi-stage--question">
+    <article className="vc-koikoi-card vc-koikoi-card--question">
+      {question ? <>
+        <p>A little detail, if you’d like</p>
+        <h2>{question.question}</h2>
+        <div className="vc-story-choice vc-story-choice--single">
+          {question.options.map(option => <button key={option} type="button" aria-pressed={answers[question.id] === option} onClick={() => { setAnswers(previous => ({ ...previous, [question.id]: option })); saveAnswer(question.question, option, (detail || 0) + 1); }}>{option}</button>)}
         </div>
-        {hasRunaway ? (
-          <div className="vc-koikoi-runaway">
-            <p>{ctaPrompt}</p>
-
-            <RomanceButtons onYes={onYes} yesText={yesText} noText={noText} onDodge={onDodge} onLater={() => setResponse("Take your time. This little moment will be here when you are ready.")} />
-            {response && <p role="status">{response}</p>}
-          </div>
-        ) : (
-          <div className="vc-story-response">
-            <button type="button" onClick={onYes}>{yesText || "Send answer"}</button>
-            {noText && <button type="button" className="vc-story-response__secondary" onClick={() => {
-              setResponse("Your pace matters. You can come back to this whenever you are ready.");
-              void fetch(`/api/cards/${cardId}/events`, {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ event_type: "story_answered", metadata: { question: revealStory.answerCue, answer: noText } }),
-              }).catch(() => {});
-            }}>{noText}</button>}
-            {response && <p role="status">{response}</p>}
-          </div>
-        )}
-      </article>
-    </KoikoiStageShell>
-  );
+        <div className="vc-story-detail-nav">
+          <button type="button" onClick={() => setDetail(null)}>Back to your moment</button>
+          <button type="button" onClick={() => setDetail(detail != null && detail < prompts.length - 1 ? detail + 1 : null)}>{detail === prompts.length - 1 ? 'That’s lovely ♡' : 'One more little detail →'}</button>
+        </div>
+      </> : <>
+        <p>{recipientName}, one little question</p>
+        <span className="vc-question-keepsake" aria-hidden="true">{getMoodStory(templateType).emoji}</span>
+        <h2>{revealStory.answerCue}</h2>
+        <div className="vc-question-note"><MoodTypewriter text={revealStory.signal} templateType={templateType} /></div>
+        <strong className="vc-question-signature">— {creatorName}</strong>
+        {hasRunaway ? <RomanceButtons onYes={onYes} yesText={yesText} noText={noText} onDodge={onDodge} onLater={() => { setResponse("Take your time. I’m here whenever you’re ready."); saveAnswer(revealStory.answerCue, "I’d like some time"); }} /> : <div className="vc-story-response">
+          <button type="button" onClick={onYes}>{yesText || "Send answer"}</button>
+          {noText && <button type="button" className="vc-story-response__secondary" onClick={() => { setResponse("Your pace matters. Take all the time you need."); saveAnswer(revealStory.answerCue, noText); }}>{noText}</button>}
+        </div>}
+        {response && <p className="vc-question-response">{response}</p>}
+        {prompts.length > 0 && <button type="button" className="vc-story-details-toggle" onClick={() => setDetail(0)}>Add a little detail, if you’d like</button>}
+      </>}
+    </article>
+  </KoikoiStageShell>;
 }
 
-function KoikoiFinaleStage({
-  templateType,
-  creatorName,
-  recipientName,
-}: {
-  templateType: string;
-  creatorName: string;
-  recipientName: string;
+function KoikoiFinaleStage({ templateType, creatorName, recipientName, onNext }: {
+  templateType: string; creatorName: string; recipientName: string; onNext: () => void;
 }) {
-  return (
-    <KoikoiStageShell className="vc-koikoi-stage--finale">
-      <div className="vc-koikoi-confetti" aria-hidden>
-        {Array.from({ length: 42 }, (_, index) => (
-          <span
-            key={index}
-            style={
-              {
-                "--confetti-left": `${(index * 11) % 100}%`,
-                "--confetti-sway": `${((index % 7) - 3) * 12}px`,
-                "--confetti-size": `${1 + (index % 4) * 0.28}rem`,
-                "--confetti-duration": `${2.4 + (index % 5) * 0.24}s`,
-                "--confetti-delay": `${(index % 12) * -0.12}s`,
-              } as React.CSSProperties
-            }
-          >
-            {getMoodStory(templateType).narrative.emojis[index % 3]}
-          </span>
-        ))}
-      </div>
+  const story = getMoodStory(templateType);
+  return <KoikoiStageShell className="vc-koikoi-stage--finale">
+    <div className="vc-pair-moment">
+      <div className="vc-pair-petals" aria-hidden="true">{story.narrative.emojis.map((emoji, index) => <span key={index} style={{ animationDelay: `${index * 1.2}s` }}>{emoji}</span>)}</div>
       <article className="vc-koikoi-card vc-koikoi-card--center">
-        <p>{getMoodStory(templateType).narrative.ending}</p>
-        <h1>{recipientName} + {creatorName}</h1>
+        <p>{story.narrative.eyebrow}</p>
+        <h1 className="vc-pair-names"><span>{recipientName}</span><i aria-hidden="true">♡</i><span>{creatorName}</span></h1>
         <span>A little moment between the two of you.</span>
+        <p className="vc-koikoi-soft-note">No rush. Let this one sink in.</p>
+        <button type="button" onClick={onNext}>Keep this little moment ♡</button>
       </article>
-    </KoikoiStageShell>
-  );
+    </div>
+  </KoikoiStageShell>;
 }
 
 function PhotoClipAccordion({
@@ -712,10 +664,10 @@ function PhotoClipAccordion({
 
     const intervalId = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % images.length);
-    }, 2400);
+    }, PHOTO_HOLD_MS);
 
     return () => window.clearInterval(intervalId);
-  }, [images.length]);
+  }, [images.length, activeIndex]);
 
   if (!images.length) {
     return (
@@ -743,8 +695,7 @@ function PhotoClipAccordion({
           aria-hidden
         />
         <div className="vc-photo-clip-light__spotlight">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={activeSource} alt="" draggable={false} />
+          <AnimatePresence mode="sync"><motion.img key={activeSource} src={activeSource} alt="A memory chosen just for you" draggable={false} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 1.5 }} /></AnimatePresence>
           <span>{String(activeIndex + 1).padStart(2, "0")} / {String(images.length).padStart(2, "0")}</span>
           <strong>{activeCaption}</strong>
         </div>
@@ -783,7 +734,7 @@ function PhotoClipAccordion({
       </div>
       <p>
         <span aria-hidden>{templateEmoji}</span>
-        Tap a frame. The spotlight moves with the memory.
+        Little memories, worth lingering over.
       </p>
     </div>
   );
@@ -872,13 +823,13 @@ function ScratchLoveNote({
       }
 
       ctx.fillStyle = "rgba(61, 26, 46, 0.72)";
-      ctx.font = "900 13px Inter, system-ui, sans-serif";
+      ctx.font = "600 13px Quicksand, system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("A LITTLE SOMETHING UNDERNEATH", rect.width / 2, rect.height / 2 - 10, Math.max(1, rect.width - 24));
-      ctx.font = "800 11px Inter, system-ui, sans-serif";
+      ctx.fillText("A LITTLE NOTE, JUST FOR YOU", rect.width / 2, rect.height / 2 - 10, Math.max(1, rect.width - 24));
+      ctx.font = "500 11px Quicksand, system-ui, sans-serif";
       ctx.fillStyle = "rgba(61, 26, 46, 0.48)";
-      ctx.fillText(`Use your finger or cursor to reveal ${SCRATCH_REVEAL_PERCENT}%`, rect.width / 2, rect.height / 2 + 18, Math.max(1, rect.width - 24));
+      ctx.fillText("Gently brush here to find it", rect.width / 2, rect.height / 2 + 18, Math.max(1, rect.width - 24));
 
     };
 
@@ -948,9 +899,9 @@ function ScratchLoveNote({
       transition={{ duration: 0.72, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="vc-scratch-note__copy">
-        <p>scratch note</p>
+        <p>A little secret</p>
         <h2>One little thing, tucked away.</h2>
-        <span>{recipientName}, scratch about {SCRATCH_REVEAL_PERCENT}% to uncover your note.</span>
+        <span>{recipientName}, gently brush away the shimmer. There’s something underneath, just for you.</span>
       </div>
 
       <div className="vc-scratch-note__card" ref={noteRef}>
@@ -986,9 +937,7 @@ function ScratchLoveNote({
             measureCoverage();
           }}
         />
-        <div className="vc-scratch-note__meter" role="progressbar" aria-label="Note reveal progress" aria-valuemin={0} aria-valuemax={SCRATCH_REVEAL_PERCENT} aria-valuenow={Math.min(scratched, SCRATCH_REVEAL_PERCENT)}>
-          <span style={{ width: `${Math.min(100, scratched / SCRATCH_REVEAL_PERCENT * 100)}%` }} />
-        </div>
+
       </div>
       {scratched < SCRATCH_REVEAL_PERCENT && (
         <button type="button" className="vc-scratch-accessible" onClick={() => setScratched(SCRATCH_REVEAL_PERCENT)}>Reveal without scratching</button>
@@ -1000,7 +949,7 @@ function ScratchLoveNote({
           onClick={onNext}
           disabled={scratched < SCRATCH_REVEAL_PERCENT}
         >
-          {scratched < SCRATCH_REVEAL_PERCENT ? `Keep scratching · ${scratched}/${SCRATCH_REVEAL_PERCENT}%` : "Go to final answer"}
+          {scratched < SCRATCH_REVEAL_PERCENT ? "A little more shimmer to brush away" : "One little question ♡"}
           <span aria-hidden>{scratched < SCRATCH_REVEAL_PERCENT ? "👆" : "💖"}</span>
         </button>
       )}
@@ -1033,7 +982,7 @@ function RecipientFinalReveal({
 }) {
   const heroImage = coverImages[0];
   const supportingImages = coverImages.slice(1, 4);
-  const pages = useMemo(() => paginateLetter(displayMainBody), [displayMainBody]);
+  const pages = useMemo(() => paginateLetter(displayMainBody, 320), [displayMainBody]);
   const [page, setPage] = useState(0);
 
   return (
@@ -1041,7 +990,7 @@ function RecipientFinalReveal({
       className="vc-final-reveal"
       initial={{ opacity: 0, y: 28, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.62, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="vc-final-reveal__media">
         {heroImage ? (
@@ -1066,12 +1015,12 @@ function RecipientFinalReveal({
       </div>
 
       <div className="vc-final-reveal__copy">
-        <p>{successEmoji} final reveal</p>
+        <p>For {recipientName}, from {creatorName}</p>
         <h1>{successHeading}</h1>
         <strong>{recipientName}, a little moment from {creatorName}, yours to keep.</strong>
         <div className="vc-final-reveal__note">
           <span>{displayMessageTitle}</span>
-          <p style={{ whiteSpace: "pre-wrap" }}>{pages[page]}</p>
+          {letterParagraphs(pages[page]).map((paragraph, index) => <p key={index}>{paragraph}</p>)}
           {pages.length > 1 && <nav className="vc-letter-pages" aria-label="Saved letter pages"><button type="button" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>←</button><span>{page + 1} / {pages.length}</span><button type="button" onClick={() => setPage(p => Math.min(pages.length - 1, p + 1))} disabled={page === pages.length - 1}>→</button></nav>}
         </div>
         <small>{successSubtext}</small>

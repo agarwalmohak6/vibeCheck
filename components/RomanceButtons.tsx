@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useReducedMotion } from 'framer-motion';
+import { dodgePosition } from '@/lib/romanceMotion';
 
 export default function RomanceButtons({ onYes, yesText, noText, onDodge, onLater }: {
   onYes: () => void; yesText?: string; noText?: string;
@@ -9,19 +10,40 @@ export default function RomanceButtons({ onYes, yesText, noText, onDodge, onLate
 }) {
   const [dodges, setDodges] = useState(0);
   const [accepted, setAccepted] = useState(false);
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const laneRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const countRef = useRef(0);
   const reduced = useReducedMotion();
-  const dodge = () => {
-    const next = dodges + 1;
-    setDodges(next); onDodge(noText || 'No', next);
+  const positionButton = (count: number) => {
+    const lane = laneRef.current, button = buttonRef.current;
+    if (!lane || !button) return;
+    const size = { width: lane.clientWidth, height: lane.clientHeight, buttonWidth: button.offsetWidth, buttonHeight: button.offsetHeight };
+    setPosition(count ? dodgePosition(size.width, size.height, size.buttonWidth, size.buttonHeight, count) : { x: Math.max(8, (size.width - size.buttonWidth) / 2), y: Math.max(8, (size.height - size.buttonHeight) / 2) });
   };
-  const shifts = [[0, 0], [8, -12], [-2, 12], [10, -6], [0, 0]];
-  const [x, y] = shifts[Math.min(dodges, 4)];
+  useEffect(() => {
+    const lane = laneRef.current;
+    if (!lane) return;
+    const observer = new ResizeObserver(() => positionButton(countRef.current));
+    observer.observe(lane);
+    return () => observer.disconnect();
+  }, []);
+  const dodge = () => {
+    const next = ++countRef.current;
+    setDodges(next);
+    if (!reduced) positionButton(next);
+    onDodge(noText || 'No', next);
+  };
   return <div className="vc-romance-answer">
-    <div className="vc-romance-answer__buttons" style={{ '--yes-scale': Math.min(1.15, 1 + dodges * .035), '--no-scale': Math.max(.7, 1 - dodges * .07), '--no-x': `${reduced ? 0 : x}px`, '--no-y': `${reduced ? 0 : y}px` } as CSSProperties}>
+    <div className="vc-romance-answer__buttons" style={{ '--yes-scale': Math.min(1.14, 1 + dodges * .025) } as CSSProperties}>
       <button type="button" className="vc-romance-yes" disabled={accepted} onClick={() => { setAccepted(true); onYes(); }}>{yesText || 'Yes ♡'}</button>
-      <div className="vc-romance-no-wrap"><button type="button" className="vc-romance-no" onClick={dodge}>{noText || 'No'}</button></div>
+      <div className="vc-romance-no-lane" ref={laneRef}>
+        <button ref={buttonRef} type="button" className="vc-romance-no" style={{ left: position?.x ?? '50%', top: position?.y ?? 26, transform: position ? undefined : 'translateX(-50%)' }}
+          onPointerEnter={event => { if (event.pointerType === 'mouse') dodge(); }}
+          onPointerDown={event => { event.preventDefault(); dodge(); }}
+          onClick={event => { if (event.detail === 0) dodge(); }}>{noText || 'No'}</button>
+      </div>
     </div>
-    <p aria-live="polite">{dodges ? 'A shy little button. Take all the time you need.' : 'A little courage. A lot of heart.'}</p>
     <button type="button" className="vc-romance-later" onClick={onLater}>I’d like some time</button>
   </div>;
 }

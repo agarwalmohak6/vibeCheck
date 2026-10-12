@@ -88,3 +88,10 @@ describe('letters and scratch interaction in fitted screens', () => {
     expect(scratchPoint(10 + 200 * scale, 20 + 120 * scale, rect, 400, 240)).toEqual({ x: 200, y: 120 });
   });
 });
+
+describe('unhurried reveal controls', () => {
+  it('uses a readable typing pace with longer pauses for punctuation', () => {
+    expect(typingDelay('a')).toBeGreaterThanOrEqual(45);
+    expect(typingDelay('.')).toBeGreaterThanOrEqual(400);
+  });
+});
