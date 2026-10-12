@@ -68,8 +68,8 @@ type CheckoutSession = {
 const CARD_DECOR: Record<string, string[]> = {
   maan_jao: ['🥺', '💌', '🧸', '🕊️'],
   birthday_roast: ['🎂', '🎉', '🎩', '🧸'],
-  bestie_check: ['🍹', '🥂', '✨', '💅'],
-  shoot_shot: ['💌', '💍', '✨', '🌙'],
+  bestie_check: ['💗', '🙈', '✨', '💌'],
+  shoot_shot: ['🤍', '💍', '✨', '💌'],
   netflix_chill: ['🍿', '🥤', '🎬', '✨'],
 };
 
@@ -813,6 +813,7 @@ function CustomizePageContent() {
             <MusicSelector
               selectedTrackId={form.musicTrackId}
               selectedLabel={form.musicLabel}
+              selectedPreviewUrl={form.selectedMusicUrl}
               onSelectTrack={(trackId, musicUrl, label) => {
                 setForm(prev => ({
                   ...prev,

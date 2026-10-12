@@ -1,17 +1,19 @@
+import { MOOD_STORIES } from './moodStories';
+
 export const LANDING_STRINGS = {
   NAV_LOGO: 'VibeCheck',
   NAV_BUTTON: 'Make the moment',
   HERO_BADGE: 'The message you cannot send as a normal text',
   HERO_TITLE_1: 'Say the thing.',
   HERO_TITLE_2: 'Make it unforgettable.',
-  HERO_SUBTITLE: "Create a beautiful private moment for one person—tell them how you feel, ask the big question, or say sorry properly.",
+  HERO_SUBTITLE: "Create a beautiful private moment for one person—share your feelings, propose, say sorry, celebrate a birthday, or make a cosy plan.",
   HERO_BUTTON: 'Create your moment',
   HERO_PRICE_NOTE: '₹199 once · no subscription · one private link',
   SIMULATOR_TITLE: 'See how it works',
   SIMULATOR_SUBTITLE: 'A private reveal that feels better than another long message.',
   HOW_IT_WORKS_TITLE: 'How it works ⚡',
   HOW_IT_WORKS_STEPS: [
-    { icon: '💗', title: 'Choose the feeling.', desc: 'Tell them how you feel, ask the big question, or say sorry.' },
+    { icon: '💗', title: 'Choose the feeling.', desc: 'A confession, a proposal, an apology, a birthday, or a movie night.' },
     { icon: '✍️', title: 'Make it yours.', desc: 'Start with a strong message, then add your name, photo, and mood.' },
     { icon: '🔗', title: 'Send one private link.', desc: 'They open it on their phone—no app, account, or installation.' },
   ],
@@ -37,8 +39,8 @@ export const LANDING_STRINGS = {
 export const SIMULATOR_STRINGS = {
   SAMPLE_CREATOR: 'Aarav',
   SAMPLE_RECIPIENT: 'Priya',
-  SAMPLE_TITLE: "Please hear me out",
-  SAMPLE_BODY: "I was wrong, and I'm not going to dress it up with excuses.\nWhat I said hurt you, and you did not deserve that.\nI'm sorry, truly. Give me one more chance to be the person you know I can be.",
+  SAMPLE_TITLE: MOOD_STORIES.maan_jao.messagePresets[0].title,
+  SAMPLE_BODY: MOOD_STORIES.maan_jao.messagePresets[0].body,
   ENVELOPE_NEW_CARD: '💌 New card for',
   ENVELOPE_UNREAD: 'You have a private card from',
   ENVELOPE_TAP_WAX: 'Break the seal to open',

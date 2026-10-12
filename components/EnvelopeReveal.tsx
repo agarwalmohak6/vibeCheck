@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef } from 'react';
 import confetti from 'canvas-confetti';
+import { getMoodStory } from '@/lib/moodStories';
 import WaxSeal from '@/components/WaxSeal';
 
 interface EnvelopeRevealProps {
@@ -17,44 +18,6 @@ interface EnvelopeRevealProps {
 const REVEAL_WITH_CAMEO_MS = 2600;
 const REVEAL_DEFAULT_MS = 1250;
 
-const ENVELOPE_MOMENTS: Record<string, {
-  icon: string;
-  title: string;
-  hint: (recipientName: string) => string;
-  messages: string[];
-}> = {
-  maan_jao: {
-    icon: '🥺',
-    title: 'A softer sorry is waiting',
-    hint: (recipientName) => `Made gently for ${recipientName}. No forwarded energy here.`,
-    messages: ['I am sorry', 'one honest chance', 'no excuses', 'please hear me out', 'made just for you'],
-  },
-  birthday_roast: {
-    icon: '🎂',
-    title: 'Birthday chaos inside',
-    hint: (recipientName) => `A private birthday moment for ${recipientName}, with cake-level effort.`,
-    messages: ['happy birthday', 'cake first', 'main character day', 'one wish pending', 'party starts here'],
-  },
-  bestie_check: {
-    icon: '🍹',
-    title: 'Bestie hotline unlocked',
-    hint: (recipientName) => `A tiny private chaos room for ${recipientName}.`,
-    messages: ['bestie check', 'no refunds', 'inside jokes only', 'you are my person', 'drinks soon?'],
-  },
-  shoot_shot: {
-    icon: '💌',
-    title: 'A brave little letter',
-    hint: (recipientName) => `A private confession made only for ${recipientName}.`,
-    messages: ['just us', 'say it properly', 'soft launch?', 'one real chance', 'heart doing things'],
-  },
-  netflix_chill: {
-    icon: '🍿',
-    title: 'Movie-night invite inside',
-    hint: (recipientName) => `A cozy plan for ${recipientName}, snacks emotionally included.`,
-    messages: ['movie night', 'snacks ready', 'blanket reserved', 'press play?', 'no boring picks'],
-  },
-};
-
 export default function EnvelopeReveal({
   creatorName,
   recipientName = 'you',
@@ -65,7 +28,13 @@ export default function EnvelopeReveal({
 }: EnvelopeRevealProps) {
   const [phase, setPhase] = useState<'sealed' | 'opening' | 'open'>('sealed');
   const hasOpened = useRef(false);
-  const moment = ENVELOPE_MOMENTS[templateType] || ENVELOPE_MOMENTS.maan_jao;
+  const mood = getMoodStory(templateType);
+  const moment = {
+    icon: mood.emoji,
+    title: mood.narrative.headline,
+    hint: (name: string) => `For ${name}, from ${creatorName}. ${mood.narrative.eyebrow}.`,
+    messages: mood.narrative.scribbles,
+  };
 
   const handleTap = () => {
     if (hasOpened.current || phase !== 'sealed') return;

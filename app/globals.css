@@ -9467,3 +9467,118 @@ body {
     min-height: 4.75rem;
   }
 }
+
+/* Occasion stories: warm proposal stationery, readable letters, and compact audio. */
+[data-theme="proposal_glow"] {
+  --bg: #fff9f0;
+  --bg2: #f4e8db;
+  --surface: #fffdf8;
+  --surface2: #f8eee5;
+  --accent: #9b4654;
+  --accent2: #aa7738;
+  --accent3: #c39776;
+  --text: #3e2929;
+  --text2: #765653;
+  --text3: #876d61;
+  --border: rgba(155,70,84,.24);
+  --glow: rgba(155,70,84,.16);
+  --glow2: rgba(170,119,56,.18);
+  --font-display: var(--font-cormorant-garamond), Georgia, serif;
+  --envelope-color: #f4e8db;
+  --envelope-flap: #9b4654;
+  --hero-img-opacity: .3;
+  --hero-veil-grad-1: linear-gradient(180deg, #fff9f077, #fff9f022 40%, var(--bg));
+  --hero-veil-grad-2: linear-gradient(90deg, #fff9f0dd, #fff9f044 60%, #aa773822);
+}
+.vc-recipient-shell[data-theme="proposal_glow"] .vc-koikoi-flow {
+  --koikoi-ink: #3e2929;
+  --koikoi-muted: #765653;
+  --koikoi-accent: #9b4654;
+  --koikoi-accent2: #aa7738;
+  --koikoi-paper: #fffdf8;
+  --koikoi-paper2: #f8eee5;
+  --koikoi-soft: #f2e0dc;
+}
+.vc-recipient-shell[data-template="shoot_shot"] .vc-koikoi-letter {
+  border-radius: 5rem 5rem 1.5rem 1.5rem;
+  border: 1px solid var(--border);
+  padding-top: 3rem;
+}
+.vc-recipient-shell[data-template="shoot_shot"] .vc-koikoi-letter h2 {
+  font-family: var(--font-cormorant-garamond), Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -.035em;
+  line-height: 1.08;
+}
+.vc-mood-typewriter { width: 100%; min-width: 0; text-align: left; color: var(--koikoi-muted, var(--text2)); margin-top: 1rem; }
+.vc-mood-typewriter__page { display: grid; }
+.vc-mood-typewriter__page > span {
+  grid-area: 1 / 1;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--font-outfit), sans-serif;
+  font-size: clamp(1rem, 2vw, 1.17rem);
+  line-height: 1.85;
+  font-weight: 450;
+}
+.vc-mood-typewriter__spacer { visibility: hidden; pointer-events: none; }
+.vc-mood-typewriter__cursor { display: inline-block; width: 2px; height: 1em; margin-left: 3px; vertical-align: -.12em; background: var(--accent); animation: vc-type-cursor 1s step-end infinite; }
+@keyframes vc-type-cursor { 50% { opacity: 0; } }
+.vc-mood-typewriter__foot { display: flex; min-height: 3rem; align-items: center; justify-content: space-between; gap: .75rem; margin-top: .75rem; }
+.vc-mood-typewriter__emojis { display: flex; gap: .65rem; font-size: 1.3rem; }
+.vc-mood-typewriter__emojis > span { opacity: 0; transform: translateY(5px) scale(.85); transition: opacity .4s, transform .4s; }
+.vc-mood-typewriter__emojis > .is-visible { opacity: 1; transform: none; }
+.vc-koikoi-letter .vc-mood-typewriter__foot button { min-height: 44px; padding: .5rem .75rem; margin: 0; background: transparent; color: var(--text2); box-shadow: none; font-size: .78rem; border: 1px solid var(--border); }
+.vc-story-choice { border: 0; min-width: 0; padding: 0; margin: 0 0 1rem; text-align: left; }
+.vc-story-choice legend { margin-bottom: .6rem; font-size: .95rem; font-weight: 650; color: var(--text); }
+.vc-story-choice > div { display: flex; flex-wrap: wrap; gap: .5rem; }
+.vc-koikoi-card .vc-story-choice button { width: auto; min-height: 44px; margin: 0; padding: .6rem .8rem; border: 1px solid var(--border); background: var(--surface); color: var(--text2); box-shadow: none; font-size: .82rem; letter-spacing: 0; text-transform: none; }
+.vc-koikoi-card .vc-story-choice button[aria-pressed="true"] { background: var(--accent); color: white; border-color: var(--accent); }
+.vc-story-response { display: grid; gap: .6rem; }
+.vc-koikoi-card .vc-story-response__secondary { background: transparent; color: var(--text2); box-shadow: none; border: 1px solid var(--border); }
+.vc-story-response p { font-size: .85rem; line-height: 1.6; color: var(--text2); }
+.vc-scratch-accessible { justify-self: center; min-height: 44px; padding: .5rem .75rem; color: var(--text2); text-decoration: underline; font-size: .8rem; cursor: pointer; }
+.vc-scratch-note__canvas { touch-action: none; }
+.vc-music-selector { display: grid; gap: .85rem; min-width: 0; width: 100%; color: var(--text); }
+.vc-music-saved { min-width: 0; padding: .8rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface2); }
+.vc-music-saved__heading { display: flex; align-items: center; justify-content: space-between; gap: .6rem; color: var(--accent); font-size: .72rem; font-weight: 700; }
+.vc-music-saved__heading button { min-height: 44px; padding: .4rem; color: var(--text2); cursor: pointer; }
+.vc-music-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .6rem; min-width: 0; border-radius: .8rem; }
+.vc-music-track { display: flex; align-items: center; gap: .7rem; width: 100%; min-width: 0; text-align: left; padding: .5rem 0; }
+button.vc-music-track { cursor: pointer; }
+.vc-music-art { width: 44px; height: 44px; flex: 0 0 44px; border-radius: .6rem; object-fit: cover; }
+.vc-music-art--placeholder { display: grid; place-items: center; background: var(--surface); color: var(--accent); font-size: 1.5rem; border: 1px solid var(--border); }
+.vc-music-info { display: grid; gap: .2rem; min-width: 0; }
+.vc-music-info strong, .vc-music-info > span { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.vc-music-info strong { font-size: .84rem; font-weight: 650; }
+.vc-music-info > span { color: var(--text2); font-size: .72rem; }
+.vc-music-preview { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--surface); color: var(--accent); border: 1px solid var(--border); cursor: pointer; }
+.vc-music-preview[aria-pressed="true"] { color: white; background: var(--accent); }
+.vc-music-search { display: grid; gap: .45rem; font-size: .75rem; color: var(--text2); }
+.vc-music-search input { width: 100%; min-width: 0; padding: .85rem; color: var(--text); }
+.vc-music-results { max-height: 280px; overflow-y: auto; min-width: 0; display: grid; gap: .35rem; }
+.vc-music-results .vc-music-row { padding: .35rem .5rem; background: var(--surface2); border: 1px solid var(--border); }
+.vc-music-results .vc-music-row[data-selected="true"] { border-color: var(--accent); }
+.vc-music-selector p { margin: .3rem 0 0; color: var(--text2); font-size: .7rem; line-height: 1.5; }
+.vc-music-selector .vc-music-error { color: var(--text); border-left: 2px solid var(--accent); padding: .5rem; }
+.vc-soundtrack { position: fixed; z-index: 40; right: max(1rem, env(safe-area-inset-right)); bottom: max(1rem, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: .65rem; width: min(20rem, calc(100vw - 2rem)); padding: .6rem .85rem .6rem .6rem; border: 1px solid var(--border); border-radius: 3rem; background: var(--surface); color: var(--text); box-shadow: 0 8px 30px #00000018; }
+.vc-soundtrack__control { position: relative; width: 44px; height: 44px; flex: 0 0 44px; border-radius: 50%; background: var(--accent); color: white; cursor: pointer; }
+.vc-soundtrack__control[data-playing="true"] { outline: 3px solid var(--border); outline-offset: 2px; }
+.vc-soundtrack__info { display: grid; gap: .2rem; min-width: 0; }
+.vc-soundtrack__info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; }
+.vc-soundtrack__info > span { font-size: .65rem; color: var(--text2); }
+.vc-recipient-shell:has(.vc-soundtrack) { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+.vc-music-selector button:focus-visible, .vc-soundtrack button:focus-visible, .vc-story-choice button:focus-visible, .vc-scratch-accessible:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .vc-mood-typewriter__cursor { animation: none; }
+  .vc-mood-typewriter__emojis > span { transition: none; }
+}
+
+.vc-koikoi-letter h2 { max-width: 22ch; font-size: clamp(2.1rem, 6vw, 3.5rem); line-height: 1.12; }
+.vc-koikoi-letter .vc-mood-typewriter__foot button { width: auto; flex-shrink: 0; color: var(--koikoi-muted); }
+.vc-koikoi-card .vc-story-choice legend, .vc-koikoi-card .vc-story-response__secondary, .vc-story-response p { color: var(--koikoi-ink); }
+.vc-koikoi-lineup b { color: var(--koikoi-accent); }
+.vc-koikoi-lineup strong { color: var(--koikoi-ink); }
+
+.vc-koikoi-stage--scratch .vc-scratch-note__content { position: relative; inset: auto; min-height: inherit; padding: clamp(1.4rem, 4vw, 2.4rem) clamp(1.2rem, 3vw, 2rem) 3rem; }
+.vc-koikoi-stage--scratch .vc-scratch-note__content h3 { max-width: 22ch; font-size: clamp(2rem, 4vw, 3rem); line-height: 1.08; }

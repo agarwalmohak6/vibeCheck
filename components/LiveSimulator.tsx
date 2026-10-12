@@ -8,42 +8,10 @@ import { useTheme } from "@/components/ThemeProvider";
 import { PRIMARY_TEMPLATE_TYPES, TEMPLATE_TYPES } from "@/lib/themes";
 import HeartCanvas from "@/components/HeartCanvas";
 
-// Per-template sample content for the simulator
-const TEMPLATE_SAMPLES: Record<
-  string,
-  { emoji: string; badge: string; title: string; body: string }
-> = {
-  shoot_shot: {
-    emoji: "💍",
-    badge: "Proposal",
-    title: "A little something I made for you",
-    body: "I wanted this to feel more personal than a text.\nMore private than a story.\nAnd more memorable than a screenshot.\nSo here it is, just for you.",
-  },
-  maan_jao: {
-    emoji: "🥺",
-    badge: "Sorry Card",
-    title: "I was wrong",
-    body: "I was wrong, and I'm not going to dress it up with excuses.\nWhat I said hurt you, and you did not deserve that.\nI'm sorry, truly. Give me one more chance to be the person you know I can be.",
-  },
-  birthday_roast: {
-    emoji: "🎂",
-    badge: "Happy Birthday",
-    title: "Still iconic",
-    body: "Another year down, and somehow you're still this iconic.\nWishing you a birthday as extra as you are, cake first, adulting later.\nHere's to more stories, more chaos, and more reasons to celebrate you.",
-  },
-  bestie_check: {
-    emoji: "💗",
-    badge: "Feelings",
-    title: "I need to say this properly",
-    body: "I don't know the perfect way to say this, so I'll say the honest version.\nYou matter to me more than I usually let on.\nI wanted you to know that, without hiding behind a normal text.",
-  },
-  netflix_chill: {
-    emoji: "🍿",
-    badge: "Netflix & Chill",
-    title: "A quiet invite, just for you",
-    body: "No big speech, just a cozy plan.\nA good movie, good snacks, and a little time together.\nFeels simple, but the good kind of simple.",
-  },
-};
+const TEMPLATE_SAMPLES = Object.fromEntries(TEMPLATE_TYPES.map((template) => [template.id, {
+  emoji: template.emoji, badge: template.label,
+  title: template.messagePresets[0].title, body: template.messagePresets[0].body,
+}]));
 
 export default function LiveSimulator() {
   const { theme, setTheme } = useTheme();
