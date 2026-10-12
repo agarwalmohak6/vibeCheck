@@ -47,6 +47,7 @@ export default function EnvelopeReveal({ creatorName, recipientName = 'you', tem
             </span>
           </button>
           <p className="vc-romance-open-hint">♡ &nbsp; {opening ? 'Opening your little moment…' : 'Tap to open'} &nbsp; ♡</p>
+          <div className="vc-romance-auto-cameo" aria-hidden="true">{mood.narrative.emojis.map((emoji, index) => <span key={index} style={{ animationDelay: `${index * .2}s` }}>{emoji}</span>)}</div>
           {gifUrl && <div className="vc-romance-cameo">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={gifUrl} alt="A little animated surprise from the sender" />
