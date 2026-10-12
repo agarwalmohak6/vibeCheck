@@ -11,6 +11,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // ── Types ──────────────────────────────────────────────
 export interface CardData {
+  /** Server compatibility storage; removed from public card responses. */
+  reply_messages?: import('@/types/vibecheck').ChatMessageDTO[];
+  reply_version?: number;
   message_title: string;
   main_body: string;
   media_url?: string;

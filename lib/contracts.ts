@@ -100,6 +100,7 @@ export const trackerEventSchema = z.object({
 });
 
 export const sendMessageSchema = z.object({
+  message_id: z.string().uuid().optional(),
   card_id: z.string().uuid(),
   sender: z.enum(['creator', 'recipient']),
   text: z.string().trim().min(1).max(500),

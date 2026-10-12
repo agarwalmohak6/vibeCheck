@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { PublicCard, ChatMessageDTO } from '@/types/vibecheck';
 import {
   RECIPIENT_COPY,
@@ -20,28 +20,26 @@ type RoomMeta = {
   name: string;
 };
 
-const SENT_FEEDBACK_MS = 3200;
-const ROOM_COPY_FEEDBACK_MS = 3000;
 
 const ROOM_NAMES: Record<string, Record<RecipientLocale, RoomMeta>> = {
   maan_jao: {
-    en: { emoji: '🕊️', name: 'The Reset Room' },
+    en: { emoji: '🕊️', name: 'A fresh start' },
     hi: { emoji: '🕊️', name: 'रीसेट रूम' },
   },
   birthday_roast: {
-    en: { emoji: '🎂', name: 'Birthday Backstage' },
+    en: { emoji: '🎂', name: 'Birthday wishes' },
     hi: { emoji: '🎂', name: 'बर्थडे बैकस्टेज' },
   },
   bestie_check: {
-    en: { emoji: '🍹', name: 'Bestie Hotline' },
+    en: { emoji: '🍹', name: 'Just between us' },
     hi: { emoji: '🍹', name: 'बेस्टी हॉटलाइन' },
   },
   shoot_shot: {
-    en: { emoji: '💌', name: 'Soft Launch Room' },
+    en: { emoji: '💌', name: 'Our next chapter' },
     hi: { emoji: '💌', name: 'सॉफ्ट लॉन्च रूम' },
   },
   netflix_chill: {
-    en: { emoji: '🍿', name: 'Snack Pact Room' },
+    en: { emoji: '🍿', name: 'A little time together' },
     hi: { emoji: '🍿', name: 'स्नैक पैक्ट रूम' },
   },
 };
@@ -55,9 +53,9 @@ const CHAT_COPY = {
     sendFailed: 'Could not send that message. Check the room link and try again.',
     expired: 'This room is closed because the card expired.',
     emptyCreator: (recipientName: string) =>
-      `${recipientName} has not replied yet. When they do, it will feel like a tiny private chat, not a comments section.`,
+      `${recipientName} has not replied yet. Their words will appear right here.`,
     emptyRecipient: (creatorName: string) =>
-      `Write back to ${creatorName} in your own words. No canned quick answers here.`,
+      `Write back to ${creatorName} in your own words. Take your time. I’m listening.`,
     placeholderCreator: (recipientName: string) => `Reply to ${recipientName}...`,
     placeholderRecipient: 'Write your real reply...',
     sending: 'Sending...',
@@ -108,11 +106,21 @@ function getRoomMeta(templateType: string, locale: RecipientLocale) {
   return ROOM_NAMES[templateType]?.[locale] || ROOM_NAMES.maan_jao[locale];
 }
 
+function mergeMessages (previous: ChatMessageDTO[], incoming: ChatMessageDTO[]) {
+  return [...new Map([...previous, ...incoming].map(message => [message.id, message])).values()].sort((a, b) => a.created_at.localeCompare(b.created_at));
+}
+
 export default function FollowUpReplies({ card, isCreator, locale = 'en' }: FollowUpRepliesProps) {
   const [messages, setMessages] = useState<ChatMessageDTO[]>([]);
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [sentSuccess, setSentSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const activeRef = useRef(true);
+  const inFlightRef = useRef(false);
+  const sendingRef = useRef(false);
+  const requestRef = useRef<AbortController | null>(null);
+  const pendingRef = useRef<{ id: string; text: string } | null>(null);
   const [sendError, setSendError] = useState('');
   const [roomCopied, setRoomCopied] = useState(false);
   const bodyRef = useRef<HTMLDivElement | null>(null);
@@ -135,69 +143,79 @@ export default function FollowUpReplies({ card, isCreator, locale = 'en' }: Foll
     return url.toString();
   };
 
+  const roomHeaders = useCallback((): Record<string, string> => {
+    const token = new URLSearchParams(window.location.search).get('ct') || localStorage.getItem(`creator_token_${card.id}`);
+    const unlock = localStorage.getItem(`unlock_token_${card.id}`);
+    return { ...(isCreator && token ? { 'x-vibecheck-creator-token': token } : {}), ...(unlock ? { 'x-vibecheck-unlock-token': unlock } : {}) };
+  }, [card.id, isCreator]);
+
+
+
   const fetchMessages = useCallback(async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+    const controller = new AbortController();
+    requestRef.current = controller;
     try {
-      const res = await fetch(`/api/messages?card_id=${card.id}`, { cache: 'no-store' });
+      const res = await fetch(`/api/messages?card_id=${card.id}`, { cache: 'no-store', headers: roomHeaders(), signal: controller.signal });
+      if (!activeRef.current) return;
       if (res.ok) {
-        const data = await res.json();
-        setMessages(data);
-        setSendError('');
-      } else if (res.status === 410) {
-        setSendError(chatCopy.expired);
+        const data = await res.json() as ChatMessageDTO[];
+        if (!activeRef.current) return;
+        setMessages(previous => mergeMessages(previous, data));
+        setLoadError('');
+      } else setLoadError(res.status === 410 ? chatCopy.expired : 'Your replies are taking a little longer to load. We’ll keep trying.');
+    } catch (error) {
+      if (activeRef.current && !(error instanceof Error && error.name === 'AbortError')) setLoadError('Connection paused. Your words are safe here; we’ll reconnect.');
+    } finally {
+      if (requestRef.current === controller) {
+        inFlightRef.current = false;
+        if (activeRef.current) setIsLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to fetch replies:', err);
     }
-  }, [card.id, chatCopy.expired]);
+  }, [card.id, chatCopy.expired, roomHeaders]);
 
   useEffect(() => {
+    activeRef.current = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchMessages();
-    const interval = setInterval(fetchMessages, 3500);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => { if (!document.hidden) void fetchMessages(); }, 5000);
+    const refresh = () => { if (!document.hidden) void fetchMessages(); };
+    document.addEventListener('visibilitychange', refresh);
+    return () => { activeRef.current = false; inFlightRef.current = false; clearInterval(interval); requestRef.current?.abort(); document.removeEventListener('visibilitychange', refresh); };
   }, [fetchMessages]);
 
   useEffect(() => {
-    bodyRef.current?.scrollTo({
-      top: bodyRef.current.scrollHeight,
-      behavior: 'smooth',
-    });
+    bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages.length]);
 
-  const getCreatorToken = () => {
-    if (typeof window === 'undefined') return '';
-    return (
-      new URLSearchParams(window.location.search).get('ct') ||
-      localStorage.getItem(`creator_token_${card.id}`) ||
-      ''
-    );
-  };
-
   const handleSend = async (text: string) => {
-    if (!text.trim() || isSending) return;
+    if (!text.trim() || sendingRef.current) return;
+    sendingRef.current = true;
+    const trimmed = text.trim();
+    if (pendingRef.current?.text !== trimmed) pendingRef.current = { id: crypto.randomUUID(), text: trimmed };
     setIsSending(true);
     setSendError('');
 
     try {
       const res = await fetch('/api/messages', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(isCreator
-            ? { 'x-vibecheck-creator-token': getCreatorToken() }
-            : {}),
-        },
+        headers: { 'Content-Type': 'application/json', ...roomHeaders() },
         body: JSON.stringify({
           card_id: card.id,
           sender: senderType,
-          text: text.trim(),
+          text: trimmed,
+          message_id: pendingRef.current.id,
         }),
       });
 
+      if (!activeRef.current) return;
       if (res.ok) {
-        setInputText('');
-        setSentSuccess(true);
-        setTimeout(() => setSentSuccess(false), SENT_FEEDBACK_MS);
+        const message = await res.json() as ChatMessageDTO;
+        if (!activeRef.current) return;
+        setMessages(previous => mergeMessages(previous, [message]));
+        setInputText(current => current.trim() === trimmed ? '' : current);
+        pendingRef.current = null;
         await fetchMessages();
       } else if (res.status === 410) {
         setSendError(chatCopy.expired);
@@ -208,7 +226,8 @@ export default function FollowUpReplies({ card, isCreator, locale = 'en' }: Foll
       console.error('Failed to send reply:', err);
       setSendError(chatCopy.sendFailed);
     } finally {
-      setIsSending(false);
+      sendingRef.current = false;
+      if (activeRef.current) setIsSending(false);
     }
   };
 
@@ -216,9 +235,10 @@ export default function FollowUpReplies({ card, isCreator, locale = 'en' }: Foll
     const roomHref = getRoomHref();
     if (!roomHref) return;
     try {
-      await navigator.clipboard?.writeText(roomHref);
+      if (!navigator.clipboard) throw new Error('Clipboard is unavailable');
+      await navigator.clipboard.writeText(roomHref);
       setRoomCopied(true);
-      setTimeout(() => setRoomCopied(false), ROOM_COPY_FEEDBACK_MS);
+
     } catch {
       setSendError(roomHref);
     }
@@ -254,19 +274,19 @@ export default function FollowUpReplies({ card, isCreator, locale = 'en' }: Foll
           <small>{creatorName} + {recipientName}</small>
         </div>
         <div className="vc-chat-room__header-actions">
-          <span>{chatCopy.live}</span>
-          <button type="button" onClick={() => void copyRoomLink()}>
+          <span>{isLoading ? 'Connecting…' : loadError ? 'Reconnecting…' : 'Just us'}</span>
+          {isCreator && <button type="button" onClick={() => void copyRoomLink()}>
             {roomCopied ? chatCopy.copied : chatCopy.copyRoom}
-          </button>
+          </button>}
         </div>
       </div>
 
       <p className="vc-chat-room__statusline">
-        This room stays open inside VibeCheck until the card expires. Keep the link private.
+        A little space for your words, just between the two of you.
       </p>
 
-      <div className="vc-chat-room__body" ref={bodyRef}>
-        {messages.length === 0 ? (
+      <div className="vc-chat-room__body" ref={bodyRef} role="log" aria-live="polite" aria-relevant="additions text" aria-busy={isLoading}>
+        {isLoading ? <div className="vc-chat-room__empty"><span aria-hidden="true">{room.emoji}</span><p>Making a little space for your words…</p></div> : messages.length === 0 ? (
           <div className="vc-chat-room__empty">
             <span>{room.emoji}</span>
             <p>{emptyText}</p>
@@ -304,6 +324,9 @@ export default function FollowUpReplies({ card, isCreator, locale = 'en' }: Foll
       >
         <input
           type="text"
+          aria-label={placeholder}
+          autoComplete="off"
+          enterKeyHint="send"
           value={inputText}
           onChange={(event) => setInputText(event.target.value)}
           placeholder={placeholder}
@@ -314,26 +337,13 @@ export default function FollowUpReplies({ card, isCreator, locale = 'en' }: Foll
         </button>
       </form>
 
-      {sendError && (
+      {(sendError || loadError) && (
         <p className="vc-chat-room__error" role="status">
-          {sendError}
+          {sendError || loadError}
         </p>
       )}
 
-      <AnimatePresence>
-        {sentSuccess && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.92 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.96 }}
-            transition={{ duration: 0.24 }}
-            className="vc-chat-room__sent"
-          >
-            <span>✨</span>
-            {chatCopy.sent}
-          </motion.div>
-        )}
-      </AnimatePresence>
+
     </section>
   );
 }

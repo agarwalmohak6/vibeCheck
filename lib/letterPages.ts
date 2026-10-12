@@ -23,3 +23,8 @@ export function paginateLetter(text: string, limit = 420): string[] {
   if (remaining || !pages.length) pages.push(remaining);
   return pages;
 }
+
+/** Present a keepsake as prose even when an older draft used a list. */
+export function letterParagraphs(text: string): string[] {
+  return text.split(/\n+/).map(line => line.replace(/^\s*(?:[-*•]\s+|\d+[.)]\s+)/, '').trim()).filter(Boolean);
+}

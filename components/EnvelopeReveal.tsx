@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { getMoodStory } from '@/lib/moodStories';
+import { ENVELOPE_OPEN_MS } from '@/lib/romanceMotion';
 import FitStage from '@/components/FitStage';
 
 interface EnvelopeRevealProps {
@@ -28,7 +29,7 @@ export default function EnvelopeReveal({ creatorName, recipientName = 'you', tem
     // The player is already mounted: invoke playback synchronously on this tap.
     win.__startMusic?.();
     setOpening(true);
-    timer.current = setTimeout(onOpen, reducedMotion ? 150 : 1850);
+    timer.current = setTimeout(onOpen, reducedMotion ? 150 : ENVELOPE_OPEN_MS);
   };
   return (
     <div className="vc-romance-overlay">
@@ -47,7 +48,7 @@ export default function EnvelopeReveal({ creatorName, recipientName = 'you', tem
             </span>
           </button>
           <p className="vc-romance-open-hint">♡ &nbsp; {opening ? 'Opening your little moment…' : 'Tap to open'} &nbsp; ♡</p>
-          <div className="vc-romance-auto-cameo" aria-hidden="true">{mood.narrative.emojis.map((emoji, index) => <span key={index} style={{ animationDelay: `${index * .2}s` }}>{emoji}</span>)}</div>
+          <div className="vc-romance-auto-cameo" aria-hidden="true">{mood.narrative.emojis.map((emoji, index) => <span key={index} style={{ animationDelay: `${.7 + index * .4}s` }}>{emoji}</span>)}</div>
           {gifUrl && <div className="vc-romance-cameo">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={gifUrl} alt="A little animated surprise from the sender" />
