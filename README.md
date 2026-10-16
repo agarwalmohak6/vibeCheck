@@ -54,7 +54,22 @@ captured status, INR currency and selected tier amount before the card unlocks.
 
 ## Availability monitoring
 
-The `Render uptime check` GitHub Actions workflow requests `/api/health` every
-five minutes and can also be run manually. It provides a lightweight availability
-check and keeps the free Render web service from reaching its 15-minute idle
-window during normal GitHub Actions operation.
+The `Render uptime check` GitHub Actions workflow requests `/api/health` on a
+five-minute schedule and can also be run manually. It validates fresh application
+JSON and retries cold starts; an HTTP 200 Render loading page is not success.
+The check has no database dependency and does not run a background loop inside
+the sleeping service. Test it with `node --test tests/health-monitor.test.mjs`.
+
+This is best-effort, not an always-on guarantee. GitHub can delay or drop scheduled
+runs and disables public-repository schedules after 60 days without repository
+activity. Re-enable it from Actions if its state is `disabled_inactivity`.
+For an independent monitor, configure an external HTTPS GET every five minutes
+to `https://vibecheck-gh7u.onrender.com/api/health`, with a JSON check for
+`status: ok` and `service: vibecheck`. No token is needed.
+
+Render Free sleeps after 15 minutes without inbound traffic, can restart at any
+time, and shares 750 running-instance hours per workspace per month. Keeping one
+instance awake uses up to 744 hours in a 31-day month. Multiple free services share
+that allowance. Pings cannot prevent quota suspension or infrastructure restarts.
+See [Render Free limits](https://render.com/docs/free) and
+[GitHub schedule limitations](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).

@@ -2,10 +2,14 @@ name: Render uptime check
 
 on:
   schedule:
-    # GitHub may delay or drop individual scheduled runs. Each run therefore
-    # keeps the service warm across the gap until the next ten-minute trigger.
-    - cron: '*/10 * * * *'
+    # Offset from the busy start of each hour. Scheduling is best-effort.
+    - cron: '2-59/5 * * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/render-uptime.yml'
+      - 'scripts/check-health.mjs'
 
 permissions:
   contents: read
@@ -18,24 +22,14 @@ jobs:
   check:
     name: Check VibeCheck
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
-      - name: Keep the Render service warm
-        run: |
-          for attempt in 1 2 3; do
-            echo "Health request ${attempt}/3 at $(date -u +%FT%TZ)"
-            curl \
-              --fail-with-body \
-              --show-error \
-              --silent \
-              --max-time 110 \
-              --retry 2 \
-              --retry-all-errors \
-              --retry-delay 5 \
-              https://vibecheck-gh7u.onrender.com/api/health
-            echo
-
-            if [ "$attempt" -lt 3 ]; then
-              sleep 240
-            fi
-          done
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Validate monitor
+        run: node --test tests/health-monitor.test.mjs
+      - name: Check the live application
+        env:
+          HEALTHCHECK_URL: https://vibecheck-gh7u.onrender.com/api/health
+        run: node scripts/check-health.mjs
