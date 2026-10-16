@@ -274,3 +274,11 @@ body, input, textarea, button, select { font-family: var(--font-body), 'Arial Ro
 .vc-fit-stage__content > * { min-width: 0; max-width: 100%; }
 .vc-final-reveal,.vc-final-reveal__copy,.vc-final-reveal__note { min-width: 0; max-width: 100%; }
 .vc-final-reveal__copy :is(h1,strong,small,p,span) { overflow-wrap: anywhere; white-space: normal; }
+
+/* The creator phone stays on the same sealed opening as the recipient. */
+.vc-romance-opening-preview { position: absolute; inset: 0; overflow: hidden; padding: 18px 4px 8px; }
+.vc-romance-opening-preview .vc-romance-opening { gap: 12px; }
+.vc-romance-opening-preview .vc-romance-opening h1 { font-size: 28px; line-height: 1.35; }
+.vc-romance-opening-preview .vc-romance-subtitle { display: block; font-size: 12px; }
+.vc-romance-opening-preview .vc-romance-envelope-button { width: min(260px,100%); margin-top: 32px; cursor: default; opacity: 1; }
+.vc-romance-opening-preview .vc-romance-open-hint { font-size: 11px; margin-top: 18px; }

@@ -11,11 +11,12 @@ interface EnvelopeRevealProps {
   recipientName?: string;
   templateType?: string;
   gifUrl?: string;
-  onOpen: () => void;
+  onOpen?: () => void;
+  preview?: boolean;
   theme?: string;
 }
 
-export default function EnvelopeReveal({ creatorName, recipientName = 'you', templateType = 'maan_jao', gifUrl, onOpen }: EnvelopeRevealProps) {
+export default function EnvelopeReveal({ creatorName, recipientName = 'you', templateType = 'maan_jao', gifUrl, onOpen, preview = false }: EnvelopeRevealProps) {
   const [opening, setOpening] = useState(false);
   const opened = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -23,7 +24,7 @@ export default function EnvelopeReveal({ creatorName, recipientName = 'you', tem
   const mood = getMoodStory(templateType);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   const open = () => {
-    if (opened.current) return;
+    if (preview || !onOpen || opened.current) return;
     opened.current = true;
     const win = window as Window & { __startMusic?: () => void };
     // The player is already mounted: invoke playback synchronously on this tap.
@@ -32,13 +33,13 @@ export default function EnvelopeReveal({ creatorName, recipientName = 'you', tem
     timer.current = setTimeout(onOpen, reducedMotion ? 150 : ENVELOPE_OPEN_MS);
   };
   return (
-    <div className="vc-romance-overlay">
+    <div className={preview ? 'vc-romance-opening-preview' : 'vc-romance-overlay'}>
       <FitStage>
         <div className={`vc-romance-opening ${opening ? 'is-opening' : ''}`}>
           <p className="vc-romance-eyebrow">Special delivery</p>
           <h1>Something just for you.</h1>
           <p className="vc-romance-subtitle">From {creatorName}, with a little love.</p>
-          <button type="button" className="vc-romance-envelope-button" onClick={open} disabled={opening} aria-label={`Open ${creatorName}'s card for ${recipientName}`}>
+          <button type="button" className="vc-romance-envelope-button" onClick={open} disabled={opening || preview} aria-label={preview ? `Opening preview of ${creatorName}'s card for ${recipientName}` : `Open ${creatorName}'s card for ${recipientName}`}>
             <span className="vc-romance-envelope">
               <span className="vc-romance-letter-peek" aria-hidden="true"><b>{mood.emoji}</b><span>{mood.narrative.eyebrow}</span></span>
               <span className="vc-romance-pocket" />

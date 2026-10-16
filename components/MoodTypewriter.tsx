@@ -8,9 +8,8 @@ import { splitGraphemes, typingDelay } from '@/lib/revealEffects';
 export default function MoodTypewriter({ text, templateType }: { text: string; templateType: string }) {
   const characters = useMemo(() => splitGraphemes(text), [text]);
   const [position, setPosition] = useState(0);
-  const [showAll, setShowAll] = useState(false);
   const reduceMotion = useReducedMotion();
-  const complete = showAll || !!reduceMotion || position >= characters.length;
+  const complete = !!reduceMotion || position >= characters.length;
   const emojis = getMoodStory(templateType).narrative.emojis;
   const visibleText = complete ? text : characters.slice(0, position).join('');
 
@@ -31,7 +30,6 @@ export default function MoodTypewriter({ text, templateType }: { text: string; t
         <span className="vc-mood-typewriter__emojis" aria-hidden="true">
           {emojis.map((emoji, index) => <span key={emoji} className={complete || position / Math.max(1, characters.length) >= index / emojis.length ? 'is-visible' : ''}>{emoji}</span>)}
         </span>
-        {!complete && <button type="button" onClick={() => setShowAll(true)}>Read at once</button>}
       </div>
     </div>
   );

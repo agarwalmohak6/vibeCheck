@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useTheme } from '@/components/ThemeProvider';
 import { PRIMARY_TEMPLATE_TYPES, TEMPLATE_TYPES, TIERS, ThemeId } from '@/lib/themes';
 import SceneLoading from '@/components/SceneLoading';
+import EnvelopeReveal from '@/components/EnvelopeReveal';
 import { getMoodStory } from '@/lib/moodStories';
 import SuccessHub from '@/components/SuccessHub';
 import MusicSelector from '@/components/MusicSelector';
@@ -81,10 +82,6 @@ function formatPersonName(value: string, fallback = '') {
   return cleaned.replace(/[A-Za-zÀ-ÖØ-öø-ÿ]+/g, (part) =>
     part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
   );
-}
-
-function stripEmojiLabel(label: string) {
-  return label.replace(/\s[^\s]*$/, '').trim();
 }
 
 function readCheckoutSession(): CheckoutSession | null {
@@ -228,7 +225,6 @@ function CustomizePageContent() {
   const submitRecipientName = formatPersonName(form.recipientName);
   const submitCreatorName = formatPersonName(form.creatorName);
   const uploadedImages = form.coverImageUrls.filter((source) => source.trim());
-  const primaryUploadedImage = uploadedImages[0] || '';
 
   const rememberCheckout = (
     cardId: string,
@@ -552,10 +548,7 @@ function CustomizePageContent() {
         const orderEmail = data.notifications?.email;
         const orderWhatsapp = data.notifications?.whatsapp;
         if (orderEmail?.sent) {
-          setNotice({
-            tone: 'success',
-            message: 'Tracking link emailed. Check your inbox or spam folder and keep this page open for payment verification.',
-          });
+          setNotice(null);
         } else {
           setNotice({
             tone: 'info',
@@ -1171,91 +1164,14 @@ function CustomizePageContent() {
                 </div>
               </div>
 
-              {/* Live Card Content Preview */}
-              <div className="vc-preview-stack w-full">
-
-                {/* People Badge */}
-                <div className="vc-preview-badge text-center space-y-2">
-                  <div
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold text-white"
-                    style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent2))' }}
-                  >
-                    <span>{selectedTemplate.emoji}</span>
-                    <span>{stripEmojiLabel(selectedTemplate.label)}</span>
-                  </div>
-                  <div className="vc-preview-people">
-                    <span>
-                      <em>For</em>
-                      <strong>{displayRecipientName}</strong>
-                    </span>
-                    <span>
-                      <em>From</em>
-                      <strong>{displayCreatorName}</strong>
-                    </span>
-                  </div>
-                </div>
-
-                <div className="vc-preview-cameo-chip"><span>{selectedTemplate.emoji}</span><strong>Opening effects match this mood</strong></div>
-
-                {/* Uploaded gallery preview */}
-                {primaryUploadedImage ? (
-                  <div className="vc-preview-cover rounded-2xl overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={primaryUploadedImage}
-                      alt="Cover Preview"
-                      className="vc-preview-cover__image rounded-2xl mx-auto block"
-                      draggable={false}
-                    />
-                    {uploadedImages.length > 1 && (
-                      <div className="vc-preview-cover-strip" aria-label="Uploaded photo count">
-                        {uploadedImages.slice(0, 4).map((source, index) => (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img key={`${source.slice(0, 32)}-${index}`} src={source} alt="" draggable={false} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="vc-preview-cover vc-preview-cover--empty rounded-2xl">
-                    <strong>Upload {MIN_REVEAL_IMAGES} photos</strong>
-                    <span>Your images become the full reveal gallery.</span>
-                  </div>
-                )}
-
-                {/* Main Message Display */}
-                <div
-                  className="vc-preview-message vc-preview-copy rounded-2xl p-4 space-y-2 text-left"
-                >
-                  <h3
-                    className="vc-preview-title text-2xl font-black mb-2 tracking-tight drop-shadow-md"
-                    style={{
-                      fontFamily: 'var(--font-display)',
-                      color: 'var(--accent)',
-                    }}
-                  >
-                    {previewTitle}
-                  </h3>
-                  <p
-                    className="vc-preview-body text-xs leading-relaxed font-medium first-letter:uppercase first-letter:text-lg first-letter:font-bold whitespace-pre-line"
-                    style={{ color: 'var(--text2)' }}
-                  >
-                    {previewBody}
-                  </p>
-                </div>
-
-                {/* Runaway buttons mock */}
-                {TEMPLATE_TYPES.find(t => t.id === form.templateType)?.hasRunaway && (
-                  <div
-                    className="vc-preview-message vc-preview-actions rounded-2xl p-4 space-y-3 text-center"
-                  >
-                    <p className="text-[10px] font-bold" style={{ color: 'var(--text)' }}>So, what feels right?</p>
-                    <div className="flex gap-2 justify-center min-w-0">
-                      <button className="theme-btn min-w-0 flex-1 px-3 py-2 rounded-xl text-xs font-bold cursor-not-allowed truncate">{form.yesBtnText || 'YES 💖'}</button>
-                      <button className="min-w-0 flex-1 px-3 py-2 rounded-xl text-xs font-bold cursor-not-allowed vc-preview-no truncate">{form.noBtnText || 'No 💔'}</button>
-                    </div>
-                  </div>
-                )}
+              <div className="relative min-h-0 w-full flex-1" aria-label="Recipient opening preview">
+                <EnvelopeReveal
+                  preview
+                  creatorName={displayCreatorName}
+                  recipientName={displayRecipientName}
+                  templateType={form.templateType}
+                  gifUrl={form.gifUrl || undefined}
+                />
               </div>
 
               {/* Watermark brand overlay */}
