@@ -187,6 +187,8 @@ export default function RecipientView({ card, initialRoomMode = false, isCreator
       {envelopeOpened && !secretUnlocked && (
         <SecretCodeGate
           cardId={card.id}
+          creatorName={card.creator_name}
+          recipientName={recipientName}
           unlockQuestion={card.card_data.unlock_question}
           onUnlock={handleUnlock}
         />
@@ -244,12 +246,10 @@ export default function RecipientView({ card, initialRoomMode = false, isCreator
               <FitStage><RecipientFinalReveal
                 onReplay={() => setYesClicked(false)}
                 onReply={() => { if (celebrationTimer.current) clearTimeout(celebrationTimer.current); confetti.reset(); setRoomOpen(true); }}
-                coverImages={coverImages}
                 displayMessageTitle={displayMessageTitle}
                 displayMainBody={displayMainBody}
                 recipientName={recipientName}
                 creatorName={creatorName}
-                successEmoji={getMoodStory(card.template_type).emoji}
                 successHeading={revealStory.ending}
                 successSubtext="Come back whenever you need a little smile. This moment is yours."
               /></FitStage>
@@ -957,31 +957,25 @@ function ScratchLoveNote({
   );
 }
 
-function RecipientFinalReveal({
+export function RecipientFinalReveal({
   onReplay,
   onReply,
-  coverImages,
   displayMessageTitle,
   displayMainBody,
   recipientName,
   creatorName,
-  successEmoji,
   successHeading,
   successSubtext,
 }: {
   onReplay: () => void;
   onReply: () => void;
-  coverImages: string[];
   displayMessageTitle: string;
   displayMainBody: string;
   recipientName: string;
   creatorName: string;
-  successEmoji: string;
   successHeading: string;
   successSubtext: string;
 }) {
-  const heroImage = coverImages[0];
-  const supportingImages = coverImages.slice(1, 4);
   const pages = useMemo(() => paginateLetter(displayMainBody, 320), [displayMainBody]);
   const [page, setPage] = useState(0);
 
@@ -992,28 +986,6 @@ function RecipientFinalReveal({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="vc-final-reveal__media">
-        {heroImage ? (
-          <>
-            <div
-              className="vc-final-reveal__glow"
-              style={{ backgroundImage: `url("${heroImage}")` }}
-              aria-hidden
-            />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={heroImage} alt="" draggable={false} />
-          </>
-        ) : (
-          <span>{successEmoji}</span>
-        )}
-        <div className="vc-final-reveal__thumbs" aria-hidden>
-          {supportingImages.map((source, index) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={`final-thumb-${index}-${source.slice(0, 24)}`} src={source} alt="" draggable={false} />
-          ))}
-        </div>
-      </div>
-
       <div className="vc-final-reveal__copy">
         <p>For {recipientName}, from {creatorName}</p>
         <h1>{successHeading}</h1>
