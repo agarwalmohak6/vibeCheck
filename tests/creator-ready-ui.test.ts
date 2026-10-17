@@ -6,6 +6,7 @@ import SuccessHub from '@/components/SuccessHub';
 import MusicSelector from '@/components/MusicSelector';
 import { RecipientFinalReveal } from '@/components/RecipientView';
 import { isOfficialMusicLink, RECOMMENDED_SONGS } from '@/lib/musicLinks';
+import OfficialSongPlayer from '@/components/OfficialSongPlayer';
 import { cardDataSchema } from '@/lib/contracts';
 
 describe('compact ready screen', () => {
@@ -52,7 +53,15 @@ describe('official song dedications', () => {
       successHeading: 'Yours to keep', successSubtext: '', musicLink: song.sourceUrl, musicLabel: song.label,
       onReply: () => {}, onReplay: () => {},
     }));
-    expect(html).toContain(song.sourceUrl);
+    expect(html).toContain('Play i love you');
     expect(html).not.toMatch(/<img|<audio|<iframe/);
+  });
+  it('embeds the real official player when a suggested song is selected', () => {
+    const song = RECOMMENDED_SONGS[0];
+    const html = renderToStaticMarkup(createElement(MusicSelector, { selectedTrackId: song.id, selectedMusicLink: song.sourceUrl, selectedLabel: song.label, onSelectTrack: () => {} }));
+    expect(html).toContain('<iframe');
+    expect(html).toContain('https://embed.music.apple.com/us/song/1450695895');
+    expect(html).toContain('allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"');
+    expect(renderToStaticMarkup(createElement(OfficialSongPlayer, { url: 'javascript:alert(1)' }))).toBe('');
   });
 });

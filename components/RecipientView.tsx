@@ -207,7 +207,7 @@ export default function RecipientView({ card, initialRoomMode = false, isCreator
         />
       )}
 
-      <VinylDisk trackId={card.music_track_id || undefined} musicUrl={card.card_data.music_url || undefined} musicLabel={card.card_data.music_url ? card.card_data.music_label : undefined} />
+      <VinylDisk trackId={card.music_track_id || undefined} musicUrl={card.card_data.music_url || undefined} musicLabel={card.card_data.music_label} musicLink={card.card_data.music_link} />
 
       {/* Card content */}
       <AnimatePresence>
@@ -1003,7 +1003,7 @@ export function RecipientFinalReveal({
           {pages.length > 1 && <nav className="vc-letter-pages" aria-label="Saved letter pages"><button type="button" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>←</button><span>{page + 1} / {pages.length}</span><button type="button" onClick={() => setPage(p => Math.min(pages.length - 1, p + 1))} disabled={page === pages.length - 1}>→</button></nav>}
         </div>
         <small>{successSubtext}</small>
-        {musicLink && isOfficialMusicLink(musicLink) && <a className="vc-final-song" href={musicLink} target="_blank" rel="noopener noreferrer"><span>A song for you</span><strong>{musicLabel || 'Listen on Apple Music'} ↗</strong></a>}
+        {musicLink && isOfficialMusicLink(musicLink) && <button type="button" className="vc-final-song" onClick={() => window.dispatchEvent(new Event('vibecheck:open-song'))}><span>A song for you</span><strong>Play {musicLabel || 'your song'}</strong></button>}
         <div className="vc-romance-final-actions"><button type="button" onClick={onReply}>Send a reply ♡</button><button type="button" onClick={onReplay}>See the moments again</button></div>
       </div>
     </motion.section>

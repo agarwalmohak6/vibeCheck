@@ -2,9 +2,29 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createRomanceMelody } from '@/lib/romanceMelody';
+import { isOfficialMusicLink } from '@/lib/musicLinks';
+import OfficialSongPlayer from '@/components/OfficialSongPlayer';
 
-interface VinylDiskProps { musicUrl?: string; trackId?: string; musicLabel?: string; }
-export default function VinylDisk({ musicUrl, musicLabel }: VinylDiskProps) {
+interface VinylDiskProps { musicUrl?: string; trackId?: string; musicLabel?: string; musicLink?: string; }
+export default function VinylDisk(props: VinylDiskProps) {
+  if (props.musicLink && isOfficialMusicLink(props.musicLink)) return <OfficialSoundtrack url={props.musicLink} label={props.musicLabel} />;
+  return <BackgroundSoundtrack {...props} />;
+}
+
+function OfficialSoundtrack({ url, label }: { url: string; label?: string }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const reveal = () => setOpen(true);
+    window.addEventListener('vibecheck:open-song', reveal);
+    return () => window.removeEventListener('vibecheck:open-song', reveal);
+  }, []);
+  return <aside className="vc-official-soundtrack" aria-label="Selected song">
+    <button type="button" aria-expanded={open} aria-controls="card-song-player" onClick={() => setOpen(value => !value)}>{open ? 'Close song' : 'Play song'}</button>
+    {open && <div id="card-song-player"><OfficialSongPlayer url={url} label={label} /></div>}
+  </aside>;
+}
+
+function BackgroundSoundtrack({ musicUrl, musicLabel }: VinylDiskProps) {
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState('');
   const audioRef = useRef<HTMLAudioElement | null>(null);

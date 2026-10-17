@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { isOfficialMusicLink, RECOMMENDED_SONGS } from '@/lib/musicLinks';
+import OfficialSongPlayer from '@/components/OfficialSongPlayer';
 
 interface MusicSelectorProps {
   selectedTrackId: string;
@@ -60,7 +61,7 @@ export default function MusicSelector({ selectedTrackId, selectedLabel, selected
       {selectedTrackId && <div className="vc-music-saved">
         <div className="vc-music-saved__heading"><span>Your song</span><button type="button" onClick={() => onSelectTrack('', '', '', '')}>Remove</button></div>
         <strong>{selectedLabel || 'Your selected song'}</strong>
-        {isOfficialMusicLink(selectedMusicLink || '') && <a className="vc-song-listen" href={selectedMusicLink} target="_blank" rel="noopener noreferrer">Open in Apple Music ↗</a>}
+        {selectedMusicLink && <OfficialSongPlayer key={selectedMusicLink} url={selectedMusicLink} label={selectedLabel} />}
       </div>}
       <div className="vc-song-recommendations">{RECOMMENDED_SONGS.map(songRow)}</div>
       <label className="vc-music-search"><span>Find another song</span>

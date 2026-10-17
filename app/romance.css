@@ -53,6 +53,29 @@
 .vc-final-song { display: grid; gap: 3px; margin: 12px 0; color: #92394a; font-size: 12px; overflow-wrap: anywhere; }
 .vc-final-song span { font-size: 10px; color: #6a555a; }
 .vc-final-song strong { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.vc-official-player { width: 100%; min-width: 0; margin: 12px 0; }
+.vc-official-player iframe { display: block; border: 0; width: 100%; height: 175px; border-radius: 8px; }
+.vc-official-player > a { display: block; margin-top: 6px; color: #94334a; font-size: 11px; text-decoration: underline; }
+.vc-official-soundtrack { position: fixed; z-index: 70; top: max(12px,env(safe-area-inset-top)); right: max(12px,env(safe-area-inset-right)); text-align: right; }
+.vc-official-soundtrack > button { min-height: 40px; padding: 8px 14px; border: 1px solid #d7b5bd; border-radius: 6px; background: #fffaf7; color: #803047; font-size: 12px; cursor: pointer; }
+.vc-official-soundtrack > div { width: min(350px,calc(100vw - 24px)); padding: 8px; background: #fff; border: 1px solid #ead9de; border-radius: 8px; box-shadow: 0 8px 24px #38202d22; }
+.vc-upi-checkout { width: min(100%,760px); margin: auto; padding: 24px 16px; color: #3b2932; text-align: left; position: relative; }
+.vc-upi-checkout header > span { color: #216655; font-size: 12px; font-weight: 700; }
+.vc-upi-checkout h2 { font: 400 30px/1.3 Georgia,serif; margin: 12px 0; }
+.vc-upi-checkout header p { font-size: 12px; overflow-wrap: anywhere; color: #66555e; }
+.vc-upi-checkout__payment { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 28px; padding: 24px 0; }
+.vc-upi-checkout__qr { padding: 16px; background: white; border: 1px solid #d7c7cd; border-radius: 8px; }
+.vc-upi-checkout__qr svg { display: block; width: 196px; height: 196px; }
+.vc-upi-checkout__details { display: grid; gap: 8px; min-width: 0; }
+.vc-upi-checkout__details :is(span,p) { font-size: 12px; margin: 0; }
+.vc-upi-checkout__amount { font-size: 32px; line-height: 1.3; }
+.vc-upi-checkout__details code { font-size: 14px; overflow-wrap: anywhere; user-select: text; }
+.vc-upi-checkout__details :is(a,button) { display: grid; place-items: center; min-height: 44px; padding: 10px; border: 1px solid #bda9b1; border-radius: 6px; font-size: 13px; cursor: pointer; }
+.vc-upi-checkout__details .vc-upi-checkout__pay { background: #176651; color: white; border-color: #176651; margin-top: 8px; }
+.vc-upi-checkout__fallback { border-block: 1px solid #dfcfd5; padding: 16px 0; margin: 0 0 20px; font-size: 13px; line-height: 1.6; }
+.vc-upi-checkout__fallback p { margin: 8px 0 0; color: #66555e; }
+.vc-upi-checkout__notice,.vc-upi-checkout__verification { font-size: 12px; line-height: 1.6; margin: 12px 0; }
+@media (max-width: 560px) { .vc-upi-checkout__payment { grid-template-columns: 1fr; gap: 20px; } .vc-upi-checkout__qr { justify-self: center; } .vc-upi-checkout h2 { font-size: 26px; } }
 @media (max-width: 480px) {
   .vc-ready { padding: 12px 0; }
   .vc-ready__header { padding-top: 32px; }

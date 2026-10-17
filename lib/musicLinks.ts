@@ -12,3 +12,12 @@ export function isOfficialMusicLink(value: string): boolean {
     return false;
   }
 }
+
+export function appleMusicEmbedUrl(value: string): string | null {
+  if (!isOfficialMusicLink(value)) return null;
+  const url = new URL(value);
+  url.hostname = 'embed.music.apple.com';
+  url.searchParams.delete('at');
+  url.searchParams.set('theme', 'light');
+  return url.toString();
+}
