@@ -51,13 +51,12 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa, orderId }: QRC
         <div className="vc-upi-checkout__details">
           <span>Amount to pay</span><strong className="vc-upi-checkout__amount">₹{amount.toFixed(2)}</strong>
           <p>Receiving UPI ID</p><code>{configuredVpa}</code>
-          <a className="vc-upi-checkout__pay" href={upiIntent}>Open UPI app</a>
-          <button type="button" onClick={() => void copyVpa()}>Copy UPI ID</button>
+          <button type="button" className="vc-upi-checkout__pay" onClick={() => void copyVpa()}>Copy UPI ID</button>
         </div>
       </div>
       <p role="status" className="vc-upi-checkout__notice">{notice}</p>
       <div className="vc-upi-checkout__fallback">
-        <strong>Paytm did not open the payment?</strong>
+        <strong>Pay directly from your UPI app</strong>
         <p>In Paytm, choose To UPI ID, paste the ID above, and enter ₹{amount.toFixed(2)}. Or scan this QR from another screen. Check the bank-verified recipient name before paying.</p>
         <p>If the app says the UPI ID is invalid or the transfer is blocked, stop and contact support. Do not pay twice.</p>
       </div>

@@ -32,6 +32,7 @@ describe('UPI checkout', () => {
     expect(html).toContain('To UPI ID');
     expect(html).toContain('owner@okaxis');
     expect(html).not.toContain('QR expired');
+    expect(html).not.toContain('href="upi://');
   });
 });
 
