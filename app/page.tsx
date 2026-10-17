@@ -6,6 +6,7 @@ import Link from "next/link";
 import AmbientBackground from "@/components/AmbientBackground";
 import { useTheme } from "@/components/ThemeProvider";
 import { TIERS } from "@/lib/themes";
+import ComplianceFooter from "@/components/ComplianceFooter";
 
 const HERO_CLIPS = [
   {
@@ -180,14 +181,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="vc-lite-footer">
-        <p>VibeCheck · Private cards that feel made, not forwarded.</p>
-        <div>
-          <Link href="/terms">Terms</Link>
-          <Link href="/privacy">Privacy</Link>
-          <Link href="/contact">Contact</Link>
-        </div>
-      </footer>
+      <ComplianceFooter />
     </main>
   );
 }

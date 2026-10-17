@@ -25,19 +25,19 @@ export default function TermsPage() {
           Welcome to VibeCheck, operated in India by {BUSINESS_OPERATOR} (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;). By accessing or purchasing our services, you agree to these Terms and Conditions. VibeCheck provides private interactive digital greeting-card creation and online delivery services.
         </p>
 
-        <h2 className="text-lg font-bold text-[var(--text)]">2. Digital Goods & Instant Delivery</h2>
+        <h2 className="text-lg font-bold text-[var(--text)]">2. Digital Products & Delivery</h2>
         <p>
-          Our services consist of digital, customizable interactive cards. Once a card is paid for and created, a unique access link is generated and delivered instantly on screen and stored in your session. No physical goods are shipped.
+          Our service creates personalised interactive greeting cards. After payment is verified, your recipient link becomes available on screen and a ready notification is sent to the creator email supplied at checkout. Direct UPI payments currently require a submitted transaction reference and manual verification. No physical goods are shipped. See our delivery policy for timing and support.
         </p>
 
         <h2 className="text-lg font-bold text-[var(--text)]">3. User Conduct & Content</h2>
         <p>
-          You agree not to use VibeCheck to generate hate speech, illegal content, harassment, or non-consensual personal distribution. We reserve the right to remove non-compliant cards without refund.
+          Purchasers must be at least 18 and able to enter into a contract. You must have permission to upload and share the photos, messages and other content you use. Do not use VibeCheck for illegal content, harassment, impersonation or non-consensual sharing. We may restrict unlawful or abusive content, subject to applicable consumer rights and law.
         </p>
 
         <h2 className="text-lg font-bold text-[var(--text)]">4. Pricing & Payments</h2>
         <p>
-          Current prices and access durations are listed on our <Link href="/pricing" className="text-[var(--accent)] hover:underline">Pricing page</Link> and shown again before payment. Payments are processed through Razorpay. The final amount is displayed before the customer authorises payment.
+          Current prices are listed in INR on our <Link href="/pricing" className="text-[var(--accent)] hover:underline">Pricing page</Link> and shown again before payment. Each purchase is a one-time payment for one card, not a subscription. Only payment methods actually displayed at checkout are available. Direct UPI payments are manually verified against the submitted UTR and received funds. Opening a payment app, submitting a reference or uploading a screenshot does not confirm payment. We do not currently advertise Cashfree activation or card-payment availability.
         </p>
 
         <h2 className="text-lg font-bold text-[var(--text)]">5. Delivery, Cancellation & Refunds</h2>
@@ -47,18 +47,20 @@ export default function TermsPage() {
 
         <h2 className="text-lg font-bold text-[var(--text)]">6. Intellectual Property</h2>
         <p>
-          All software, design elements, animations, and branding associated with VibeCheck are the property of VibeCheck. Users retain ownership of personal custom messages and images uploaded.
+          Users retain their rights in uploaded messages and images and grant us permission to host and display them to provide the purchased service. Third-party software, artwork and recordings remain subject to their owners&apos; rights. Song dedications link to an official music service; playback availability, subscriptions and previews are controlled by that provider, and a card purchase does not include a music subscription or ownership of a recording.
         </p>
 
         <h2 className="text-lg font-bold text-[var(--text)]">7. Service Availability</h2>
         <p>
           We aim to keep the service available but cannot guarantee uninterrupted access during maintenance, network failures, payment-provider outages or events beyond reasonable control.
         </p>
+        <p>The current plan has no scheduled card expiry. “Keep it forever” means ongoing access while VibeCheck operates and the content complies with these terms, not a guarantee of perpetual hosting. Save important original photos and messages separately. A recipient link is accessible to anyone it is shared with unless a private lock is enabled; keep creator tracking links confidential.</p>
 
         <h2 className="text-lg font-bold text-[var(--text)]">8. Governing Law</h2>
         <p>
           These terms are governed by the laws of India. Subject to applicable consumer-protection law, disputes will be handled by courts having jurisdiction in India.
         </p>
+        <p>Nothing in these terms excludes mandatory statutory consumer rights. Contact us first about a problem so we can investigate and offer an appropriate resolution.</p>
 
         <h2 className="text-lg font-bold text-[var(--text)]">9. Contact Information</h2>
         <p>

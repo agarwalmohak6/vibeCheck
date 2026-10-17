@@ -2,6 +2,8 @@ import Link from "next/link";
 import ComplianceFooter from "@/components/ComplianceFooter";
 import {
   BUSINESS_EMAIL,
+  BUSINESS_ADDRESS,
+  BUSINESS_TYPE,
   BUSINESS_NAME,
   BUSINESS_OPERATOR,
   BUSINESS_PHONE_DISPLAY,
@@ -36,14 +38,14 @@ export default function AboutPage() {
               <p className="mt-4 text-sm leading-7 text-[var(--text2)]">
                 VibeCheck is an India-based digital service for creating private
                 interactive greeting cards. Customers can personalise a message,
-                music, questions, passcode and theme, then share one private link
+                uploaded photos, song dedications, questions, passcode and theme, then share one private link
                 with the intended recipient.
               </p>
             </article>
             <article className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-7">
               <h2 className="text-xl font-black text-[var(--text)]">How it is delivered</h2>
               <p className="mt-4 text-sm leading-7 text-[var(--text2)]">
-                The product is delivered digitally after successful payment. No
+                The product is delivered digitally after payment verification. No
                 physical goods are sold or shipped. Clear pricing, access duration
                 and support information are shown before purchase.
               </p>
@@ -52,6 +54,8 @@ export default function AboutPage() {
 
           <section className="rounded-3xl border border-pink-400/20 bg-[#c75765]/5 p-7">
             <h2 className="text-xl font-black text-[var(--text)]">Business information</h2>
+            <p className="mt-3 text-sm">{BUSINESS_TYPE}. VibeCheck is operated by {BUSINESS_OPERATOR}; it is not represented as an incorporated company.</p>
+            <address className="mt-3 text-sm not-italic">{BUSINESS_ADDRESS}, India</address>
             <dl className="mt-5 grid gap-4 text-sm md:grid-cols-2">
               <div>
                 <dt className="text-xs font-bold uppercase tracking-wider text-[var(--text2)]">

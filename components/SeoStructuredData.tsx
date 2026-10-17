@@ -1,5 +1,6 @@
 import { absoluteUrl, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import { TIERS } from "@/lib/themes";
+import { BUSINESS_EMAIL, BUSINESS_OPERATOR, BUSINESS_PHONE_HREF } from "@/lib/business";
 
 const faqItems = [
   {
@@ -36,10 +37,9 @@ export default function SeoStructuredData() {
       name: SITE_NAME,
       url: SITE_URL,
       logo: absoluteUrl("/favicon.ico"),
-      sameAs: [
-        "https://instagram.com/vibecheck.cards",
-        "https://facebook.com/vibecheckcards",
-      ],
+      email: BUSINESS_EMAIL,
+      telephone: BUSINESS_PHONE_HREF,
+      founder: { "@type": "Person", name: BUSINESS_OPERATOR },
     },
     {
       "@context": "https://schema.org",

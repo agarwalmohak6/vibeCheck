@@ -2,6 +2,8 @@ import Link from 'next/link';
 import ComplianceFooter from '@/components/ComplianceFooter';
 import {
   BUSINESS_COUNTRY,
+  BUSINESS_ADDRESS,
+  BUSINESS_TYPE,
   BUSINESS_EMAIL,
   BUSINESS_NAME,
   BUSINESS_OPERATOR,
@@ -56,6 +58,8 @@ export default function ContactPage() {
 
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 space-y-4">
             <h2 className="text-lg font-bold text-[var(--text)]">Merchant & Business Information</h2>
+            <p className="text-sm">{BUSINESS_TYPE}. VibeCheck is the trading name of {BUSINESS_OPERATOR}.</p>
+            <div><h3 className="text-sm font-bold">Business contact location</h3><address className="text-sm not-italic">{BUSINESS_ADDRESS}, {BUSINESS_COUNTRY}</address></div>
             <div>
               <p className="text-[10px] font-bold text-[var(--text2)] uppercase tracking-wider">Brand Name</p>
               <p className="text-xs text-[var(--text2)] font-medium">{BUSINESS_NAME}</p>
@@ -77,6 +81,11 @@ export default function ContactPage() {
               <p className="text-xs text-[var(--text2)] font-medium">Not applicable — digital services only</p>
             </div>
           </div>
+        </section>
+        <section className="space-y-3 text-sm leading-relaxed">
+          <h2 className="text-lg font-bold">Order support and complaints</h2>
+          <p>For delivery, refunds, privacy requests or complaints, contact {BUSINESS_OPERATOR} using the email or phone above. Include your order ID, purchase email and a description of the issue. For a payment issue, include the UTR or transaction reference.</p>
+          <p>Never send your UPI PIN, OTP, CVV, full card number or account password. We aim to respond within one business day during support hours. Refund review and processing timelines are listed in our <Link href="/refund-policy" className="underline">Cancellation & Refund Policy</Link>.</p>
         </section>
       </main>
       <ComplianceFooter />

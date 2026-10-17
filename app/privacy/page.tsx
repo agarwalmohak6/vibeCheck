@@ -22,7 +22,7 @@ export default function PrivacyPage() {
       <section className="space-y-4 text-sm leading-relaxed text-[var(--text2)]">
         <h2 className="text-lg font-bold text-[var(--text)]">1. Information We Collect</h2>
         <p>
-          We collect information necessary to create and deliver private digital cards, including creator and recipient names, custom messages, uploaded media, optional passcodes, account contact details, card interactions, and payment identifiers supplied by payment providers.
+          We collect creator and recipient names, messages, uploaded photos/media, optional private-lock answers in protected form, creator email and WhatsApp number, order IDs, payment references, replies and card interactions. Technical records may include IP addresses and request logs for security and rate limiting. You should share another person&apos;s information only with appropriate permission.
         </p>
 
         <h2 className="text-lg font-bold text-[var(--text)]">2. How Information is Used</h2>
@@ -32,12 +32,12 @@ export default function PrivacyPage() {
 
         <h2 className="text-lg font-bold text-[var(--text)]">3. Payment Security</h2>
         <p>
-          Payment transactions are processed by Razorpay. We do not store complete card numbers, CVVs, net-banking passwords, or UPI PINs.
+          Current checkout uses direct UPI through your bank or UPI app. We receive the order amount and transaction reference you submit for manual verification, not your UPI PIN or bank credentials. If a gateway payment method is enabled in future, its provider will be identified at checkout. We do not request or store complete card numbers, CVVs, net-banking passwords or UPI PINs.
         </p>
 
         <h2 className="text-lg font-bold text-[var(--text)]">4. Data Retention & Expiry</h2>
         <p>
-          Digital cards remain accessible for the purchased duration. Related transaction and support records may be retained as required for accounting, fraud prevention, dispute handling and applicable law.
+          Current cards have no scheduled expiry and their content is retained to provide ongoing access while the service operates. You can request deletion using the support email below. Related transaction and support records may be retained where needed for accounting, fraud prevention, disputes or legal obligations. Deletion from backups may take additional time; closing your browser does not delete an order.
         </p>
 
         <h2 className="text-lg font-bold text-[var(--text)]">5. Cookies & Local Storage</h2>
@@ -47,12 +47,13 @@ export default function PrivacyPage() {
 
         <h2 className="text-lg font-bold text-[var(--text)]">6. Service Providers</h2>
         <p>
-          We use service providers such as Supabase for application data and storage, Render for hosting, Razorpay for payment processing, and media-search providers when those features are used. They process data only for providing their contracted services.
+          We use Supabase for application data/storage, Render for hosting, configured email delivery providers for order and security messages, and messaging providers where enabled. Music search and official embedded players use Apple services; their own privacy terms apply when you use them. Relevant providers may process data outside India. We share information needed for these functions, lawful requests and dispute resolution, rather than selling private card content.
         </p>
+        <p>Anyone holding a recipient link may view its accessible content; an optional private lock adds an access step. Creator tracking links grant access to order activity and must be kept private. The creator can see events such as envelope opens, lock attempts, story answers and replies. Authorised operators may access records to provide support, verify payments or investigate abuse. No online service can guarantee absolute security.</p>
 
         <h2 className="text-lg font-bold text-[var(--text)]">7. Your Choices</h2>
         <p>
-          You may request access, correction or deletion of eligible personal data. Some records may be retained where required for transactions, security or legal compliance.
+          Creators and recipients may request access, correction or deletion of their eligible personal data by emailing us with the order/card ID. We may request proportionate identity or ownership verification. Do not send identity documents unsolicited. Some records may be retained for transactions, security or legal compliance. Order emails are service messages, not a subscription to marketing.
         </p>
 
         <h2 className="text-lg font-bold text-[var(--text)]">8. Contact & Data Support</h2>

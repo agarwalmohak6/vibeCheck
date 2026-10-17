@@ -30,7 +30,7 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <section className="mt-12 grid gap-5 md:grid-cols-3">
+          <section className="mx-auto mt-8 grid max-w-2xl gap-5">
             {TIERS.map((tier) => (
               <article
                 key={tier.id}
@@ -55,8 +55,10 @@ export default function PricingPage() {
                 </p>
                 <ul className="mt-5 space-y-2 text-sm text-[var(--text2)]">
                   <li>✓ Interactive private reveal</li>
-                  <li>✓ One-person shareable link</li>
+                  <li>✓ Recipient link and optional private lock</li>
                   <li>✓ Creator tracker and replies</li>
+                  <li>✓ Your uploaded photos and personalised message</li>
+                  <li>✓ Optional official song link/player; no music subscription included</li>
                 </ul>
                 <Link
                   href={`/customize?tier=${tier.id}&new=1`}
@@ -70,11 +72,13 @@ export default function PricingPage() {
 
           <div className="mt-10 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-sm leading-relaxed text-[var(--text2)]">
             <p>
-              Prices are displayed in Indian Rupees and are the final product
-              prices shown before checkout. Any payment-provider information is
-              displayed securely inside the payment window. Pricing last
-              confirmed on {POLICY_EFFECTIVE_DATE}.
+              Prices are displayed in Indian Rupees (INR). The displayed amount is
+              the total payable to VibeCheck, including any applicable taxes;
+              we add no separate delivery or subscription fee. Each purchase covers
+              one personalised digital card. Pricing last updated on {POLICY_EFFECTIVE_DATE}.
             </p>
+            <p className="mt-3">Current checkout uses direct UPI with manual payment verification, targeted within one business day after payment and UTR submission. Debit/credit-card checkout is not yet available. A gateway logo or application does not mean our account is approved.</p>
+            <p className="mt-3">Cards have no scheduled expiry while the service operates; this does not guarantee perpetual hosting. See <Link className="underline" href="/terms">Terms</Link>, <Link className="underline" href="/shipping-policy">Delivery</Link> and <Link className="underline" href="/refund-policy">Cancellation & Refunds</Link> before purchasing.</p>
           </div>
         </div>
       </main>

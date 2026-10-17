@@ -31,6 +31,9 @@ export const SITE_KEYWORDS = [
 ];
 
 export const PUBLIC_SEO_ROUTES = [
+  ...['/about', '/pricing', '/contact', '/terms', '/privacy', '/refund-policy', '/shipping-policy'].map(path => ({
+    path, priority: 0.5, changeFrequency: 'monthly' as const,
+  })),
   {
     path: "/",
     priority: 1,

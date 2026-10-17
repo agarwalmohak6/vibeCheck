@@ -5,6 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { buildUpiIntent, DEFAULT_UPI_VPA, isValidUpiVpa } from '@/lib/upi';
 import { startPaymentPolling } from '@/lib/paymentPolling';
 import PaymentReferenceForm from '@/components/PaymentReferenceForm';
+import Link from 'next/link';
 
 interface QRCheckoutProps {
   cardId: string;
@@ -62,6 +63,14 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa, orderId }: QRC
       </div>
       <PaymentReferenceForm cardId={cardId} variant="soft" onSubmitted={() => setReferenceSubmitted(true)} />
       <p className="vc-upi-checkout__verification" role="status">{referenceSubmitted ? 'Reference received. Waiting for payment verification.' : 'After payment, submit the UTR from your UPI app. Your card opens after verification.'}</p>
+      <p className="vc-upi-checkout__verification">Verification is targeted within one business day after payment and UTR submission. No physical delivery or subscription.</p>
+      <nav aria-label="Payment policies" className="flex flex-wrap gap-4 text-xs underline">
+        <Link href="/terms" target="_blank" rel="noopener noreferrer">Terms</Link>
+        <Link href="/privacy" target="_blank" rel="noopener noreferrer">Privacy</Link>
+        <Link href="/refund-policy" target="_blank" rel="noopener noreferrer">Refunds</Link>
+        <Link href="/shipping-policy" target="_blank" rel="noopener noreferrer">Delivery</Link>
+        <Link href="/contact" target="_blank" rel="noopener noreferrer">Support</Link>
+      </nav>
     </>}
   </section>;
 }

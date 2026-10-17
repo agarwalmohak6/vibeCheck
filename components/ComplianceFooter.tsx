@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   BUSINESS_EMAIL,
+  BUSINESS_ADDRESS,
   BUSINESS_NAME,
   BUSINESS_OPERATOR,
   BUSINESS_PHONE_DISPLAY,
@@ -25,11 +26,12 @@ export default function ComplianceFooter() {
           <p className="text-lg font-black text-[var(--text)]">{BUSINESS_NAME}</p>
           <p className="text-sm leading-relaxed text-[var(--text2)]">
             Private interactive digital greeting cards, delivered online after
-            successful payment.
+            payment verification. Digital products only; no physical shipping.
           </p>
           <p className="text-xs text-[var(--text2)]">
             Operated in India by {BUSINESS_OPERATOR}.
           </p>
+          <address className="text-xs not-italic">{BUSINESS_ADDRESS}, India</address>
         </div>
 
         <div className="space-y-5">

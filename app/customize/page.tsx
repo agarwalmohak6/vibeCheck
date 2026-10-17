@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useTheme } from '@/components/ThemeProvider';
 import { PRIMARY_TEMPLATE_TYPES, TEMPLATE_TYPES, TIERS, ThemeId } from '@/lib/themes';
 import SceneLoading from '@/components/SceneLoading';
@@ -1028,8 +1029,18 @@ function CustomizePageContent() {
             {loading ? 'Preparing your card…' : `Looks good - send it for ₹${selectedTier.price}`}
           </motion.button>
           <p className="text-xs text-center font-medium leading-relaxed" style={{ color: 'var(--text2)' }}>
-            Secure direct UPI · QR/deep links accepted · admin verified by UTR
+            Direct UPI · manual verification after UTR submission · no subscription
           </p>
+          <p className="text-xs text-center leading-relaxed" style={{ color: 'var(--text2)' }}>
+            Total: ₹{selectedTier.price} INR, including any applicable taxes. No shipping fee.
+            Delivery is targeted within one business day after payment and UTR submission.
+            By proceeding, you agree to the <Link href="/terms" target="_blank" rel="noopener noreferrer" className="underline">Terms</Link> and acknowledge the <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">Privacy Policy</Link>.
+          </p>
+          <nav aria-label="Checkout policies" className="flex flex-wrap justify-center gap-4 text-xs underline">
+            <Link href="/refund-policy" target="_blank" rel="noopener noreferrer">Cancellation & Refunds</Link>
+            <Link href="/shipping-policy" target="_blank" rel="noopener noreferrer">Digital Delivery</Link>
+            <Link href="/contact" target="_blank" rel="noopener noreferrer">Contact support</Link>
+          </nav>
         </div>
       );
 

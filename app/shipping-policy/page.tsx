@@ -49,11 +49,14 @@ export default function ShippingPolicyPage() {
               2. Delivery Method and Timeline
             </h2>
             <p className="mt-2">
-              After a successful payment is captured, the purchased card is
-              unlocked and its private shareable link is displayed online.
-              Delivery is normally immediate, but may take up to 15 minutes
-              during temporary payment-provider or network delays.
+              Your order ID is generated during checkout. With the current direct
+              UPI checkout, submit the payment UTR after paying. We review payments
+              during support hours, Monday–Saturday, 10:00 AM–7:00 PM IST, and aim
+              to verify them within one business day after receiving the payment
+              and its reference. Orders submitted outside these hours may be
+              reviewed on the next business day. This is not instant automated fulfilment.
             </p>
+            <p className="mt-2">After verification, the recipient link becomes available on the checkout/tracking page and a ready email is sent to the creator. The creator shares the recipient link themselves. Email and third-party messaging delivery can be delayed; access on the tracking page does not depend on opening the email.</p>
           </div>
 
           <div>
@@ -61,9 +64,9 @@ export default function ShippingPolicyPage() {
               3. Access Duration
             </h2>
             <p className="mt-2">
-              Access remains available for the duration selected at checkout:
-              1 Day, 2 Days, or Lifetime. The selected duration and final price
-              are shown before payment.
+              The current one-time card plan has no scheduled expiry. Access
+              continues while VibeCheck operates, subject to our Terms and Conditions.
+              This is not a promise of perpetual hosting. There are no recurring subscription charges.
             </p>
           </div>
 
@@ -72,8 +75,8 @@ export default function ShippingPolicyPage() {
               4. Delivery Problems
             </h2>
             <p className="mt-2">
-              If payment is debited but the card does not unlock within 15
-              minutes, email{" "}
+              If you have submitted the UTR and the card has not unlocked within
+              one business day, email{" "}
               <a
                 href={`mailto:${BUSINESS_EMAIL}`}
                 className="text-[var(--accent)] hover:underline"
