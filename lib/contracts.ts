@@ -147,6 +147,15 @@ export const razorpayVerifyPaymentSchema = z.object({
   card_id: z.string().uuid().optional(),
 });
 
+export const cashfreeOrderSchema = z.object({
+  card_id: z.string().uuid(),
+});
+
+export const cashfreeVerifySchema = z.object({
+  card_id: z.string().uuid(),
+  order_id: z.string().trim().min(1).max(120),
+});
+
 export const manualPaymentVerifySchema = z.object({
   utr: paymentReferenceValueSchema,
 });
@@ -217,3 +226,6 @@ export type AdminOtpRequestInput = z.infer<typeof adminOtpRequestSchema>;
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
 export type CreatorAuthInput = z.infer<typeof creatorAuthSchema>;
 export type CreatorCardClaimInput = z.infer<typeof creatorCardClaimSchema>;
+export type CashfreeOrderInput = z.infer<typeof cashfreeOrderSchema>;
+export type CashfreeVerifyInput = z.infer<typeof cashfreeVerifySchema>;
+

@@ -12,6 +12,7 @@ import { getMoodStory } from '@/lib/moodStories';
 import SuccessHub from '@/components/SuccessHub';
 import MusicSelector from '@/components/MusicSelector';
 import QRCheckout from '@/components/QRCheckout';
+import CashfreeCheckout from '@/components/CashfreeCheckout';
 import PaymentTestModeToggle from '@/components/PaymentTestModeToggle';
 import { compressImage, prepareCardImages } from '@/lib/imageCompressor';
 import { DEFAULT_UPI_VPA } from '@/lib/upi';
@@ -631,17 +632,34 @@ function CustomizePageContent() {
             Open your private order tracking link — keep it for later
           </a>
 
-          <QRCheckout
+          <CashfreeCheckout
             cardId={createdCardId}
             amount={selectedTier.price}
             orderId={orderId}
-            creatorEmail={form.creatorEmail}
-            creatorWhatsapp={form.creatorWhatsapp}
+            creatorToken={creatorToken}
             onPaid={() => {
               markCheckoutPaid(createdCardId, creatorToken);
             }}
-            vpa={paymentVpa}
           />
+
+          <details className="mx-auto w-full max-w-xl text-center text-xs text-gray-500">
+            <summary className="cursor-pointer py-2 font-medium hover:text-pink-600">
+              Prefer direct UPI app transfer? Click to view UPI QR &amp; UTR entry
+            </summary>
+            <div className="mt-4 text-left">
+              <QRCheckout
+                cardId={createdCardId}
+                amount={selectedTier.price}
+                orderId={orderId}
+                creatorEmail={form.creatorEmail}
+                creatorWhatsapp={form.creatorWhatsapp}
+                onPaid={() => {
+                  markCheckoutPaid(createdCardId, creatorToken);
+                }}
+                vpa={paymentVpa}
+              />
+            </div>
+          </details>
 
           <PaymentTestModeToggle
             cardId={createdCardId}
