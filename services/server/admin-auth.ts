@@ -24,7 +24,7 @@ function getAdminSecret() {
   return process.env.VIBECHECK_ADMIN_SESSION_SECRET ||
     process.env.VIBECHECK_TOKEN_SECRET ||
     process.env.NEXTAUTH_SECRET ||
-    process.env.RAZORPAY_KEY_SECRET ||
+    process.env.CASHFREE_SECRET_KEY ||
     (process.env.NODE_ENV === 'production' ? '' : 'vibecheck-local-admin-session-secret');
 }
 

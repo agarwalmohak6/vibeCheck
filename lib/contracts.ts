@@ -108,44 +108,14 @@ export const sendMessageSchema = z.object({
   text: z.string().trim().min(1).max(500),
 });
 
-export const paymentWebhookSchema = z.object({
-  card_id: z.string().uuid(),
-  payment_id: z.string().trim().min(1).max(160).optional(),
-  order_id: z.string().trim().min(1).max(120).optional(),
-  amount: z.coerce.number().int().positive().optional(),
-  currency: z.string().trim().length(3).optional(),
-  status: z.string().trim().max(40).optional(),
-  extends_at: z.string().datetime().optional(),
-});
+
 
 export const paymentReferenceSchema = z.object({
   card_id: z.string().uuid(),
   utr: paymentReferenceValueSchema,
 });
 
-export const paymentOrderSchema = z.object({
-  card_id: z.string().uuid(),
-});
 
-export const paymentVerifySchema = z.object({
-  card_id: z.string().uuid(),
-  razorpay_order_id: z.string().trim().min(1).max(120),
-  razorpay_payment_id: z.string().trim().min(1).max(120),
-  razorpay_signature: z.string().trim().min(1).max(240),
-});
-
-export const razorpayCreateOrderSchema = z.object({
-  amount: z.coerce.number().int().min(100),
-  currency: z.string().trim().min(3).max(3).default('INR'),
-  receipt: z.string().trim().min(1).max(40).optional(),
-});
-
-export const razorpayVerifyPaymentSchema = z.object({
-  razorpay_order_id: z.string().trim().min(1).max(120),
-  razorpay_payment_id: z.string().trim().min(1).max(120),
-  razorpay_signature: z.string().trim().min(1).max(240),
-  card_id: z.string().uuid().optional(),
-});
 
 export const cashfreeOrderSchema = z.object({
   card_id: z.string().uuid(),
@@ -216,10 +186,7 @@ export const signedUploadSchema = z.object({
 
 export type CreateCardInput = z.infer<typeof createCardSchema>;
 export type PaymentReferenceInput = z.infer<typeof paymentReferenceSchema>;
-export type PaymentOrderInput = z.infer<typeof paymentOrderSchema>;
-export type PaymentVerifyInput = z.infer<typeof paymentVerifySchema>;
-export type RazorpayCreateOrderInput = z.infer<typeof razorpayCreateOrderSchema>;
-export type RazorpayVerifyPaymentInput = z.infer<typeof razorpayVerifyPaymentSchema>;
+
 export type ManualPaymentVerifyInput = z.infer<typeof manualPaymentVerifySchema>;
 export type TestPaymentModeInput = z.infer<typeof testPaymentModeSchema>;
 export type AdminOtpRequestInput = z.infer<typeof adminOtpRequestSchema>;

@@ -27,8 +27,13 @@ export async function POST(req: NextRequest) {
     const paymentId = String(paymentData?.cf_payment_id || orderId);
 
     let cardId: string | null = null;
+    const orderTags = orderData?.order_tags;
+    if (orderTags && typeof orderTags.card_id === 'string') {
+      cardId = orderTags.card_id;
+    }
+
     const admin = getSupabaseAdmin();
-    if (admin && orderId) {
+    if (!cardId && admin && orderId) {
       const { data: paymentRecord } = await admin
         .from('payments')
         .select('card_id')
@@ -41,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     if (eventType === 'PAYMENT_SUCCESS_WEBHOOK' || orderData?.order_status === 'PAID') {
       if (cardId) {
-        await markCardPaymentVerified(cardId, paymentId, undefined, orderId);
+        await markCardPaymentVerified(cardId, paymentId, undefined, orderId, 'cashfree');
         const card = await getPublicCard(cardId);
         if (card) {
           const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;

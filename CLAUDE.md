@@ -10,7 +10,7 @@
 * **Styling**: Tailwind CSS v4 (with PostCSS)
 * **Backend/Database**: Supabase client (`lib/supabase.ts`) and Admin SDK (`services/server/supabase-admin.ts`).
   * *Crucial*: If Supabase env variables are not set, both client and server automatically fall back to **in-memory/mock state storage** (stored in `globalThis`).
-* **Payments**: Razorpay. Falls back to mock payments when `NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS=true` or in development mode if not explicitly set to false.
+* **Payments**: Cashfree. Falls back to mock payments when `NEXT_PUBLIC_ENABLE_MOCK_PAYMENTS=true` or in development mode if not explicitly set to false.
 
 ## Code Guidelines
 * **Breaking Next.js Changes**: Always read Next.js rules in `@AGENTS.md` before changing routing/APIs.

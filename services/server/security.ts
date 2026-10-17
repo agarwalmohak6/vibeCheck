@@ -59,11 +59,3 @@ export function verifyPasscodeHash(passcode: string, salt: string, hash: string)
   return provided.length === expected.length && timingSafeEqual(provided, expected);
 }
 
-export function verifyRazorpayWebhook(rawBody: string, signature: string | null) {
-  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
-  if (!secret || !signature) return false;
-  const expected = createHmac('sha256', secret).update(rawBody).digest('hex');
-  const provided = Buffer.from(signature);
-  const expectedBuffer = Buffer.from(expected);
-  return provided.length === expectedBuffer.length && timingSafeEqual(provided, expectedBuffer);
-}

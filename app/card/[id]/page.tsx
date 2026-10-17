@@ -1,5 +1,6 @@
 import { getPublicCard } from '@/services/server/card-store';
 import { verifyAccessToken } from '@/services/server/security';
+import { verifyCashfreeOrderForCard } from '@/services/server/cashfree';
 import { isExpired } from '@/lib/utils';
 import RecipientView from '@/components/RecipientView';
 import SuccessHub from '@/components/SuccessHub';
@@ -35,9 +36,24 @@ export default async function CardPage({
 }) {
   const { id } = await params;
   const query = await searchParams;
-  const card = await getPublicCard(id);
+  let card = await getPublicCard(id);
 
   if (!card) return notFound();
+
+  // If returning from Cashfree redirect and payment not yet confirmed
+  const cfOrderId = typeof query.cf_order_id === 'string'
+    ? query.cf_order_id
+    : Array.isArray(query.cf_order_id)
+      ? query.cf_order_id[0]
+      : undefined;
+
+  if (cfOrderId && !card.is_paid) {
+    await verifyCashfreeOrderForCard(id, cfOrderId);
+    const refreshed = await getPublicCard(id);
+    if (refreshed) {
+      card = refreshed;
+    }
+  }
 
   if (isExpired(card.expires_at)) {
     return <ExpiredView card={card} />;

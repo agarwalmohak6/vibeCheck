@@ -55,7 +55,6 @@ const DEFAULT_TEMPLATE = 'bestie_check';
 const DEFAULT_TIER = 'one_moment';
 const ACTIVE_CHECKOUT_KEY = 'vibecheck_active_checkout';
 const MAX_UPLOAD_IMAGES = 8;
-const MIN_REVEAL_IMAGES = 3;
 
 type CheckoutSession = {
   cardId: string;
@@ -196,6 +195,14 @@ function CustomizePageContent() {
   const [isPaid, setIsPaid] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
   const paymentVpa = (process.env.NEXT_PUBLIC_UPI_VPA || DEFAULT_UPI_VPA).trim();
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => {
+      setNotice(null);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) => setForm(p => ({ ...p, [k]: v }));
 
@@ -352,9 +359,6 @@ function CustomizePageContent() {
     if (stepIndex === 1) {
       if (!form.messageTitle.trim()) issues.push('Write a headline or choose a starting point.');
       if (!form.mainBody.trim()) issues.push('Write the main message or choose a starting point.');
-      if (uploadedImages.length < MIN_REVEAL_IMAGES) {
-        issues.push(`Upload at least ${MIN_REVEAL_IMAGES} photos so the reveal uses only your images.`);
-      }
     }
 
     if (stepIndex === 2 && form.hasSecretCode) {
@@ -373,14 +377,9 @@ function CustomizePageContent() {
 
     if (stepIndex === 3) {
       const email = form.creatorEmail.trim();
-      const whatsapp = form.creatorWhatsapp.trim();
       if (!email) issues.push('Add your email so we can send the order tracking link.');
       if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         issues.push('Enter a valid email for the order tracking link.');
-      }
-      if (!whatsapp) issues.push('Add your WhatsApp number for order tracking.');
-      if (whatsapp && !/^[0-9+\-\s()]{8,24}$/.test(whatsapp)) {
-        issues.push('Enter a valid WhatsApp number for order tracking.');
       }
     }
 
@@ -551,15 +550,12 @@ function CustomizePageContent() {
           paid: false,
         });
         const orderEmail = data.notifications?.email;
-        const orderWhatsapp = data.notifications?.whatsapp;
         if (orderEmail?.sent) {
           setNotice(null);
         } else {
           setNotice({
             tone: 'info',
-            message: orderWhatsapp?.sent
-              ? 'Your order is saved. Email delivery failed, but your tracking link was sent on WhatsApp.'
-              : 'Your order is saved, but we could not email your tracking link. Save the private tracking link below before leaving this page.',
+            message: 'Your order is saved. Save the private tracking link below before leaving this page.',
           });
         }
         setPaymentStep(true);
@@ -841,9 +837,9 @@ function CustomizePageContent() {
           <div className="vc-bulk-upload-panel">
             <div className="vc-bulk-upload-head">
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>Upload reveal photos *</label>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>Upload photos (optional)</label>
                 <p className="text-[11px]" style={{ color: 'var(--text3)' }}>
-                  Add at least {MIN_REVEAL_IMAGES}. Only your uploaded photos will appear in the recipient card.
+                  Add your photos (up to {MAX_UPLOAD_IMAGES}). If you skip, the card will skip the photo section.
                 </p>
               </div>
               <span>{uploadedImages.length}/{MAX_UPLOAD_IMAGES}</span>
@@ -983,7 +979,7 @@ function CustomizePageContent() {
             <p className="vc-builder-eyebrow">Order tracking</p>
             <h2 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text)', fontFamily: 'var(--font-display)' }}>Where should we send your tracking link?</h2>
             <p className="text-sm leading-relaxed" style={{ color: 'var(--text2)' }}>
-              Before payment, add your email and WhatsApp. Every order gets a unique ID and a private creator link.
+              Before payment, add your email. Every order gets a unique ID and a private creator link.
             </p>
           </div>
           <div className="vc-order-contact-card">
@@ -994,17 +990,6 @@ function CustomizePageContent() {
                 value={form.creatorEmail}
                 onChange={e => set('creatorEmail', e.target.value)}
                 placeholder="you@example.com"
-                className="vc-builder-input w-full px-4 py-3 outline-none text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: 'var(--text2)' }}>WhatsApp number *</label>
-              <input
-                type="tel"
-                inputMode="tel"
-                value={form.creatorWhatsapp}
-                onChange={e => set('creatorWhatsapp', e.target.value)}
-                placeholder="+91 98765 43210"
                 className="vc-builder-input w-full px-4 py-3 outline-none text-sm"
               />
             </div>

@@ -21,7 +21,7 @@ export function getTokenSecret() {
     process.env.VIBECHECK_TOKEN_SECRET ||
     process.env.VIBECHECK_ADMIN_SESSION_SECRET ||
     process.env.NEXTAUTH_SECRET ||
-    process.env.RAZORPAY_KEY_SECRET;
+    process.env.CASHFREE_SECRET_KEY;
 
   if (!secret && process.env.NODE_ENV === 'production') {
     throw new Error('VIBECHECK_TOKEN_SECRET is required in production');

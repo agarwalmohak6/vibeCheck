@@ -13,7 +13,7 @@ Live website: [vibecheck-gh7u.onrender.com](https://vibecheck-gh7u.onrender.com)
 - Interactive envelope, music, questions and replies
 - One-person shareable links with creator tracking
 - Transparent one-time pricing: ₹49, ₹79 and ₹119
-- Razorpay checkout with a manually verified UPI fallback
+- Cashfree automated checkout with a direct UPI fallback
 - Digital-only delivery; no physical goods or shipping
 
 ## Customer Information
@@ -34,7 +34,7 @@ npm run dev
 ```
 
 Copy `.env.example` to `.env.local` and replace every placeholder with the
-appropriate development value. Never commit `.env.local`, Razorpay secrets,
+appropriate development value. Never commit `.env.local`, Cashfree secrets,
 Supabase service-role keys, or application token secrets.
 
 ## Validation
@@ -49,8 +49,8 @@ For free production email on Render, configure `BREVO_API_KEY` and a verified
 `BREVO_SENDER_EMAIL`. See the email setup section in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 Production payment verification is fail-closed: mock signatures are accepted
-only outside production, and a Razorpay payment must match the card, order,
-captured status, INR currency and selected tier amount before the card unlocks.
+only outside production, and a Cashfree payment must match the card, order,
+paid status, INR currency and selected tier amount before the card unlocks.
 
 ## Availability monitoring
 

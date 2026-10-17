@@ -127,10 +127,9 @@ export default function CashfreeCheckout({
         return;
       }
 
-      const envMode =
-        process.env.NEXT_PUBLIC_CASHFREE_ENV === 'production'
-          ? 'production'
-          : 'sandbox';
+      const rawEnv = (process.env.NEXT_PUBLIC_CASHFREE_ENV || '').trim().toLowerCase();
+      const envMode: 'sandbox' | 'production' =
+        rawEnv === 'production' || rawEnv === 'prod' ? 'production' : 'sandbox';
 
       const cashfree = window.Cashfree({ mode: envMode });
 
@@ -170,7 +169,7 @@ export default function CashfreeCheckout({
         </p>
       </div>
 
-      <div className="my-6 flex flex-col items-center justify-between gap-6 rounded-2xl bg-gradient-to-br from-pink-50/70 to-purple-50/70 p-6 sm:flex-row">
+      <div className="my-6 flex flex-col items-center justify-between gap-6 rounded-2xl bg-linear-to-br from-pink-50/70 to-purple-50/70 p-6 sm:flex-row">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Total payable</span>
           <div className="text-4xl font-black text-gray-900">₹{amount.toFixed(2)}</div>
@@ -183,7 +182,7 @@ export default function CashfreeCheckout({
           type="button"
           onClick={handleStartCheckout}
           disabled={loading || verifying}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-pink-600 to-rose-600 px-8 py-4 text-base font-black text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-3 rounded-2xl bg-linear-to-r from-pink-600 to-rose-600 px-8 py-4 text-base font-black text-white shadow-lg shadow-pink-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 cursor-pointer"
         >
           {loading ? (
             <>

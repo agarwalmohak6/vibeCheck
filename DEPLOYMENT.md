@@ -109,13 +109,15 @@ References: [Brevo Free limits](https://help.brevo.com/hc/en-us/articles/2085806
 [Render Free restrictions](https://render.com/docs/free#other-limitations)
 and [Resend test sender restrictions](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain).
 
-Direct UPI is the active checkout path. Razorpay remains available as an optional UPI-first gateway path when you want automatic payment confirmation:
+Cashfree is the active automated checkout gateway (with direct UPI QR/UTR as backup):
 
 | Variable | Required | Where |
 | --- | --- | --- |
-| `RAZORPAY_KEY_ID` | Razorpay only | Vercel + Render |
-| `RAZORPAY_KEY_SECRET` | Razorpay only | Vercel + Render |
-| `RAZORPAY_WEBHOOK_SECRET` | Razorpay only | Render |
+| `CASHFREE_APP_ID` | Production | Render / Vercel |
+| `CASHFREE_SECRET_KEY` | Production | Render (Server only) |
+| `CASHFREE_ENV` | Production | Render / Vercel (`sandbox` or `production`) |
+| `NEXT_PUBLIC_CASHFREE_APP_ID` | Production | Render / Vercel |
+| `NEXT_PUBLIC_CASHFREE_ENV` | Production | Render / Vercel |
 
 ## 3. Deploy Backend on Render
 
@@ -182,7 +184,7 @@ Use **Direct UPI as the primary path** for the current mobile-first launch:
 6. Admin receives an email alert and verifies the UTR from `/admin`.
 7. The card unlocks and the creator gets a verified-payment notification.
 
-Use **Razorpay Checkout** when instant automatic confirmation matters more than the gateway fee. The Razorpay code still creates server-side Orders, verifies checkout signatures, validates amount/currency/payment status, and accepts signed webhooks.
+Use **Cashfree Checkout** when instant automatic confirmation is preferred. The Cashfree integration creates server-side Orders, opens the JS SDK modal, verifies payment status, and accepts signed webhooks.
 
 ## 7. Direct UPI: What To Use
 
@@ -192,14 +194,14 @@ Use **Razorpay Checkout** when instant automatic confirmation matters more than 
 | Easy customer payment | UPI QR + mobile UPI intent |
 | Payment proof | UTR/reference number |
 | Verification | Manual admin check |
-| Automatic verification | Razorpay checkout + signed webhook |
+| Automatic verification | Cashfree checkout + signed webhook |
 
 Current app support:
 
 - `lib/upi.ts` already builds a `upi://pay` intent.
 - `components/QRCheckout.tsx` renders the active direct UPI checkout.
 - `NEXT_PUBLIC_UPI_VPA` controls the payment VPA.
-- UPI payments made inside Razorpay are automatically verified; direct VPA payments still require UTR/admin or bank/PSP verification.
+- UPI payments made inside Cashfree are automatically verified; direct VPA payments still require UTR/admin or bank/PSP verification.
 
 ## 8. Direct UPI Production Flow
 
@@ -215,15 +217,15 @@ For the first live version, keep it simple:
 
 This is not instant, but it preserves the no-convenience-fee requirement.
 
-## 9. Razorpay Webhook Configuration
+## 9. Cashfree Webhook Configuration
 
-In the Razorpay Dashboard, create a webhook pointing to:
+In the Cashfree Merchant Dashboard (Developers -> Webhooks), create a webhook pointing to:
 
-`https://your-domain.com/api/payment/webhook`
+`https://your-domain.com/api/payment/cashfree/webhook`
 
-Subscribe to the payment events used by your account, especially `payment.authorized`, `payment.captured`, and `payment.failed`. Copy the webhook secret into `RAZORPAY_WEBHOOK_SECRET` on the server. Never expose `RAZORPAY_KEY_SECRET` or the webhook secret in a browser variable.
+Subscribe to `PAYMENT_SUCCESS_WEBHOOK` (Order / Payment Paid). Cashfree signs webhook payloads with your `CASHFREE_SECRET_KEY` using HMAC-SHA256, so no separate webhook secret is needed.
 
-The route rejects unsigned webhooks and validates the payment amount and card/order association before unlocking anything.
+The route validates the HMAC-SHA256 signature using `x-webhook-signature` and `x-webhook-timestamp` headers, verifies the card and order match, updates the payment record, and automatically notifies the creator.
 
 ## 10. Payment Tradeoffs
 
@@ -254,7 +256,7 @@ Razorpay is convenient because webhooks are easy, but it is not the no-fee optio
 13. GIF search works with `GIPHY_API_KEY`.
 14. Create a test card.
 15. Complete a direct UPI payment, submit UTR, receive admin email, approve it in `/admin`, and confirm unlock.
-16. If using Razorpay, configure keys/webhook, test UPI with `success@razorpay`, and confirm automatic unlock.
+16. If using Cashfree, configure App ID & Secret Key, set up webhook, and verify instant automated checkout & card unlock.
 17. Open the recipient card link.
 18. Test creator tracking and recipient reactions.
 

@@ -3,6 +3,7 @@ import 'server-only';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { TIERS } from '@/lib/themes';
 import { getPublicCard, markCardPaymentVerified } from './card-store';
+import { createAccessToken } from './security';
 import { getSupabaseAdmin } from './supabase-admin';
 
 export type CashfreeOrderResult = {
@@ -118,6 +119,7 @@ export async function createCashfreeOrderForCard(
     'https://vibecheck-gh7u.onrender.com'
   ).replace(/\/+$/, '');
 
+  const creatorToken = createAccessToken(card.id, 'creator');
   const payload = {
     order_id: orderId,
     order_amount: amountInRupees,
@@ -129,9 +131,12 @@ export async function createCashfreeOrderForCard(
       customer_name: card.creator_name || 'VibeCheck Creator',
     },
     order_meta: {
-      return_url: `${baseDomain}/card/${card.id}?cf_order_id={order_id}`,
+      return_url: `${baseDomain}/card/${card.id}?cf_order_id={order_id}&ct=${encodeURIComponent(creatorToken)}`,
     },
     order_note: `VibeCheck ${tier.label} - ${card.recipient_name}`,
+    order_tags: {
+      card_id: card.id,
+    },
   };
 
   const response = await fetch(`${baseUrl}/orders`, {
@@ -259,7 +264,7 @@ export async function verifyCashfreeOrderForCard(
     console.warn('Could not fetch Cashfree payments list:', err);
   }
 
-  const ok = await markCardPaymentVerified(cardId, paymentId, undefined, orderId);
+  const ok = await markCardPaymentVerified(cardId, paymentId, undefined, orderId, 'cashfree');
   return { ok, reason: ok ? undefined : 'CARD_NOT_FOUND', paymentId };
 }
 

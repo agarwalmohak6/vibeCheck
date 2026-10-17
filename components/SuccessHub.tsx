@@ -68,6 +68,14 @@ export default function SuccessHub({ cardId, recipientName, creatorName, creator
     return () => { controller.abort(); clearTimeout(timer); };
   }, [expanded, creatorToken, cardId, recipientName]);
 
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => {
+      setNotice('');
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [notice]);
+
   const copy = async (value: string, label: string) => {
     try {
       await navigator.clipboard.writeText(value);

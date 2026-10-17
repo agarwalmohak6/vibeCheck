@@ -291,15 +291,20 @@ export async function getPaymentStatus(id: string) {
   };
 }
 
-export async function getCardIdForProviderOrder(providerOrderId: string) {
+export async function getCardIdForProviderOrder(providerOrderId: string, provider?: string) {
   const admin = getSupabaseAdmin();
   if (!admin || !providerOrderId) return null;
 
-  const { data, error } = await admin
+  let query = admin
     .from('payments')
     .select('card_id')
-    .eq('provider_order_id', providerOrderId)
-    .eq('provider', 'razorpay')
+    .eq('provider_order_id', providerOrderId);
+
+  if (provider) {
+    query = query.eq('provider', provider);
+  }
+
+  const { data, error } = await query
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -796,7 +801,13 @@ export async function clearAllCardsAndPayments() {
   };
 }
 
-export async function markCardPaymentVerified(id: string, paymentId: string, extendsAt?: string, providerOrderId?: string) {
+export async function markCardPaymentVerified(
+  id: string,
+  paymentId: string,
+  extendsAt?: string,
+  providerOrderId?: string,
+  provider: 'cashfree' | 'razorpay' | 'upi' = 'cashfree',
+) {
   const admin = getSupabaseAdmin();
   if (!admin) {
     const card = MOCK_STORE[id];
@@ -804,7 +815,7 @@ export async function markCardPaymentVerified(id: string, paymentId: string, ext
     card.is_paid = true;
     card.payment_id = paymentId;
     if (extendsAt) card.expires_at = extendsAt;
-    await captureServerEvent('payment_succeeded', id, { payment_id: paymentId, mock: true });
+    await captureServerEvent('payment_succeeded', id, { payment_id: paymentId, mock: true, provider });
     return true;
   }
 
@@ -833,7 +844,7 @@ export async function markCardPaymentVerified(id: string, paymentId: string, ext
   await admin.from('payments').upsert(
     {
       card_id: id,
-      provider: 'razorpay',
+      provider: provider,
       provider_order_id: providerOrderId || null,
       provider_payment_id: paymentId,
       status: 'paid',
@@ -842,7 +853,7 @@ export async function markCardPaymentVerified(id: string, paymentId: string, ext
     { onConflict: 'provider_payment_id' }
   );
 
-  await captureServerEvent('payment_succeeded', id, { payment_id: paymentId });
+  await captureServerEvent('payment_succeeded', id, { payment_id: paymentId, provider });
   return true;
 }
 

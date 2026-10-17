@@ -371,11 +371,12 @@ function RecipientRevealDrive({
             creatorName={creatorName}
             recipientName={recipientName}
             templateType={templateType}
-            onNext={() => setStage("cards")}
+            hasPhotos={coverImages.length > 0}
+            onNext={() => setStage(coverImages.length > 0 ? "cards" : "scratch")}
           />
         )}
 
-        {stage === "cards" && (
+        {stage === "cards" && coverImages.length > 0 && (
           <KoikoiCardsStage
             key="cards"
             coverImages={coverImages}
@@ -494,6 +495,7 @@ function KoikoiLetterStage({
   creatorName,
   recipientName,
   templateType,
+  hasPhotos = false,
   onNext,
 }: {
   title: string;
@@ -501,6 +503,7 @@ function KoikoiLetterStage({
   creatorName: string;
   recipientName: string;
   templateType: string;
+  hasPhotos?: boolean;
   onNext: () => void;
 }) {
   const [opened, setOpened] = useState(false);
@@ -528,7 +531,11 @@ function KoikoiLetterStage({
           {pages.length > 1 && <nav className="vc-letter-pages" aria-label="Letter pages"><button type="button" disabled={page === 0} onClick={() => setPage(p => p - 1)}>← Previous</button><span>{page + 1} / {pages.length}</span><button type="button" disabled={page === pages.length - 1} onClick={() => setPage(p => p + 1)}>Next →</button></nav>}
           <strong>— {creatorName}</strong>
           <button type="button" onClick={onNext}>
-            A few little moments <span aria-hidden>→</span>
+            {hasPhotos ? (
+              <>A few little moments <span aria-hidden>→</span></>
+            ) : (
+              <>One more thing for you <span aria-hidden>✨</span></>
+            )}
           </button>
         </motion.article>
       )}
@@ -555,6 +562,8 @@ function KoikoiCardsStage({
   revealStory: RevealStory;
   onNext: () => void;
 }) {
+  if (!coverImages.length) return null;
+
   return (
     <KoikoiStageShell className="vc-koikoi-stage--cards">
       <div className="vc-koikoi-cards-copy">
@@ -673,15 +682,7 @@ function PhotoClipAccordion({
   }, [images.length, activeIndex]);
 
   if (!images.length) {
-    return (
-      <div className="vc-photo-clip-light vc-photo-clip-light--empty" aria-label="Photo clip reveal">
-        <div className="vc-photo-clip-light__empty">
-          <span aria-hidden>{templateEmoji}</span>
-          <strong>No uploaded photos in this card</strong>
-          <p>Every word is still here, just for you.</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const activeSource = images[activeIndex];
