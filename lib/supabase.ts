@@ -21,6 +21,7 @@ export interface CardData {
   gif_url?: string;
   music_url?: string;
   music_label?: string;
+  music_link?: string;
   unlock_code?: string;
   unlock_question?: string;
   cover_image_url?: string;

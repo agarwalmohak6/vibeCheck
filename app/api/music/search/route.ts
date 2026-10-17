@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
+import { isOfficialMusicLink } from '@/lib/musicLinks';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,7 @@ type SongResult = {
   label: string;
   artist: string;
   album?: string;
-  previewUrl: string;
+  previewUrl?: string;
   artworkUrl?: string;
   sourceUrl?: string;
   provider: 'itunes';
@@ -46,6 +47,7 @@ async function searchITunes(term: string, country: string, limit: number) {
   const res = await fetch(url, {
     headers: { Accept: 'application/json' },
     cache: 'no-store',
+    signal: AbortSignal.timeout(8000),
   });
 
   if (!res.ok) return [];
@@ -55,7 +57,7 @@ async function searchITunes(term: string, country: string, limit: number) {
 }
 
 function normalizeTrack(track: ITunesTrack): SongResult | null {
-  if (!track.trackId || !track.trackName || !track.artistName || !track.previewUrl) {
+  if (!track.trackId || !track.trackName || !track.artistName || !isOfficialMusicLink(track.trackViewUrl || '')) {
     return null;
   }
 

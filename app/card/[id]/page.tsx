@@ -2,6 +2,7 @@ import { getPublicCard } from '@/services/server/card-store';
 import { verifyAccessToken } from '@/services/server/security';
 import { isExpired } from '@/lib/utils';
 import RecipientView from '@/components/RecipientView';
+import SuccessHub from '@/components/SuccessHub';
 import ExpiredView from '@/components/ExpiredView';
 import { notFound } from 'next/navigation';
 
@@ -48,5 +49,11 @@ export default async function CardPage({
     : roomParam === 'chat';
 
   const isCreator = typeof query.ct === 'string' && verifyAccessToken(query.ct, card.id, 'creator');
+  if (isCreator && !initialRoomMode) {
+    return <main className="vc-creator-tracking" data-theme={card.theme_selected}>
+      <SuccessHub cardId={card.id} recipientName={card.recipient_name} creatorName={card.creator_name}
+        creatorToken={query.ct as string} orderId={card.card_data.order_id} isPaid={card.is_paid} />
+    </main>;
+  }
   return <RecipientView card={card} initialRoomMode={initialRoomMode} isCreator={isCreator} />;
 }

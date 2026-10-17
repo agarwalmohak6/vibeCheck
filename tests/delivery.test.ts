@@ -17,7 +17,7 @@ vi.mock('@/services/server/card-store', () => ({
 
 import nodemailer from 'nodemailer';
 import { sendAdminOtpEmail, sendCreatorOrderEmail } from '@/services/server/email';
-import { sendCreatorOrderNotifications } from '@/services/server/notifications';
+import { sendCreatorOrderNotifications, sendCreatorPaymentVerifiedNotifications } from '@/services/server/notifications';
 import { createAdminOtpToken, verifyAdminToken } from '@/services/server/admin-auth';
 import { createCardDraft } from '@/services/server/card-store';
 import { POST as requestOtp } from '@/app/api/admin/request-otp/route';
@@ -188,6 +188,17 @@ describe('admin OTP login', () => {
 });
 
 describe('order notifications', () => {
+  it('sends the themed ready email to the creator through the configured provider', async () => {
+    configureBrevo();
+    const result = await sendCreatorPaymentVerifiedNotifications({ ...order, templateType: 'birthday_roast', recipientUrl: 'https://cards.example.com/card/card-123' });
+    expect(result.email?.sent).toBe(true);
+    const mail = JSON.parse(vi.mocked(fetch).mock.calls[0][1]?.body as string);
+    expect(mail.to).toEqual([{ email: order.creatorEmail }]);
+    expect(mail.subject).toContain('is ready');
+    expect(mail.htmlContent).toContain('A wish worth making.');
+    expect(mail.htmlContent).toContain('Open recipient card');
+    expect(mail.htmlContent).toContain(order.trackingUrl);
+  });
   it('preserves email success when WhatsApp fails', async () => {
     configureBrevo();
     vi.stubEnv('WHATSAPP_CLOUD_API_TOKEN', 'test-token'); vi.stubEnv('WHATSAPP_PHONE_NUMBER_ID', 'test-phone');

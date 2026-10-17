@@ -17,6 +17,7 @@ export interface PublicCardData {
   gif_url?: string;
   music_url?: string;
   music_label?: string;
+  music_link?: string;
   cover_image_url?: string;
   cover_image_urls?: string[];
   creator_email?: string;

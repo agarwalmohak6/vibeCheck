@@ -1,4 +1,5 @@
 import { MAX_IMAGE_DATA_URL_LENGTH } from './imageLimits';
+import { isOfficialMusicLink } from './musicLinks';
 import { z } from 'zod';
 
 const trimString = (min: number, max: number) =>
@@ -54,6 +55,7 @@ export const cardDataSchema = z.object({
   gif_url: z.string().url().optional().or(z.literal('')),
   music_url: z.string().url().optional().or(z.literal('')),
   music_label: z.string().trim().max(160).optional().or(z.literal('')),
+  music_link: z.string().max(2048).refine(isOfficialMusicLink, 'Use an official Apple Music link.').optional().or(z.literal('')),
   cover_image_url: z.string().max(MAX_IMAGE_DATA_URL_LENGTH, 'One photo is too large. Please upload it again so we can resize it.').optional().or(z.literal('')),
   cover_image_urls: z.array(z.string().max(MAX_IMAGE_DATA_URL_LENGTH, 'One photo is too large. Please upload it again so we can resize it.')).max(8).optional().default([]),
   creator_email: z.string().trim().email().max(160).optional().or(z.literal('')),

@@ -10,6 +10,7 @@ import FitStage from "@/components/FitStage";
 import FollowUpReplies from "@/components/FollowUpReplies";
 import { LETTER_OPEN_MS, PHOTO_HOLD_MS } from "@/lib/romanceMotion";
 import { paginateLetter, letterParagraphs } from "@/lib/letterPages";
+import { isOfficialMusicLink } from "@/lib/musicLinks";
 import MoodTypewriter from "@/components/MoodTypewriter";
 import EnvelopeReveal from "@/components/EnvelopeReveal";
 import RomanceButtons from "@/components/RomanceButtons";
@@ -206,7 +207,7 @@ export default function RecipientView({ card, initialRoomMode = false, isCreator
         />
       )}
 
-      <VinylDisk trackId={card.music_track_id || undefined} musicUrl={card.card_data.music_url || undefined} musicLabel={card.card_data.music_label || undefined} />
+      <VinylDisk trackId={card.music_track_id || undefined} musicUrl={card.card_data.music_url || undefined} musicLabel={card.card_data.music_url ? card.card_data.music_label : undefined} />
 
       {/* Card content */}
       <AnimatePresence>
@@ -252,6 +253,8 @@ export default function RecipientView({ card, initialRoomMode = false, isCreator
                 creatorName={creatorName}
                 successHeading={revealStory.ending}
                 successSubtext="Come back whenever you need a little smile. This moment is yours."
+                musicLink={card.card_data.music_link}
+                musicLabel={card.card_data.music_label}
               /></FitStage>
             )}
 
@@ -966,6 +969,8 @@ export function RecipientFinalReveal({
   creatorName,
   successHeading,
   successSubtext,
+  musicLink,
+  musicLabel,
 }: {
   onReplay: () => void;
   onReply: () => void;
@@ -975,6 +980,8 @@ export function RecipientFinalReveal({
   creatorName: string;
   successHeading: string;
   successSubtext: string;
+  musicLink?: string;
+  musicLabel?: string;
 }) {
   const pages = useMemo(() => paginateLetter(displayMainBody, 320), [displayMainBody]);
   const [page, setPage] = useState(0);
@@ -996,6 +1003,7 @@ export function RecipientFinalReveal({
           {pages.length > 1 && <nav className="vc-letter-pages" aria-label="Saved letter pages"><button type="button" onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}>←</button><span>{page + 1} / {pages.length}</span><button type="button" onClick={() => setPage(p => Math.min(pages.length - 1, p + 1))} disabled={page === pages.length - 1}>→</button></nav>}
         </div>
         <small>{successSubtext}</small>
+        {musicLink && isOfficialMusicLink(musicLink) && <a className="vc-final-song" href={musicLink} target="_blank" rel="noopener noreferrer"><span>A song for you</span><strong>{musicLabel || 'Listen on Apple Music'} ↗</strong></a>}
         <div className="vc-romance-final-actions"><button type="button" onClick={onReply}>Send a reply ♡</button><button type="button" onClick={onReplay}>See the moments again</button></div>
       </div>
     </motion.section>

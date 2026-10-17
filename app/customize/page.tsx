@@ -38,6 +38,7 @@ interface FormData {
   yesBtnText: string;
   noBtnText: string;
   selectedMusicUrl: string;
+  selectedMusicLink: string;
   musicLabel: string;
 }
 
@@ -180,6 +181,7 @@ function CustomizePageContent() {
     yesBtnText: initialTmplMeta?.defaultYesText || 'YES 💖',
     noBtnText: initialTmplMeta?.defaultNoText || 'No 💔',
     selectedMusicUrl: '',
+    selectedMusicLink: '',
     musicLabel: '',
   });
 
@@ -520,6 +522,7 @@ function CustomizePageContent() {
             no_btn_text: form.noBtnText,
             music_url: form.selectedMusicUrl || undefined,
             music_label: form.musicLabel || undefined,
+            music_link: form.selectedMusicLink || undefined,
           },
         }),
       });
@@ -670,8 +673,9 @@ function CustomizePageContent() {
               {PRIMARY_TEMPLATE_TYPES.map(t => (
                 <motion.button key={t.id} whileTap={{ scale: 0.96 }}
                   type="button"
+                  aria-pressed={form.templateType === t.id}
                   onClick={() => handleTemplateChange(t.id)}
-                  className={`vc-template-option ${form.templateType === t.id ? 'is-active' : ''}`}
+                  className={`vc-template-option vc-template-option--readable ${form.templateType === t.id ? 'is-active' : ''}`}
                   style={{
                     '--template-cover': `url(${t.defaultCoverImage})`,
                   } as React.CSSProperties}
@@ -802,12 +806,14 @@ function CustomizePageContent() {
               selectedTrackId={form.musicTrackId}
               selectedLabel={form.musicLabel}
               selectedPreviewUrl={form.selectedMusicUrl}
-              onSelectTrack={(trackId, musicUrl, label) => {
+              selectedMusicLink={form.selectedMusicLink}
+              onSelectTrack={(trackId, musicUrl, label, musicLink) => {
                 setForm(prev => ({
                   ...prev,
                   musicTrackId: trackId,
                   selectedMusicUrl: musicUrl || '',
                   musicLabel: label || '',
+                  selectedMusicLink: musicLink || '',
                 }));
               }}
             />

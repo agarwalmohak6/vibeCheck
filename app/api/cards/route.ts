@@ -59,6 +59,8 @@ export async function POST(req: NextRequest) {
       recipientName: card.recipient_name,
       creatorName: card.creator_name,
       trackingUrl: creatorUrl,
+      templateType: card.template_type,
+      themeId: card.theme_selected,
     });
 
     return NextResponse.json({

@@ -1,18 +1,13 @@
 import 'server-only';
 import nodemailer from 'nodemailer';
+import { buildCreatorEmail, type CreatorEmailDetails } from './creator-email-template';
 
 type AdminOtpEmailInput = {
   to: string;
   otp: string;
 };
 
-type CreatorOrderEmailInput = {
-  to: string;
-  orderId: string;
-  recipientName: string;
-  creatorName: string;
-  trackingUrl: string;
-};
+type CreatorOrderEmailInput = CreatorEmailDetails & { to: string };
 
 type AdminPaymentReviewEmailInput = {
   to: string;
@@ -24,13 +19,7 @@ type AdminPaymentReviewEmailInput = {
   adminUrl: string;
 };
 
-type CreatorPaymentVerifiedEmailInput = {
-  to: string;
-  orderId: string;
-  recipientName: string;
-  creatorName: string;
-  trackingUrl: string;
-};
+type CreatorPaymentVerifiedEmailInput = CreatorOrderEmailInput;
 
 export type EmailDeliveryResult = {
   // "sent" means accepted by the provider, not confirmed inbox delivery.
@@ -205,39 +194,8 @@ export async function sendAdminOtpEmail({ to, otp }: AdminOtpEmailInput) {
   return sendEmail({ to, subject, text, html });
 }
 
-export async function sendCreatorOrderEmail({
-  to,
-  orderId,
-  recipientName,
-  creatorName,
-  trackingUrl,
-}: CreatorOrderEmailInput) {
-  const safeOrderId = escapeHtml(orderId);
-  const safeRecipientName = escapeHtml(recipientName || 'your recipient');
-  const safeTrackingUrl = escapeHtml(trackingUrl);
-  const subject = `Your VibeCheck order ${orderId}`;
-  const text = [
-    `Hey ${creatorName || 'there'},`,
-    '',
-    `Your VibeCheck for ${recipientName || 'your recipient'} has been created.`,
-    `Order ID: ${orderId}`,
-    '',
-    'Track and manage it here:',
-    trackingUrl,
-    '',
-    'Keep this creator link private.',
-  ].join('\n');
-  const html = `
-    <div style="font-family:Inter,Arial,sans-serif;background:#fff7fb;color:#3d1a2e;padding:28px;border-radius:22px;border:1px solid #ffd1e5">
-      <p style="margin:0 0 8px;color:#e91e8c;font-size:12px;font-weight:900;letter-spacing:.18em;text-transform:uppercase">VibeCheck Order</p>
-      <h1 style="margin:0 0 10px;font-size:28px;line-height:1">Your private card is being prepared</h1>
-      <p style="margin:0 0 18px;color:#7b3f6e;font-size:14px;line-height:1.55">Order <strong>${safeOrderId}</strong> for <strong>${safeRecipientName}</strong> is linked to this creator tracking page.</p>
-      <a href="${safeTrackingUrl}" style="display:inline-block;background:#3d1a2e;color:#fff;text-decoration:none;border-radius:999px;padding:13px 18px;font-weight:900">Track order</a>
-      <p style="margin:18px 0 0;color:#7b3f6e;font-size:12px;line-height:1.55">Keep this link private. It can show opens, answers, and payment status.</p>
-    </div>
-  `;
-
-  return sendEmail({ to, subject, text, html });
+export async function sendCreatorOrderEmail({ to, ...details }: CreatorOrderEmailInput) {
+  return sendEmail({ to, ...buildCreatorEmail(details, 'pending') });
 }
 
 export async function sendAdminPaymentReviewEmail({
@@ -279,31 +237,6 @@ export async function sendAdminPaymentReviewEmail({
   return sendEmail({ to, subject, text, html });
 }
 
-export async function sendCreatorPaymentVerifiedEmail({
-  to,
-  orderId,
-  recipientName,
-  creatorName,
-  trackingUrl,
-}: CreatorPaymentVerifiedEmailInput) {
-  const subject = `VibeCheck order ${orderId} is unlocked`;
-  const text = [
-    `Hey ${creatorName || 'there'},`,
-    '',
-    `Payment for ${recipientName || 'your recipient'} has been verified.`,
-    `Order ID: ${orderId}`,
-    '',
-    'Your recipient link is ready from your creator tracking page:',
-    trackingUrl,
-  ].join('\n');
-  const html = `
-    <div style="font-family:Inter,Arial,sans-serif;background:#ecfdf5;color:#052e16;padding:28px;border-radius:22px;border:1px solid #bbf7d0">
-      <p style="margin:0 0 8px;color:#059669;font-size:12px;font-weight:900;letter-spacing:.18em;text-transform:uppercase">Payment Verified</p>
-      <h1 style="margin:0 0 10px;font-size:28px;line-height:1">Your VibeCheck is unlocked</h1>
-      <p style="margin:0 0 18px;color:#166534;font-size:14px;line-height:1.55">Order <strong>${escapeHtml(orderId)}</strong> for <strong>${escapeHtml(recipientName || 'your recipient')}</strong> is ready to send.</p>
-      <a href="${escapeHtml(trackingUrl)}" style="display:inline-block;background:#052e16;color:#fff;text-decoration:none;border-radius:999px;padding:13px 18px;font-weight:900">Open tracking page</a>
-    </div>
-  `;
-
-  return sendEmail({ to, subject, text, html });
+export async function sendCreatorPaymentVerifiedEmail({ to, ...details }: CreatorPaymentVerifiedEmailInput) {
+  return sendEmail({ to, ...buildCreatorEmail(details, 'ready') });
 }

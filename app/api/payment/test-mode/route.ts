@@ -4,6 +4,7 @@ import { markCardPaymentTestMode } from '@/services/server/card-store';
 import { isTestPaymentsEnabled } from '@/services/server/config';
 import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
 import { verifyAccessToken } from '@/services/server/security';
+import { notifyCreatorCardReady } from '@/services/server/notify-card-ready';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,7 +37,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Card not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, ...result });
+    const notifications = await notifyCreatorCardReady(result.card_id, req.nextUrl.origin);
+    return NextResponse.json({ success: true, notifications, ...result });
   } catch (error) {
     console.error('Test mode payment error:', error);
     return NextResponse.json({ error: 'Could not skip payment in test mode.' }, { status: 500 });

@@ -22,6 +22,10 @@ type CreatorOrderNotificationInput = {
   recipientName: string;
   creatorName: string;
   trackingUrl: string;
+  recipientUrl?: string;
+  templateType?: string;
+  themeId?: string;
+  testMode?: boolean;
 };
 
 type AdminPaymentReviewNotificationInput = {
@@ -69,7 +73,7 @@ async function deliverNotifications(input: {
 
 function buildCreatorTrackingMessage(input: CreatorOrderNotificationInput) {
   return [
-    `VibeCheck order ${input.orderId} is ready.`,
+    `VibeCheck order ${input.orderId} is saved. Payment verification is pending.`,
     `For: ${input.recipientName || 'your recipient'}`,
     `Track privately: ${input.trackingUrl}`,
     'Keep this creator link private.',
@@ -78,8 +82,9 @@ function buildCreatorTrackingMessage(input: CreatorOrderNotificationInput) {
 
 function buildCreatorVerifiedMessage(input: CreatorPaymentVerifiedNotificationInput) {
   return [
-    `Payment verified for VibeCheck order ${input.orderId}.`,
+    input.testMode ? `Test VibeCheck order ${input.orderId} is ready. No payment was collected.` : `Payment verified for VibeCheck order ${input.orderId}.`,
     `For: ${input.recipientName || 'your recipient'}`,
+    ...(input.recipientUrl ? [`Your card is ready to share: ${input.recipientUrl}`] : []),
     `Open tracking: ${input.trackingUrl}`,
   ].join('\n');
 }
@@ -104,6 +109,8 @@ export async function sendCreatorOrderNotifications(input: CreatorOrderNotificat
       recipientName: input.recipientName,
       creatorName: input.creatorName,
       trackingUrl: input.trackingUrl,
+      templateType: input.templateType,
+      themeId: input.themeId,
     }),
     whatsappTo: input.creatorWhatsapp,
     message: buildCreatorTrackingMessage(input),
@@ -138,6 +145,10 @@ export async function sendCreatorPaymentVerifiedNotifications(input: CreatorPaym
       recipientName: input.recipientName,
       creatorName: input.creatorName,
       trackingUrl: input.trackingUrl,
+      recipientUrl: input.recipientUrl,
+      testMode: input.testMode,
+      templateType: input.templateType,
+      themeId: input.themeId,
     }),
     whatsappTo: input.creatorWhatsapp,
     message: buildCreatorVerifiedMessage(input),

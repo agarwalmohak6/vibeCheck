@@ -1,4 +1,67 @@
 /* Shared stationery design from romantic-date-invitation.html. */
+.vc-template-option.vc-template-option--readable {
+  grid-template-rows: 84px 1fr;
+  min-height: 210px;
+  border-width: 2px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: none;
+  align-content: start;
+}
+.vc-template-option--readable::after { display: none; }
+.vc-template-option--readable .vc-template-option__image {
+  position: relative; inset: auto; width: 100%; height: 84px;
+  background-position: center 38%; transform: none;
+}
+.vc-template-option--readable .vc-template-option__copy { align-self: start; padding: 13px; color: #322b30; gap: 7px; }
+.vc-template-option--readable .vc-template-option__copy strong { font-family: var(--font-body), sans-serif; font-size: 15px; font-weight: 800; line-height: 1.45; letter-spacing: 0; overflow-wrap: anywhere; }
+.vc-template-option--readable .vc-template-option__copy small { color: #554a51; font-size: 13px; font-weight: 500; line-height: 1.5; }
+.vc-template-option.vc-template-option--readable.is-active { border: 2px solid #ac3f55; box-shadow: 0 0 0 2px #ac3f551a; }
+.vc-template-option--readable .vc-template-option__tone { background: #fff !important; color: #ac3f55 !important; border: 1px solid #e2c4cd; }
+.vc-template-option--readable:focus-visible { outline: 3px solid #17665c; outline-offset: 3px; }
+.vc-creator-tracking { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: #fff9f8; }
+.vc-ready { position: relative; z-index: 1; width: min(100%, 680px); padding: 28px 12px; color: #352c32; }
+.vc-ready :is(a, button, summary) { font-family: var(--font-body), sans-serif; letter-spacing: 0; }
+.vc-ready__nav { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.vc-ready__brand { font-family: var(--font-display) !important; font-size: 27px; color: #a33d53; }
+.vc-ready__new { font-size: 13px; font-weight: 700; text-align: right; color: #55434d; }
+.vc-ready__header { text-align: center; padding: 48px 0 24px; }
+.vc-ready__status { font-size: 12px; font-weight: 700; color: #216655; }
+.vc-ready .vc-ready__header h1 { margin: 14px auto; max-width: 530px; font: 400 42px/1.2 Georgia, serif; letter-spacing: 0; color: #3b2932; overflow-wrap: anywhere; }
+.vc-ready__header p { font-size: 15px; line-height: 1.6; color: #66555e; margin: 0; overflow-wrap: anywhere; }
+.vc-ready__actions { display: grid; grid-template-columns: 1.25fr 1fr; gap: 12px; }
+.vc-ready__actions :is(a, button), .vc-ready__refresh { min-height: 48px; display: flex; align-items: center; justify-content: center; padding: 12px 16px; border: 1px solid #bea8b1; border-radius: 6px; font-size: 14px; font-weight: 700; color: #43333b; background: #fff; cursor: pointer; text-align: center; }
+.vc-ready__actions .vc-ready__share { background: #176651; border-color: #176651; color: #fff; }
+.vc-ready__preview { display: block; width: fit-content; margin: 18px auto 0; color: #9c354c; font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.vc-ready__notice { min-height: 22px; margin: 12px 0; font-size: 12px; text-align: center; color: #55404c; }
+.vc-ready__private { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 20px 0; border-block: 1px solid #e2d3d9; }
+.vc-ready__private strong { font-size: 14px; }
+.vc-ready__private p { font-size: 12px; color: #66555e; margin: 5px 0 0; }
+.vc-ready__private button { background: transparent; border: 0; font-size: 12px; font-weight: 700; min-height: 44px; cursor: pointer; color: #93334a; text-decoration: underline; text-underline-offset: 4px; }
+.vc-ready__activity { padding: 18px 0 0; font-size: 13px; }
+.vc-ready__activity summary { cursor: pointer; min-height: 32px; font-weight: 700; }
+.vc-ready__activity p { margin: 12px 0; }
+.vc-ready__order { overflow-wrap: anywhere; font-size: 11px; color: #66555e; }
+.vc-ready__activity ol { list-style: none; margin: 0; padding: 0; max-height: 280px; overflow: auto; }
+.vc-ready__activity li { padding: 12px 0; border-top: 1px solid #e2d3d9; display: grid; gap: 6px; overflow-wrap: anywhere; }
+.vc-ready__activity time { font-size: 11px; color: #66555e; }
+.vc-ready :is(a, button, summary):focus-visible { outline: 3px solid #176651; outline-offset: 4px; }
+.vc-song-recommendations { display: grid; gap: 8px; margin-bottom: 16px; }
+.vc-song-marker { display: grid; place-items: center; flex: 0 0 36px; height: 36px; color: #99374f; background: #f9e9ee; border-radius: 6px; }
+.vc-song-listen { flex-shrink: 0; font-size: 12px; min-height: 44px; display: inline-flex; align-items: center; color: #94334a; text-decoration: underline; text-underline-offset: 3px; }
+.vc-music-saved > strong { display: block; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.vc-final-song { display: grid; gap: 3px; margin: 12px 0; color: #92394a; font-size: 12px; overflow-wrap: anywhere; }
+.vc-final-song span { font-size: 10px; color: #6a555a; }
+.vc-final-song strong { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 480px) {
+  .vc-ready { padding: 12px 0; }
+  .vc-ready__header { padding-top: 32px; }
+  .vc-ready .vc-ready__header h1 { font-size: 32px; }
+  .vc-ready__actions { grid-template-columns: 1fr; gap: 8px; }
+  .vc-template-option.vc-template-option--readable { grid-template-columns: 72px minmax(0,1fr); grid-template-rows: auto; min-height: 114px; }
+  .vc-template-option--readable .vc-template-option__image { height: 100%; min-height: 114px; background-position: center; }
+  .vc-template-option--readable .vc-template-option__tone { left: 20px; top: 12px; right: auto; }
+}
 :root, [data-theme] {
   --bg: #fff2e9; --bg2: #ffe9dc; --surface: #fffcf6; --surface2: #fff4e8;
   --accent: #c75765; --accent2: #b88943; --accent3: #e9ad91;

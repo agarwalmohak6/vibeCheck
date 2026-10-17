@@ -53,6 +53,7 @@ type VerifyResponse = {
   success?: boolean;
   card_id?: string;
   payment_reference?: string;
+  notifications?: { email?: { sent: boolean } } | null;
   error?: string;
 };
 
@@ -265,7 +266,7 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
         return;
       }
 
-      setNotice(`Approved ${data.payment_reference || normalized}. Card ${data.card_id || ''} is unlocked.`);
+      setNotice(`Approved ${data.payment_reference || normalized}. Card is ready. ${data.notifications?.email?.sent ? 'Ready email accepted by the email provider.' : 'Creator email was not sent. Re-submit this UTR to retry notification.'}`);
       setManualUtr('');
       await loadAdminData();
     } catch {
