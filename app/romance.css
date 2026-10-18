@@ -46,7 +46,6 @@
 .vc-ready__activity li { padding: 12px 0; border-top: 1px solid #e2d3d9; display: grid; gap: 6px; overflow-wrap: anywhere; }
 .vc-ready__activity time { font-size: 11px; color: #66555e; }
 .vc-ready :is(a, button, summary):focus-visible { outline: 3px solid #176651; outline-offset: 4px; }
-.vc-song-recommendations { display: grid; gap: 8px; margin-bottom: 16px; }
 .vc-song-marker { display: grid; place-items: center; flex: 0 0 36px; height: 36px; color: #99374f; background: #f9e9ee; border-radius: 6px; }
 .vc-song-listen { flex-shrink: 0; font-size: 12px; min-height: 44px; display: inline-flex; align-items: center; color: #94334a; text-decoration: underline; text-underline-offset: 3px; }
 .vc-music-saved > strong { display: block; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }

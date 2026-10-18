@@ -5,7 +5,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 import SuccessHub from '@/components/SuccessHub';
 import MusicSelector from '@/components/MusicSelector';
 import { RecipientFinalReveal } from '@/components/RecipientView';
-import { isOfficialMusicLink, RECOMMENDED_SONGS } from '@/lib/musicLinks';
+import { isOfficialMusicLink } from '@/lib/musicLinks';
 import OfficialSongPlayer from '@/components/OfficialSongPlayer';
 import { cardDataSchema } from '@/lib/contracts';
 
@@ -31,13 +31,12 @@ describe('compact ready screen', () => {
 });
 
 describe('official song dedications', () => {
-  it('offers both requested songs without a hosted recording or preview player', () => {
+  const song = { id: 'apple:1450695895', label: 'i love you', sourceUrl: 'https://music.apple.com/us/song/1450695895' };
+  it('starts with song search and no suggested songs or preview player', () => {
     const html = renderToStaticMarkup(createElement(MusicSelector, { selectedTrackId: '', onSelectTrack: () => {} }));
-    for (const song of RECOMMENDED_SONGS) {
-      expect(isOfficialMusicLink(song.sourceUrl)).toBe(true);
-      expect(html).toContain(song.label);
-      expect(html).toContain(song.sourceUrl);
-    }
+    expect(html).toContain('Search for a song');
+    expect(html).not.toContain('vc-music-row');
+    expect(html).not.toContain('music.apple.com');
     expect(html).not.toContain('<audio');
   });
   it.each(['javascript:alert(1)', 'https://music.apple.com.evil.test/song/1', 'https://attacker@music.apple.com/song/1', 'http://music.apple.com/song/1'])('rejects unsafe listening links: %s', url => {
@@ -45,7 +44,6 @@ describe('official song dedications', () => {
     expect(cardDataSchema.safeParse({ message_title: 'Hello', main_body: 'For you', music_link: url }).success).toBe(false);
   });
   it('preserves a listening link in the card payload and final image-free keepsake', () => {
-    const song = RECOMMENDED_SONGS[0];
     const data = cardDataSchema.parse({ message_title: 'For you', main_body: 'A little note', music_link: song.sourceUrl });
     expect(data.music_link).toBe(song.sourceUrl);
     const html = renderToStaticMarkup(createElement(RecipientFinalReveal, {
@@ -56,8 +54,7 @@ describe('official song dedications', () => {
     expect(html).toContain('Play i love you');
     expect(html).not.toMatch(/<img|<audio|<iframe/);
   });
-  it('embeds the real official player when a suggested song is selected', () => {
-    const song = RECOMMENDED_SONGS[0];
+  it('embeds the real official player when a song is selected', () => {
     const html = renderToStaticMarkup(createElement(MusicSelector, { selectedTrackId: song.id, selectedMusicLink: song.sourceUrl, selectedLabel: song.label, onSelectTrack: () => {} }));
     expect(html).toContain('<iframe');
     expect(html).toContain('https://embed.music.apple.com/us/song/1450695895');

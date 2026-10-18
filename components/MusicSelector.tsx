@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { isOfficialMusicLink, RECOMMENDED_SONGS } from '@/lib/musicLinks';
+import { isOfficialMusicLink } from '@/lib/musicLinks';
 import OfficialSongPlayer from '@/components/OfficialSongPlayer';
 
 interface MusicSelectorProps {
@@ -32,7 +32,7 @@ export default function MusicSelector({ selectedTrackId, selectedLabel, selected
         const data = await response.json() as { results?: Song[] };
         if (!controller.signal.aborted) setResults((data.results || []).filter(song => isOfficialMusicLink(song.sourceUrl || '')));
       } catch {
-        if (!controller.signal.aborted) { setError('Search is unavailable. You can still choose a song below.'); setResults([]); }
+        if (!controller.signal.aborted) { setError('Search is unavailable. Please try again later.'); setResults([]); }
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -63,8 +63,7 @@ export default function MusicSelector({ selectedTrackId, selectedLabel, selected
         <strong>{selectedLabel || 'Your selected song'}</strong>
         {selectedMusicLink && <OfficialSongPlayer key={selectedMusicLink} url={selectedMusicLink} label={selectedLabel} />}
       </div>}
-      <div className="vc-song-recommendations">{RECOMMENDED_SONGS.map(songRow)}</div>
-      <label className="vc-music-search"><span>Find another song</span>
+      <label className="vc-music-search"><span>Search for a song</span>
         <input type="search" maxLength={80} value={query} placeholder="Song title or artist" className="vc-builder-input" onChange={event => {
           setQuery(event.target.value); setResults([]); setLoading(event.target.value.trim().length >= 2); setError('');
         }} />
