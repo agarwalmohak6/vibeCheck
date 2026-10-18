@@ -45,7 +45,7 @@ export const TIERS = [
     id: 'one_moment',
     label: 'One unforgettable moment',
     price: 199,
-    duration: 'Keep it forever',
+    duration: 'No scheduled expiry',
     durationHours: null,
     icon: '💌',
     description: 'Private link, interactive reveal, photo, music, and replies',

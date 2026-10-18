@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import ComplianceFooter from "@/components/ComplianceFooter";
 
 type SeoUseCasePageProps = {
   eyebrow: string;
@@ -29,6 +30,7 @@ export default function SeoUseCasePage({
   faqs,
 }: SeoUseCasePageProps) {
   return (
+    <>
     <main className="vc-seo-page">
       <section className="vc-seo-hero">
         <div className="vc-seo-hero__copy">
@@ -89,5 +91,7 @@ export default function SeoUseCasePage({
         </div>
       </section>
     </main>
+    <ComplianceFooter />
+    </>
   );
 }

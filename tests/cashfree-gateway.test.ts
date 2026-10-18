@@ -10,6 +10,7 @@ import {
   verifyCashfreeWebhookSignature,
 } from '@/services/server/cashfree';
 import CashfreeCheckout from '@/components/CashfreeCheckout';
+import PaymentCheckout from '@/components/PaymentCheckout';
 import { createHmac } from 'crypto';
 
 describe('Cashfree Gateway Configuration', () => {
@@ -86,7 +87,28 @@ describe('Cashfree Webhook Signature Verification', () => {
 });
 
 describe('CashfreeCheckout component', () => {
-  it('renders payable amount, Cashfree pay button, and compliance policy links', () => {
+  it('hides Cashfree checkout by default, even if credentials are configured', () => {
+    vi.stubEnv('NEXT_PUBLIC_CASHFREE_CHECKOUT_ENABLED', undefined);
+    vi.stubEnv('CASHFREE_APP_ID', 'configured-app');
+    vi.stubEnv('CASHFREE_SECRET_KEY', 'configured-secret');
+    const html = renderToStaticMarkup(
+      createElement(PaymentCheckout, {
+        cardId: '123e4567-e89b-12d3-a456-426614174000',
+        amount: 99,
+        vpa: 'merchant@upi',
+        onPaid: () => {},
+      }),
+    );
+
+    expect(html).not.toContain('via Cashfree');
+    expect(html).toContain('Scan to pay with UPI');
+    expect(html).toContain('UTR / ref no.');
+    expect(html).toContain('one business day');
+    expect(html).not.toContain('<details');
+  });
+
+  it('renders explicitly enabled checkout with accurate payment copy and policy links', () => {
+    vi.stubEnv('NEXT_PUBLIC_CASHFREE_CHECKOUT_ENABLED', 'true');
     const html = renderToStaticMarkup(
       createElement(CashfreeCheckout, {
         cardId: '123e4567-e89b-12d3-a456-426614174000',
@@ -98,12 +120,28 @@ describe('CashfreeCheckout component', () => {
 
     expect(html).toContain('₹99.00');
     expect(html).toContain('Pay ₹99.00 via Cashfree');
-    expect(html).toContain('Instant Automated Payment');
-    expect(html).toContain('GPay');
-    expect(html).toContain('PhonePe');
-    expect(html).toContain('Paytm UPI');
+    expect(html).toContain('Available payment methods are shown by Cashfree');
+    expect(html).toContain('Delivery after payment verification');
+    expect(html).not.toMatch(/Instant Automated Payment|Instant delivery|256-bit|GPay|PhonePe|Paytm UPI|>Cards<|NetBanking/);
     expect(html).toContain('href="/terms"');
     expect(html).toContain('href="/privacy"');
     expect(html).toContain('href="/refund-policy"');
+  });
+
+  it('keeps the direct UPI QR and UTR form visible when Cashfree is enabled', () => {
+    vi.stubEnv('NEXT_PUBLIC_CASHFREE_CHECKOUT_ENABLED', 'true');
+    const html = renderToStaticMarkup(
+      createElement(PaymentCheckout, {
+        cardId: '123e4567-e89b-12d3-a456-426614174000',
+        amount: 99,
+        vpa: 'merchant@upi',
+        onPaid: () => {},
+      }),
+    );
+
+    expect(html).toContain('Pay ₹99.00 via Cashfree');
+    expect(html).toContain('Scan to pay with UPI');
+    expect(html).toContain('UTR / ref no.');
+    expect(html).not.toContain('<details');
   });
 });

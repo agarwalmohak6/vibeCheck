@@ -2,7 +2,7 @@
 
 VibeCheck is a Next.js application for creating private interactive digital
 greeting cards. A creator can personalise a theme, message, music, questions
-and passcode, pay for the selected access period, and share one private link
+and passcode, pay once for one card, and share one private link
 with the intended recipient.
 
 Live website: [vibecheck-gh7u.onrender.com](https://vibecheck-gh7u.onrender.com)
@@ -12,8 +12,8 @@ Live website: [vibecheck-gh7u.onrender.com](https://vibecheck-gh7u.onrender.com)
 - Private sorry, birthday and bestie card templates
 - Interactive envelope, music, questions and replies
 - One-person shareable links with creator tracking
-- Transparent one-time pricing: ₹49, ₹79 and ₹119
-- Cashfree automated checkout with a direct UPI fallback
+- Transparent one-time pricing: ₹199 per card, with no scheduled expiry while the service operates
+- Direct UPI checkout with manual payment verification
 - Digital-only delivery; no physical goods or shipping
 
 ## Customer Information

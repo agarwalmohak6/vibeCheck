@@ -109,15 +109,24 @@ References: [Brevo Free limits](https://help.brevo.com/hc/en-us/articles/2085806
 [Render Free restrictions](https://render.com/docs/free#other-limitations)
 and [Resend test sender restrictions](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain).
 
-Cashfree is the active automated checkout gateway (with direct UPI QR/UTR as backup):
+Direct UPI QR/UTR is the current checkout. Cashfree checkout is disabled by default
+while merchant activation is unavailable. Keep both switches below `false` until
+Cashfree confirms approval for this business; adding API credentials does not
+establish approval or enable new orders.
 
 | Variable | Required | Where |
 | --- | --- | --- |
-| `CASHFREE_APP_ID` | Production | Render / Vercel |
-| `CASHFREE_SECRET_KEY` | Production | Render (Server only) |
-| `CASHFREE_ENV` | Production | Render / Vercel (`sandbox` or `production`) |
-| `NEXT_PUBLIC_CASHFREE_APP_ID` | Production | Render / Vercel |
-| `NEXT_PUBLIC_CASHFREE_ENV` | Production | Render / Vercel |
+| `CASHFREE_CHECKOUT_ENABLED` | `false` until approved; then explicitly `true` | API host |
+| `NEXT_PUBLIC_CASHFREE_CHECKOUT_ENABLED` | `false` until approved; then explicitly `true` | Frontend build + API host |
+| `CASHFREE_APP_ID` | When using approved Cashfree checkout | API host |
+| `CASHFREE_SECRET_KEY` | When using approved Cashfree checkout | API host (server only) |
+| `CASHFREE_ENV` | When using Cashfree | API host (`sandbox` or `production`) |
+| `NEXT_PUBLIC_CASHFREE_ENV` | When using Cashfree; must match server mode | Frontend build + API host |
+
+Rebuild and redeploy the frontend after changing any `NEXT_PUBLIC_` variable.
+The new-order route requires both checkout switches to be exactly `true`.
+Disabling them does not disable verification or signed webhooks for existing
+payments. The direct UPI QR and UTR form remain visible when Cashfree is enabled.
 
 ## 3. Deploy Backend on Render
 
@@ -184,7 +193,11 @@ Use **Direct UPI as the primary path** for the current mobile-first launch:
 6. Admin receives an email alert and verifies the UTR from `/admin`.
 7. The card unlocks and the creator gets a verified-payment notification.
 
-Use **Cashfree Checkout** when instant automatic confirmation is preferred. The Cashfree integration creates server-side Orders, opens the JS SDK modal, verifies payment status, and accepts signed webhooks.
+After Cashfree approves and activates the merchant account, its optional checkout
+can create server-side Orders, open the JS SDK modal, verify payment status, and
+accept signed webhooks. Set both checkout switches to `true` only after approval,
+configure matching server/client modes and credentials, then rebuild and redeploy.
+Payment methods depend on what Cashfree has enabled for the merchant account.
 
 ## 7. Direct UPI: What To Use
 
@@ -215,7 +228,7 @@ For the first live version, keep it simple:
 6. Verify from the OTP-gated `/admin` dashboard and mark `is_paid=true`.
 7. Release the card only after verification.
 
-This is not instant, but it preserves the no-convenience-fee requirement.
+Verification is targeted within one business day after payment and UTR submission.
 
 ## 9. Cashfree Webhook Configuration
 
@@ -256,7 +269,7 @@ Razorpay is convenient because webhooks are easy, but it is not the no-fee optio
 13. GIF search works with `GIPHY_API_KEY`.
 14. Create a test card.
 15. Complete a direct UPI payment, submit UTR, receive admin email, approve it in `/admin`, and confirm unlock.
-16. If using Cashfree, configure App ID & Secret Key, set up webhook, and verify instant automated checkout & card unlock.
+16. Keep Cashfree checkout switches off while merchant activation is unavailable. After approval, configure matching modes, App ID and Secret Key, enable both switches, set up the webhook, rebuild/redeploy, and verify checkout and card release after payment verification.
 17. Open the recipient card link.
 18. Test creator tracking and recipient reactions.
 

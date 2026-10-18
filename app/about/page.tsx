@@ -36,10 +36,17 @@ export default function AboutPage() {
             <article className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-7">
               <h2 className="text-xl font-black text-[var(--text)]">What we provide</h2>
               <p className="mt-4 text-sm leading-7 text-[var(--text2)]">
-                VibeCheck is an India-based digital service for creating private
-                interactive greeting cards. Customers can personalise a message,
-                uploaded photos, song dedications, questions, passcode and theme, then share one private link
-                with the intended recipient.
+                VibeCheck is an India-based service for creating private,
+                personalised digital greeting cards for birthdays, friendship,
+                apologies, romantic notes and proposals. Add your message,
+                photos, song dedications, questions, passcode and theme, then
+                share a private link with your chosen recipient.
+              </p>
+              <p className="mt-4 text-sm leading-7 text-[var(--text2)]">
+                Each purchase covers creation and hosting of one personalised
+                card. Cards carry no monetary balance or redemption value.
+                You choose the recipient; VibeCheck provides no profile
+                discovery or matching service.
               </p>
             </article>
             <article className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-7">

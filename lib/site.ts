@@ -1,10 +1,10 @@
 export const SITE_NAME = "VibeCheck";
 
 export const SITE_TITLE =
-  "VibeCheck - Say the thing. Make it unforgettable.";
+  "VibeCheck - Private Personalised Digital Greeting Cards";
 
 export const SITE_DESCRIPTION =
-  "Create a beautiful private moment for feelings, proposals, and sincere apologies. Add your words, share one link, and let them respond on their phone.";
+  "Personalised digital greeting cards for birthdays, friendship, apologies, romantic notes and proposals. Add photos, a message and music, then share a private link.";
 
 export const DEFAULT_SITE_URL = "https://vibecheck-gh7u.onrender.com";
 

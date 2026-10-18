@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { isCashfreeCheckoutVisible } from '@/lib/paymentAvailability';
 
 declare global {
   interface Window {
@@ -154,12 +155,14 @@ export default function CashfreeCheckout({
     }
   };
 
+  if (!isCashfreeCheckoutVisible()) return null;
+
   return (
     <section className="vc-cashfree-checkout rounded-3xl border border-pink-200/80 bg-white/90 p-6 shadow-xl backdrop-blur-md md:p-8">
       <div className="flex flex-col gap-2 border-b border-pink-100 pb-5">
         <div className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          Instant Automated Payment
+          Cashfree checkout
         </div>
         <h2 className="text-2xl font-black text-gray-900 md:text-3xl">
           Unlock Your VibeCheck
@@ -174,7 +177,7 @@ export default function CashfreeCheckout({
           <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Total payable</span>
           <div className="text-4xl font-black text-gray-900">₹{amount.toFixed(2)}</div>
           <p className="mt-1 text-xs text-gray-500">
-            One-time payment • No subscription • Instant delivery
+            One-time payment • No subscription • Delivery after payment verification
           </p>
         </div>
 
@@ -201,13 +204,9 @@ export default function CashfreeCheckout({
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-2 text-xs font-semibold text-gray-500">
-        <span className="rounded-md border border-gray-200 bg-white px-2.5 py-1">GPay</span>
-        <span className="rounded-md border border-gray-200 bg-white px-2.5 py-1">PhonePe</span>
-        <span className="rounded-md border border-gray-200 bg-white px-2.5 py-1">Paytm UPI</span>
-        <span className="rounded-md border border-gray-200 bg-white px-2.5 py-1">Cards</span>
-        <span className="rounded-md border border-gray-200 bg-white px-2.5 py-1">NetBanking</span>
-      </div>
+      <p className="text-center text-xs text-gray-500">
+        Available payment methods are shown by Cashfree when checkout opens.
+      </p>
 
       {activeOrderId && (
         <div className="mt-4 flex flex-col items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-900">
@@ -236,7 +235,7 @@ export default function CashfreeCheckout({
       )}
 
       <div className="mt-6 border-t border-pink-100 pt-4 flex flex-wrap justify-between items-center text-xs text-gray-500">
-        <span>Protected by 256-bit SSL encryption</span>
+        <span>Payment status is verified before your card is released.</span>
         <nav aria-label="Payment policies" className="flex gap-3 underline">
           <Link href="/terms" target="_blank">Terms</Link>
           <Link href="/privacy" target="_blank">Privacy</Link>
