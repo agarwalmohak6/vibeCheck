@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminFromRequest, isAdminConfigured } from '@/services/server/admin-auth';
 import { listManualPaymentReferences } from '@/services/server/card-store';
+import { getSupabaseAdmin } from '@/services/server/supabase-admin';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -14,6 +15,10 @@ export async function GET(req: NextRequest) {
     const admin = getAdminFromRequest(req);
     if (!admin) {
       return NextResponse.json({ error: 'Admin login required.' }, { status: 401 });
+    }
+
+    if (process.env.NODE_ENV === 'production' && !getSupabaseAdmin()) {
+      return NextResponse.json({ error: 'Persistent payment storage is unavailable. Check the Supabase configuration.' }, { status: 503 });
     }
 
     const limitParam = Number(req.nextUrl.searchParams.get('limit') || '75');

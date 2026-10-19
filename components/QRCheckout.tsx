@@ -45,7 +45,7 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa, orderId }: QRC
   };
 
   return <section className="vc-upi-checkout" aria-labelledby="upi-heading">
-    <header><span>Secure UPI payment</span><h2 id="upi-heading">One little payment. One big moment.</h2><p>Order {orderId || cardId.slice(0, 8).toUpperCase()}</p></header>
+    <header><span>Direct UPI · manual bank verification</span><h2 id="upi-heading">One little payment. One big moment.</h2><p>Order {orderId || cardId.slice(0, 8).toUpperCase()}</p></header>
     {!valid ? <p role="alert">Payment configuration is unavailable. Please contact support before paying.</p> : <>
       <div className="vc-upi-checkout__payment">
         <div className="vc-upi-checkout__qr"><QRCodeSVG value={upiIntent} size={196} level="M" fgColor="#222222" bgColor="#ffffff" title="Scan to pay with UPI" /></div>

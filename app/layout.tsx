@@ -11,48 +11,19 @@ import {
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/site";
-import { Quicksand, Pacifico, Outfit, Caveat_Brush, Dancing_Script, Cormorant_Garamond, Cinzel_Decorative } from 'next/font/google';
+const fontVariables = {
+  '--font-quicksand': "'Quicksand', Arial, sans-serif",
+  '--font-romance-heading': "'Pacifico', cursive",
+  '--font-outfit': "'Outfit', Arial, sans-serif",
+  '--font-caveat-brush': "'Caveat Brush', cursive",
+  '--font-dancing-script': "'Dancing Script', cursive",
+  '--font-cormorant-garamond': "'Cormorant Garamond', Georgia, serif",
+  '--font-cinzel-decorative': "'Cinzel Decorative', Georgia, serif",
+  '--font-body': "'Quicksand', Arial, sans-serif",
+} as React.CSSProperties;
 
-const quicksand = Quicksand({
-  subsets: ['latin'],
-  variable: '--font-quicksand',
-  display: 'swap',
-});
-
-const pacifico = Pacifico({ weight: '400', subsets: ['latin'], variable: '--font-romance-heading', display: 'swap' });
-
-const outfit = Outfit({
-  subsets: ['latin'],
-  variable: '--font-outfit',
-  display: 'swap',
-});
-
-const caveatBrush = Caveat_Brush({
-  weight: '400',
-  subsets: ['latin'],
-  variable: '--font-caveat-brush',
-  display: 'swap',
-});
-
-const dancingScript = Dancing_Script({
-  subsets: ['latin'],
-  variable: '--font-dancing-script',
-  display: 'swap',
-});
-
-const cormorantGaramond = Cormorant_Garamond({
-  weight: ['400', '600', '700'],
-  subsets: ['latin'],
-  variable: '--font-cormorant-garamond',
-  display: 'swap',
-});
-
-const cinzelDecorative = Cinzel_Decorative({
-  weight: ['400', '700', '900'],
-  subsets: ['latin'],
-  variable: '--font-cinzel-decorative',
-  display: 'swap',
-});
+// Fonts now load in the browser, avoiding Turbopack's intermittent
+// next/font/google generated import-map failure during Render builds.
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -123,8 +94,16 @@ export default function RootLayout({
     <html
       lang="en"
       data-theme="soft_coquette"
-      className={`${quicksand.variable} ${pacifico.variable} ${outfit.variable} ${caveatBrush.variable} ${dancingScript.variable} ${cormorantGaramond.variable} ${cinzelDecorative.variable}`}
+      style={fontVariables}
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:wght@400;600;700&family=Dancing+Script:wght@400;700&family=Outfit:wght@400;500;600;700;900&family=Pacifico&family=Quicksand:wght@400;500;600;700&display=swap"
+        />
+      </head>
       <body data-scroll-behavior="smooth">
         <SeoStructuredData />
         <ThemeProvider initial="soft_coquette">

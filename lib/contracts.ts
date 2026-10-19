@@ -128,6 +128,7 @@ export const cashfreeVerifySchema = z.object({
 
 export const manualPaymentVerifySchema = z.object({
   utr: paymentReferenceValueSchema,
+  confirmed_received: z.literal(true, { error: 'Confirm the bank credit before approving payment.' }),
 });
 
 export const testPaymentModeSchema = z.object({

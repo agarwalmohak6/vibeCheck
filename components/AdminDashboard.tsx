@@ -249,6 +249,8 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
       return;
     }
 
+    if (!window.confirm('Have you checked your receiving bank account and confirmed this exact UTR, the credited amount, and the payee? Only approve after the money is actually received.')) return;
+
     setVerifyingRef(normalized);
     setError('');
     setNotice('');
@@ -257,7 +259,7 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
       const res = await fetch('/api/admin/verify-utr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ utr: normalized }),
+        body: JSON.stringify({ utr: normalized, confirmed_received: true }),
       });
       const data = await res.json() as VerifyResponse;
 
@@ -420,7 +422,7 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
                 <p className="font-mono text-xs font-black uppercase tracking-[0.22em] text-[var(--accent)]">Quick approve</p>
                 <h2 className="mt-2 font-[var(--font-outfit)] text-3xl font-black text-[var(--text)]">Verify a UTR</h2>
                 <p className="mt-2 text-sm font-bold text-[var(--text2)]">
-                  Paste a submitted UTR. If it exists, the card unlocks immediately.
+                  Paste a submitted UTR. Check the bank credit, UTR and amount first; approving will unlock the card.
                 </p>
                 <div className="mt-4 flex gap-2">
                   <input

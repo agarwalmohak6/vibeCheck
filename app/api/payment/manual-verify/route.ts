@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { manualPaymentVerifySchema } from '@/lib/contracts';
 import { getAdminFromRequest, isAdminConfigured } from '@/services/server/admin-auth';
 import { verifyUpiPaymentReference } from '@/services/server/card-store';
+import { getSupabaseAdmin } from '@/services/server/supabase-admin';
 import { notifyCreatorCardReady } from '@/services/server/notify-card-ready';
 import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
 
@@ -16,6 +17,10 @@ export async function POST(req: NextRequest) {
 
     const admin = getAdminFromRequest(req);
     if (!admin) return NextResponse.json({ error: 'Admin OTP login required.' }, { status: 401 });
+
+    if (process.env.NODE_ENV === 'production' && !getSupabaseAdmin()) {
+      return NextResponse.json({ error: 'Persistent payment storage is unavailable. Configure Supabase before approving UTRs.' }, { status: 503 });
+    }
 
     const ip = getClientIp(req);
     if (!checkRateLimit(`manual-payment-verify:${admin.email}:${ip}`, 30, 60 * 60 * 1000)) {

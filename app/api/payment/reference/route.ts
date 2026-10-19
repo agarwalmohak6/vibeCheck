@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { paymentReferenceSchema } from '@/lib/contracts';
 import { getPublicCard, submitUpiPaymentReference } from '@/services/server/card-store';
+import { getSupabaseAdmin } from '@/services/server/supabase-admin';
 import { sendAdminPaymentReviewNotifications } from '@/services/server/notifications';
 import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
 
@@ -8,6 +9,10 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    if (process.env.NODE_ENV === 'production' && !getSupabaseAdmin()) {
+      return NextResponse.json({ error: 'Payment reference storage is temporarily unavailable. Please do not pay again; contact support.' }, { status: 503 });
+    }
+
     const ip = getClientIp(req);
     if (!checkRateLimit(`payment-reference:${ip}`, 20, 60 * 60 * 1000)) {
       return NextResponse.json({ error: 'Too many reference submissions. Please try again later.' }, { status: 429 });

@@ -171,6 +171,9 @@ export async function createCardDraft(input: CreateCardInput, accountId?: string
   const creatorToken = createAccessToken(id, 'creator');
 
   if (!admin) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Persistent Supabase storage is required for production card creation.');
+    }
     return createMockCardDraft(input, accountId, id, orderId, hasSecretCode, cardData, expiresAt, creatorToken);
   }
 
@@ -219,6 +222,9 @@ export async function createCardDraft(input: CreateCardInput, accountId?: string
     if (!isSupabaseConnectivityError(error)) throw error;
 
     disableSupabaseForRuntime(error);
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Persistent Supabase storage is unavailable; card was not saved.');
+    }
     return createMockCardDraft(
       input,
       accountId,
@@ -322,6 +328,10 @@ export async function submitUpiPaymentReference(id: string, reference: string) {
   const submittedAt = new Date().toISOString();
 
   if (!admin) {
+    if (process.env.NODE_ENV === 'production') throw new Error('Persistent payment storage is required in production.');
+    if (Object.entries(MOCK_PAYMENT_REFERENCES).some(([cardId, proof]) => cardId !== id && proof.payment_reference === paymentReference)) {
+      throw new Error('PAYMENT_REFERENCE_ALREADY_USED');
+    }
     MOCK_PAYMENT_REFERENCES[id] = {
       payment_reference: paymentReference,
       status: 'created',
@@ -393,6 +403,7 @@ export async function verifyUpiPaymentReference(reference: string) {
   const paymentId = `upi_manual_${paymentReference}`;
 
   if (!admin) {
+    if (process.env.NODE_ENV === 'production') throw new Error('Persistent payment storage is required in production.');
     const entry = Object.entries(MOCK_PAYMENT_REFERENCES)
       .find(([, value]) => value.payment_reference === paymentReference);
     if (!entry) return null;
