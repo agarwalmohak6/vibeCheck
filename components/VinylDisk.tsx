@@ -15,8 +15,10 @@ function OfficialSoundtrack({ url, label }: { url: string; label?: string }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     const reveal = () => setOpen(true);
+    const start = () => setOpen(true);
+    window.addEventListener('vibecheck:start-music', start);
     window.addEventListener('vibecheck:open-song', reveal);
-    return () => window.removeEventListener('vibecheck:open-song', reveal);
+    return () => { window.removeEventListener('vibecheck:open-song', reveal); window.removeEventListener('vibecheck:start-music', start); };
   }, []);
   return <aside className="vc-official-soundtrack" aria-label="Selected song">
     <button type="button" aria-expanded={open} aria-controls="card-song-player" onClick={() => setOpen(value => !value)}>{open ? 'Close song' : 'Play song'}</button>
@@ -51,10 +53,12 @@ function BackgroundSoundtrack({ musicUrl, musicLabel }: VinylDiskProps) {
   useEffect(() => {
     const win = window as Window & { __startMusic?: () => void };
     win.__startMusic = play;
+    window.addEventListener('vibecheck:start-music', play);
     const requests = requestRef;
     return () => {
       requests.current++;
       if (win.__startMusic === play) delete win.__startMusic;
+      window.removeEventListener('vibecheck:start-music', play);
       audioRef.current?.pause(); audioRef.current = null;
       melodyRef.current?.dispose(); melodyRef.current = null;
     };
