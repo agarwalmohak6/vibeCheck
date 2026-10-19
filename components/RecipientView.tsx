@@ -103,6 +103,7 @@ export default function RecipientView({ card, initialRoomMode = false, isCreator
   }, []);
 
   const handleEnvelopeOpen = () => {
+    if (!card.card_data.has_secret_code) window.dispatchEvent(new Event("vibecheck:start-music"));
     setEnvelopeOpened(true);
     void fetch(`/api/cards/${card.id}/events`, {
       method: "POST",
@@ -115,7 +116,10 @@ export default function RecipientView({ card, initialRoomMode = false, isCreator
 
   };
 
-  const handleUnlock = () => { setSecretUnlocked(true); };
+  const handleUnlock = () => {
+    window.dispatchEvent(new Event("vibecheck:start-music"));
+    setSecretUnlocked(true);
+  };
 
   const handleYes = () => {
     setYesClicked(true);
