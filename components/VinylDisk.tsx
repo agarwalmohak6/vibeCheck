@@ -21,7 +21,7 @@ function OfficialSoundtrack({ url, label }: { url: string; label?: string }) {
     return () => { window.removeEventListener('vibecheck:open-song', reveal); window.removeEventListener('vibecheck:start-music', start); };
   }, []);
   return <aside className="vc-official-soundtrack" aria-label="Selected song">
-    <button type="button" aria-expanded={open} aria-controls="card-song-player" onClick={() => setOpen(value => !value)}>{open ? 'Close song' : 'Play song'}</button>
+    <button type="button" aria-expanded={open} aria-controls="card-song-player" onClick={() => setOpen(value => !value)}>{open ? 'Close song' : 'Open song player'}</button>
     {open && <div id="card-song-player"><OfficialSongPlayer url={url} label={label} /></div>}
   </aside>;
 }
