@@ -14,9 +14,10 @@ interface EnvelopeRevealProps {
   onOpen?: () => void;
   preview?: boolean;
   theme?: string;
+  startMusicOnOpen?: boolean;
 }
 
-export default function EnvelopeReveal({ creatorName, recipientName = 'you', templateType = 'maan_jao', gifUrl, onOpen, preview = false }: EnvelopeRevealProps) {
+export default function EnvelopeReveal({ creatorName, recipientName = 'you', templateType = 'maan_jao', gifUrl, onOpen, preview = false, startMusicOnOpen = true }: EnvelopeRevealProps) {
   const [opening, setOpening] = useState(false);
   const opened = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -26,9 +27,8 @@ export default function EnvelopeReveal({ creatorName, recipientName = 'you', tem
   const open = () => {
     if (preview || !onOpen || opened.current) return;
     opened.current = true;
-    const win = window as Window & { __startMusic?: () => void };
-    // The player is already mounted: invoke playback synchronously on this tap.
-    win.__startMusic?.();
+    // Start in the opening tap's user activation; gated cards wait for verified unlock.
+    if (startMusicOnOpen) window.dispatchEvent(new Event('vibecheck:start-music'));
     setOpening(true);
     timer.current = setTimeout(onOpen, reducedMotion ? 150 : ENVELOPE_OPEN_MS);
   };
