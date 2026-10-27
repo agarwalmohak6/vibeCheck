@@ -369,7 +369,7 @@ export default function CreatorDashboard() {
                               Created {formatDate(card.created_at)} - Expires {formatDate(card.expires_at)}
                             </p>
                             {card.payment_reference && (
-                              <p className="mt-1 font-mono text-[11px] font-black text-[#b65361]">UTR: {card.payment_reference}</p>
+                              <p className="mt-1 font-mono text-[11px] font-black text-[#b65361]">Transaction ID: {card.payment_reference}</p>
                             )}
                           </div>
 

@@ -93,7 +93,7 @@ function buildAdminReviewMessage(input: AdminPaymentReviewNotificationInput, adm
   return [
     'VibeCheck UPI proof needs review.',
     `Order: ${input.orderId}`,
-    `UTR: ${input.paymentReference}`,
+    `Transaction ID: ${input.paymentReference}`,
     `Creator: ${input.creatorName || 'Creator'}`,
     `Recipient: ${input.recipientName || 'Recipient'}`,
     `Admin: ${adminUrl}`,

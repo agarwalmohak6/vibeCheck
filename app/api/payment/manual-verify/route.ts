@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     if (!admin) return NextResponse.json({ error: 'Admin OTP login required.' }, { status: 401 });
 
     if (process.env.NODE_ENV === 'production' && !getSupabaseAdmin()) {
-      return NextResponse.json({ error: 'Persistent payment storage is unavailable. Configure Supabase before approving UTRs.' }, { status: 503 });
+      return NextResponse.json({ error: 'Persistent payment storage is unavailable. Configure Supabase before approving Transaction IDs.' }, { status: 503 });
     }
 
     const ip = getClientIp(req);
@@ -30,14 +30,14 @@ export async function POST(req: NextRequest) {
     const parsed = manualPaymentVerifySchema.safeParse(await req.json());
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message || 'Enter the UPI UTR/reference to verify.' },
+        { error: parsed.error.issues[0]?.message || 'Enter the Transaction ID to verify.' },
         { status: 400 },
       );
     }
 
     const result = await verifyUpiPaymentReference(parsed.data.utr);
     if (!result) {
-      return NextResponse.json({ error: 'No submitted UTR found for this reference.' }, { status: 404 });
+      return NextResponse.json({ error: 'No submitted Transaction ID found for this reference.' }, { status: 404 });
     }
 
     const notifications = await notifyCreatorCardReady(result.card_id, req.nextUrl.origin);

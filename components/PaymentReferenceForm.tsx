@@ -45,7 +45,7 @@ export default function PaymentReferenceForm({
     const normalized = normalizeReference(reference);
 
     if (normalized.length < 6) {
-      setError('Enter the UPI UTR or reference number from your payment app.');
+      setError('Enter the Transaction ID from your payment app.');
       return;
     }
 
@@ -56,7 +56,7 @@ export default function PaymentReferenceForm({
       const res = await fetch('/api/payment/reference', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ card_id: cardId, utr: normalized }),
+        body: JSON.stringify({ card_id: cardId, transaction_id: normalized }),
       });
       const data = await res.json();
 
@@ -90,7 +90,7 @@ export default function PaymentReferenceForm({
           Paid already?
         </p>
         <p className={`text-[11px] leading-relaxed ${isDark ? 'text-neutral-400' : 'text-[#7b4b70]'}`}>
-          Enter your UPI UTR/ref no. The card unlocks after verification.
+          Enter your Transaction ID The card unlocks after verification.
         </p>
       </div>
 
@@ -102,7 +102,9 @@ export default function PaymentReferenceForm({
             if (error) setError('');
           }}
           disabled={status === 'submitting'}
-          placeholder="UTR / ref no."
+          placeholder="Transaction ID"
+          aria-label="Transaction ID"
+          autoComplete="off"
           inputMode="text"
           autoCapitalize="characters"
           className={`min-w-0 flex-1 rounded-xl border px-3 py-2 text-xs font-bold outline-none transition focus:ring-2 ${
@@ -122,7 +124,7 @@ export default function PaymentReferenceForm({
 
       {status === 'submitted' && (
         <p className={`mt-2 text-[10px] font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
-          Reference submitted. We’ll keep checking and unlock once it is verified.
+          Transaction ID submitted. We’ll verify the received payment before unlocking your card.
         </p>
       )}
       {error && (

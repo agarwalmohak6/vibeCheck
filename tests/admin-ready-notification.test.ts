@@ -17,7 +17,7 @@ import { POST as manualApprove } from '@/app/api/payment/manual-verify/route';
 import { POST as skipPayment } from '@/app/api/payment/test-mode/route';
 
 const card = { id: 'card-123', is_paid: true, creator_name: 'Mohak', recipient_name: 'Priya', template_type: 'shoot_shot', theme_selected: 'proposal_glow', card_data: { creator_email: 'creator@example.com', order_id: 'VC-123' } };
-const request = (utr = '123456789012') => new NextRequest('https://api.example.com/api/admin/verify-utr', { method: 'POST', body: JSON.stringify({ utr }), headers: { 'Content-Type': 'application/json' } });
+const request = (utr = '123456789012') => new NextRequest('https://api.example.com/api/admin/verify-utr', { method: 'POST', body: JSON.stringify({ utr, confirmed_received: true }), headers: { 'Content-Type': 'application/json' } });
 
 beforeEach(() => {
   vi.clearAllMocks();

@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           code: 'CASHFREE_CHECKOUT_UNAVAILABLE',
-          error: 'Cashfree checkout is unavailable. Please use direct UPI and submit the UTR for verification.',
+          error: 'Cashfree checkout is unavailable. Please use direct UPI and submit the Transaction ID for verification.',
         },
         { status: 503 },
       );

@@ -102,7 +102,7 @@ describe('CashfreeCheckout component', () => {
 
     expect(html).not.toContain('via Cashfree');
     expect(html).toContain('Scan to pay with UPI');
-    expect(html).toContain('UTR / ref no.');
+    expect(html).toContain('Transaction ID');
     expect(html).toContain('one business day');
     expect(html).not.toContain('<details');
   });
@@ -141,7 +141,7 @@ describe('CashfreeCheckout component', () => {
 
     expect(html).toContain('Pay ₹99.00 via Cashfree');
     expect(html).toContain('Scan to pay with UPI');
-    expect(html).toContain('UTR / ref no.');
+    expect(html).toContain('Transaction ID');
     expect(html).not.toContain('<details');
   });
 });

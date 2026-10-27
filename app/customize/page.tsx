@@ -1013,11 +1013,11 @@ function CustomizePageContent() {
             {loading ? 'Preparing your card…' : `Looks good - send it for ₹${selectedTier.price}`}
           </motion.button>
           <p className="text-xs text-center font-medium leading-relaxed" style={{ color: 'var(--text2)' }}>
-            Direct UPI · manual verification after UTR submission · no subscription
+            Direct UPI · Transaction ID verification · no subscription
           </p>
           <p className="text-xs text-center leading-relaxed" style={{ color: 'var(--text2)' }}>
             Total: ₹{selectedTier.price} INR, including any applicable taxes. No shipping fee.
-            Delivery is targeted within one business day after payment and UTR submission.
+            Delivery is targeted within one business day after payment and Transaction ID submission.
             By proceeding, you agree to the <Link href="/terms" target="_blank" rel="noopener noreferrer" className="underline">Terms</Link> and acknowledge the <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">Privacy Policy</Link>.
           </p>
           <nav aria-label="Checkout policies" className="flex flex-wrap justify-center gap-4 text-xs underline">

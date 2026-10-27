@@ -215,7 +215,7 @@ export async function sendAdminPaymentReviewEmail({
     `Card ID: ${cardId}`,
     `From: ${creatorName || 'Creator'}`,
     `For: ${recipientName || 'Recipient'}`,
-    `UTR/reference: ${paymentReference}`,
+    `Transaction ID/reference: ${paymentReference}`,
     '',
     'Open admin verification:',
     adminUrl,
@@ -224,7 +224,7 @@ export async function sendAdminPaymentReviewEmail({
     <div style="font-family:Inter,Arial,sans-serif;background:#07111f;color:#f8fafc;padding:28px;border-radius:22px;border:1px solid #164e63">
       <p style="margin:0 0 8px;color:#22d3ee;font-size:12px;font-weight:900;letter-spacing:.18em;text-transform:uppercase">UPI Verification</p>
       <h1 style="margin:0 0 14px;font-size:26px;line-height:1.1">Payment proof needs review</h1>
-      <p style="margin:0 0 18px;color:#cbd5e1;font-size:14px;line-height:1.55">Order <strong>${escapeHtml(orderId)}</strong> submitted UTR <strong>${escapeHtml(paymentReference)}</strong>.</p>
+      <p style="margin:0 0 18px;color:#cbd5e1;font-size:14px;line-height:1.55">Order <strong>${escapeHtml(orderId)}</strong> submitted Transaction ID <strong>${escapeHtml(paymentReference)}</strong>.</p>
       <div style="background:#0f172a;border:1px solid #334155;border-radius:16px;padding:14px;margin:0 0 18px">
         <p style="margin:0 0 6px;color:#cbd5e1;font-size:13px">Creator: <strong>${escapeHtml(creatorName || 'Creator')}</strong></p>
         <p style="margin:0 0 6px;color:#cbd5e1;font-size:13px">Recipient: <strong>${escapeHtml(recipientName || 'Recipient')}</strong></p>

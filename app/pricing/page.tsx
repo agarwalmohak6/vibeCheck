@@ -77,7 +77,7 @@ export default function PricingPage() {
               we add no separate delivery or subscription fee. Each purchase covers
               one personalised digital card. Pricing last updated on {POLICY_EFFECTIVE_DATE}.
             </p>
-            <p className="mt-3">Current checkout uses direct UPI with manual payment verification, targeted within one business day after payment and UTR submission. Debit/credit-card checkout is not yet available. A gateway logo or application does not mean our account is approved.</p>
+            <p className="mt-3">Current checkout uses direct UPI with Transaction ID verification. When automatic checks are unavailable, manual payment verification is targeted within one business day after payment and submission. Debit/credit-card checkout is not yet available. A gateway logo or application does not mean our account is approved.</p>
             <p className="mt-3">Cards have no scheduled expiry while the service operates; this does not guarantee perpetual hosting. See <Link className="underline" href="/terms">Terms</Link>, <Link className="underline" href="/shipping-policy">Delivery</Link> and <Link className="underline" href="/refund-policy">Cancellation & Refunds</Link> before purchasing.</p>
           </div>
         </div>

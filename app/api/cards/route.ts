@@ -5,6 +5,7 @@ import { getCreatorSessionFromRequest } from '@/services/server/creator-auth';
 import { sendCreatorOrderNotifications } from '@/services/server/notifications';
 import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
 import { isSupabaseConnectivityError } from '@/services/server/supabase-admin';
+import { tryAxisAutoApproval } from '@/services/server/axis-auto-approval';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -88,6 +89,12 @@ export async function GET(req: NextRequest) {
   if (statusOnly) {
     const status = await getPaymentStatus(id);
     if (!status) return NextResponse.json({ error: 'Card not found' }, { status: 404 });
+    if (!status.is_paid && status.payment_reference && checkRateLimit(`bank-check:${id}`, 4, 60_000)) {
+      const card = await getPublicCard(id);
+      if (card && await tryAxisAutoApproval(card, status.payment_reference, process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin) === 'verified') {
+        return NextResponse.json(await getPaymentStatus(id));
+      }
+    }
     return NextResponse.json(status);
   }
 

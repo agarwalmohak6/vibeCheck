@@ -37,7 +37,7 @@ export default function TermsPage() {
 
         <h2 className="text-lg font-bold text-[var(--text)]">4. Pricing & Payments</h2>
         <p>
-          Current prices are listed in INR on our <Link href="/pricing" className="text-[var(--accent)] hover:underline">Pricing page</Link> and shown again before payment. Each purchase is a one-time payment for one card, not a subscription. Only payment methods actually displayed at checkout are available. Direct UPI payments are manually verified against the submitted UTR and received funds. Opening a payment app, submitting a reference or uploading a screenshot does not confirm payment. We do not currently advertise Cashfree activation or card-payment availability.
+          Current prices are listed in INR on our <Link href="/pricing" className="text-[var(--accent)] hover:underline">Pricing page</Link> and shown again before payment. Each purchase is a one-time payment for one card, not a subscription. Only payment methods actually displayed at checkout are available. Direct UPI payments are verified against the submitted Transaction ID and received funds. When bank-alert matching is enabled, complete matches can be verified automatically; other payments are reviewed manually. Opening a payment app, submitting a reference or uploading a screenshot does not confirm payment. We do not currently advertise Cashfree activation or card-payment availability.
         </p>
 
         <h2 className="text-lg font-bold text-[var(--text)]">5. Delivery, Cancellation & Refunds</h2>

@@ -40,7 +40,7 @@ export default function RefundPolicyPage() {
           To request a refund, email <a href={`mailto:${BUSINESS_EMAIL}`} className="text-[var(--accent)] hover:underline">{BUSINESS_EMAIL}</a> within 7 calendar days of the transaction. Include:
         </p>
         <ul className="list-disc pl-6 space-y-1 text-[var(--text2)]">
-          <li>Your UPI UTR or payment transaction reference and the amount paid</li>
+          <li>Your Transaction ID and the amount paid</li>
           <li>Card ID (if available)</li>
           <li>Screenshot or description of the issue</li>
         </ul>

@@ -62,8 +62,8 @@ export default function QRCheckout({ cardId, amount, onPaid, vpa, orderId }: QRC
         <p>If the app says the UPI ID is invalid or the transfer is blocked, stop and contact support. Do not pay twice.</p>
       </div>
       <PaymentReferenceForm cardId={cardId} variant="soft" onSubmitted={() => setReferenceSubmitted(true)} />
-      <p className="vc-upi-checkout__verification" role="status">{referenceSubmitted ? 'Reference received. Waiting for payment verification.' : 'After payment, submit the UTR from your UPI app. Your card opens after verification.'}</p>
-      <p className="vc-upi-checkout__verification">Verification is targeted within one business day after payment and UTR submission. No physical delivery or subscription.</p>
+      <p className="vc-upi-checkout__verification" role="status">{referenceSubmitted ? 'Transaction ID received. Checking payment verification.' : 'After payment, submit the Transaction ID from your UPI app. Your card opens after verification.'}</p>
+      <p className="vc-upi-checkout__verification">Verification is targeted within one business day after payment and Transaction ID submission. No physical delivery or subscription.</p>
       <nav aria-label="Payment policies" className="flex flex-wrap gap-4 text-xs underline">
         <Link href="/terms" target="_blank" rel="noopener noreferrer">Terms</Link>
         <Link href="/privacy" target="_blank" rel="noopener noreferrer">Privacy</Link>

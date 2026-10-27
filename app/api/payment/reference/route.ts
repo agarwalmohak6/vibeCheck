@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { paymentReferenceSchema } from '@/lib/contracts';
-import { getPublicCard, submitUpiPaymentReference } from '@/services/server/card-store';
+import { getPublicCard, getPaymentStatus, submitUpiPaymentReference } from '@/services/server/card-store';
+import { tryAxisAutoApproval } from '@/services/server/axis-auto-approval';
 import { getSupabaseAdmin } from '@/services/server/supabase-admin';
 import { sendAdminPaymentReviewNotifications } from '@/services/server/notifications';
 import { checkRateLimit, getClientIp } from '@/services/server/rate-limit';
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
     const parsed = paymentReferenceSchema.safeParse(await req.json());
     if (!parsed.success) {
       return NextResponse.json(
-        { error: parsed.error.issues[0]?.message || 'Enter the UPI UTR or transaction reference.' },
+        { error: parsed.error.issues[0]?.message || 'Enter the Transaction ID.' },
         { status: 400 },
       );
     }
@@ -33,6 +34,10 @@ export async function POST(req: NextRequest) {
 
     const card = await getPublicCard(parsed.data.card_id);
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || req.nextUrl.origin;
+    const autoVerification = card ? await tryAxisAutoApproval(card, parsed.data.utr, baseUrl) : 'disabled';
+    if (autoVerification === 'verified') {
+      return NextResponse.json({ success: true, auto_verification: 'verified', ...await getPaymentStatus(parsed.data.card_id) });
+    }
     const notifications = card
       ? await sendAdminPaymentReviewNotifications({
           baseUrl,
@@ -47,7 +52,7 @@ export async function POST(req: NextRequest) {
         })
       : null;
 
-    return NextResponse.json({ success: true, notifications, ...status });
+    return NextResponse.json({ success: true, notifications, auto_verification: autoVerification, ...status });
   } catch (err) {
     if (err instanceof Error && err.message === 'PAYMENT_REFERENCE_ALREADY_USED') {
       return NextResponse.json({ error: 'This UPI reference is already linked to another card.' }, { status: 409 });
