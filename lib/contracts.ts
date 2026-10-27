@@ -35,9 +35,9 @@ const paymentReferenceValueSchema = z.preprocess(
   normalizePaymentReferenceInput,
   z.string()
     .trim()
-    .min(6, 'Enter the 6+ character UPI UTR or transaction reference.')
+    .min(6, 'Enter the 6+ character Transaction ID.')
     .max(40, 'UPI reference should be 40 characters or less.')
-    .regex(/^[A-Z0-9-]+$/, 'Use the UPI UTR/reference number only.'),
+    .regex(/^[A-Z0-9-]+$/, 'Use the Transaction ID only.'),
 );
 
 export const storyQuestionSchema = z.object({
@@ -112,8 +112,12 @@ export const sendMessageSchema = z.object({
 
 export const paymentReferenceSchema = z.object({
   card_id: z.string().uuid(),
-  utr: paymentReferenceValueSchema,
-});
+  transaction_id: paymentReferenceValueSchema.optional(),
+  utr: paymentReferenceValueSchema.optional(),
+}).superRefine((input, context) => {
+  if (!input.transaction_id && !input.utr) context.addIssue({ code: 'custom', message: 'Enter the Transaction ID from your payment app.' });
+  if (input.transaction_id && input.utr && input.transaction_id !== input.utr) context.addIssue({ code: 'custom', message: 'Conflicting Transaction IDs. Submit one Transaction ID.' });
+}).transform(input => ({ card_id: input.card_id, utr: input.transaction_id || input.utr! }));
 
 
 

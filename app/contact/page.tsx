@@ -84,7 +84,7 @@ export default function ContactPage() {
         </section>
         <section className="space-y-3 text-sm leading-relaxed">
           <h2 className="text-lg font-bold">Order support and complaints</h2>
-          <p>For delivery, refunds, privacy requests or complaints, contact {BUSINESS_OPERATOR} using the email or phone above. Include your order ID, purchase email and a description of the issue. For a payment issue, include the UTR or transaction reference.</p>
+          <p>For delivery, refunds, privacy requests or complaints, contact {BUSINESS_OPERATOR} using the email or phone above. Include your order ID, purchase email and a description of the issue. For a payment issue, include the Transaction ID or transaction reference.</p>
           <p>Never send your UPI PIN, OTP, CVV, full card number or account password. We aim to respond within one business day during support hours. Refund review and processing timelines are listed in our <Link href="/refund-policy" className="underline">Cancellation & Refund Policy</Link>.</p>
         </section>
       </main>

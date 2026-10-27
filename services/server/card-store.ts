@@ -2,6 +2,7 @@ import 'server-only';
 import { randomUUID } from 'crypto';
 import type { CreateCardInput } from '@/lib/contracts';
 import { computeExpiresAt } from '@/lib/utils';
+import { TIERS } from '@/lib/themes';
 import type { Card } from '@/lib/supabase';
 import type { CardEventType, ChatMessageDTO, PublicCard, TrackerEvent } from '@/types/vibecheck';
 import { readStoredReplies, writeStoredReply } from './reply-store';
@@ -365,6 +366,7 @@ export async function submitUpiPaymentReference(id: string, reference: string) {
   }
 
   if (!existing) {
+    const tier = TIERS.find(item => item.id === card.tier_selected);
     const { error } = await admin.from('payments').insert({
       card_id: id,
       provider: 'upi_manual',
@@ -375,8 +377,11 @@ export async function submitUpiPaymentReference(id: string, reference: string) {
         card_id: id,
         payment_reference: paymentReference,
         submitted_at: submittedAt,
+        expected_amount_in_paise: tier ? tier.price * 100 : null,
+        currency: 'INR',
       },
     });
+    if (error?.code === '23505') throw new Error('PAYMENT_REFERENCE_ALREADY_USED');
     if (error) throw error;
   }
 

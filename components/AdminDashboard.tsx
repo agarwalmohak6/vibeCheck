@@ -245,11 +245,11 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
   const verifyUtr = async (utr: string) => {
     const normalized = normalizeUtr(utr);
     if (normalized.length < 6) {
-      setError('Enter a valid UTR or reference number.');
+      setError('Enter a valid Transaction ID or reference number.');
       return;
     }
 
-    if (!window.confirm('Have you checked your receiving bank account and confirmed this exact UTR, the credited amount, and the payee? Only approve after the money is actually received.')) return;
+    if (!window.confirm('Have you checked your receiving bank account and confirmed this exact Transaction ID, the credited amount, and the payee? Only approve after the money is actually received.')) return;
 
     setVerifyingRef(normalized);
     setError('');
@@ -264,15 +264,15 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
       const data = await res.json() as VerifyResponse;
 
       if (!res.ok) {
-        setError(data.error || 'Could not approve this UTR.');
+        setError(data.error || 'Could not approve this Transaction ID.');
         return;
       }
 
-      setNotice(`Approved ${data.payment_reference || normalized}. Card is ready. ${data.notifications?.email?.sent ? 'Ready email accepted by the email provider.' : 'Creator email was not sent. Re-submit this UTR to retry notification.'}`);
+      setNotice(`Approved ${data.payment_reference || normalized}. Card is ready. ${data.notifications?.email?.sent ? 'Ready email accepted by the email provider.' : 'Creator email was not sent. Re-submit this Transaction ID to retry notification.'}`);
       setManualUtr('');
       await loadAdminData();
     } catch {
-      setError('Network issue while approving UTR.');
+      setError('Network issue while approving Transaction ID.');
     } finally {
       setVerifyingRef('');
     }
@@ -420,15 +420,15 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
             <aside className="space-y-5">
               <div className="rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl shadow-[#bd8461]/10 backdrop-blur">
                 <p className="font-mono text-xs font-black uppercase tracking-[0.22em] text-[var(--accent)]">Quick approve</p>
-                <h2 className="mt-2 font-[var(--font-outfit)] text-3xl font-black text-[var(--text)]">Verify a UTR</h2>
+                <h2 className="mt-2 font-[var(--font-outfit)] text-3xl font-black text-[var(--text)]">Verify a Transaction ID</h2>
                 <p className="mt-2 text-sm font-bold text-[var(--text2)]">
-                  Paste a submitted UTR. Check the bank credit, UTR and amount first; approving will unlock the card.
+                  Paste a submitted Transaction ID. Check the bank credit, Transaction ID and amount first; approving will unlock the card.
                 </p>
                 <div className="mt-4 flex gap-2">
                   <input
                     value={manualUtr}
                     onChange={(event) => setManualUtr(event.target.value)}
-                    placeholder="UTR / ref no."
+                    placeholder="Transaction ID"
                     className="min-w-0 flex-1 rounded-2xl border border-[var(--border)] bg-[var(--surface2)] px-4 py-3 font-mono text-sm font-black uppercase text-[var(--text)] outline-none transition placeholder:text-[var(--text2)] focus:border-[var(--border)] focus:ring-4 focus:ring-[#efb3aa]/20"
                   />
                   <button
@@ -449,11 +449,11 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-[1.25rem] border border-amber-300/20 bg-amber-300/[0.07] p-4 shadow-xl shadow-[#bd8461]/10">
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-amber-800">Pending UTR</p>
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-amber-800">Pending Transaction ID</p>
                   <p className="mt-1 text-4xl font-black text-amber-800">{pendingCount}</p>
                 </div>
                 <div className="rounded-[1.25rem] border border-emerald-300/20 bg-emerald-300/[0.07] p-4 shadow-xl shadow-[#bd8461]/10">
-                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">Paid UTR</p>
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">Paid Transaction ID</p>
                   <p className="mt-1 text-4xl font-black text-emerald-700">{paidCount}</p>
                 </div>
                 <div className="rounded-[1.25rem] border border-[var(--border)] bg-[#efb3aa]/20 p-4 shadow-xl shadow-[#bd8461]/10">
@@ -507,7 +507,7 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
               <div className="max-h-[68vh] space-y-3 overflow-y-auto pr-1">
                 {payments.length === 0 && (
                   <div className="rounded-[1.25rem] border border-dashed border-[var(--border)] bg-white/[0.035] p-8 text-center">
-                    <p className="text-lg font-black text-[var(--text)]">No UTR submissions yet.</p>
+                    <p className="text-lg font-black text-[var(--text)]">No Transaction ID submissions yet.</p>
                     <p className="mt-2 text-sm font-bold text-[var(--text2)]">
                       New references will appear here after users submit them from the payment screen.
                     </p>
@@ -635,7 +635,7 @@ export default function AdminDashboard({ configuredAdminEmail }: { configuredAdm
                           </p>
                           {card.payment_reference && (
                             <p className="mt-1 break-all font-mono text-[11px] font-black text-[var(--accent)]">
-                              UTR: {card.payment_reference}
+                              Transaction ID: {card.payment_reference}
                             </p>
                           )}
                         </div>
